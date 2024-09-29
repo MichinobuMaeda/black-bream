@@ -1,8 +1,8 @@
 {
-    "cSpell.words": [
-        "firestore",
-        "Maeda",
-        "Michinobu",
-        "michinobumaeda"
-    ]
+  "cSpell.words": ["firestore", "Maeda", "Michinobu", "michinobumaeda"],
+  "eslint.validate": ["javascript", "javascriptreact", "svelte"],
+  "eslint.useFlatConfig": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "javascript.validate.enable": false,
+  "typescript.validate.enable": false
 }
