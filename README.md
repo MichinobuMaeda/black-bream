@@ -14,8 +14,8 @@ Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also pow
 
 **Why use this over SvelteKit?**
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+-   It brings its own routing solution which might not be preferable for some users.
+-   It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
 
 This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
 
@@ -42,8 +42,8 @@ If you have state that's important to retain within a component, consider creati
 ```js
 // store.js
 // An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+import { writable } from "svelte/store";
+export default writable(0);
 ```
 
 ## Create this project
@@ -65,12 +65,12 @@ curl 8.7.1
 
 ### Get a Firebase project ID
 
-- <https://console.firebase.google.com/>
-    - Create a project
-        - Project name: black-bream
-        - Configure Google Analytics
-            - Create a new account: black-bream
-            - Analytics location: Japan
+-   <https://console.firebase.google.com/>
+    -   Create a project
+        -   Project name: black-bream
+        -   Configure Google Analytics
+            -   Create a new account: black-bream
+            -   Analytics location: Japan
 
 ### Create the local project
 
@@ -114,23 +114,39 @@ $ gh repo create
 
 <https://console.firebase.google.com/u/0/project/black-bream>
 
-- Project overview
-    - Usage and billing
-        - Details & settings
-            - Modify plan: Blaze plan
-    - Project settings
-        - General
-            - Your apps: </> (web)
-                - App nickname: Black bream
-- Build
-    - Firestore Database
-        - Create database
-            - Database ID: (default)
-                - Location: asia-northeast2 (Osaka)
-                - (o) Start in production mode
-    - Storage
-        - Get started
-            - (o) Start in production mode
+-   Project overview
+    -   Usage and billing
+        -   Details & settings
+            -   Modify plan: Blaze plan
+    -   Project settings
+        -   General
+            -   Your apps: </> (web)
+                -   App nickname: Black bream
+-   Build
+    -   Firestore Database
+        -   Create database
+            -   Database ID: (default)
+                -   Location: asia-northeast2 (Osaka)
+                -   (o) Start in production mode
+    -   Storage
+        -   Get started
+            -   (o) Start in production mode
+    -   Authentication
+        -   Sign-in method
+            -   Sign-in providers
+                -   Email/Password: Enable
+                -   Email link (passwordless sign-in): Disable
+                -   Google: Enable
+                    -   Public-facing name for project: Black bream
+            -   Advanced
+                -   Identity Platform: Upgrade to enable
+        -   Settings
+            -   User account linking
+                -   (o) Link accounts that use the same email
+            -   User actions
+                -   [ ] Enable create (sign-up)
+                -   [ ] Enable delete
+                -   [v] Email enumeration protection (recommended)
 
 ```bash
 $ npm i -D firebase-tools
@@ -186,7 +202,7 @@ Modify `functions/package.json`
 
 ```json
   "engines": {
-    "node": "18"
+    "node": "20"
   },
 ```
 
@@ -197,3 +213,26 @@ $ gh secret list
 NAME                                  UPDATED
 FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM  about 15 minutes ago
 ```
+
+#### Initial deployment
+
+```bash
+$ npx firebase deploy
+ ... ...
+? Cloud Storage for Firebase needs an IAM Role to use cross-service rules.
+Grant the new role? Yes
+
+```
+
+#### Install extension
+
+<https://console.firebase.google.com/u/0/project/black-bream>
+
+-   Build
+    -   Extensions
+        -   Explore extensions
+            -   Trigger Email from Firestore
+                -   Install
+                    -   Projects: black-bream
+                    -   Secret Manager: Enable
+                    -   Cloud Functions location: asia-northeast2 (Osaka)

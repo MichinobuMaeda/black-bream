@@ -1,5 +1,13 @@
 {
-  "cSpell.words": ["firestore", "Maeda", "Michinobu", "michinobumaeda"],
+  "cSpell.words": [
+    "ABCDEFGHJKLMNPRSTUVWXY",
+    "firestore",
+    "Maeda",
+    "Michinobu",
+    "michinobumaeda",
+    "passwordless",
+    "Zabcdefghijkmnopqrstuvwxyz"
+  ],
   "eslint.validate": ["javascript", "javascriptreact", "svelte"],
   "eslint.useFlatConfig": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",

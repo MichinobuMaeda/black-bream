@@ -4,9 +4,8 @@
     "eamodio.gitlens",
     "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
+    "github.vscode-github-actions",
     "streetsidesoftware.code-spell-checker",
-    "svelte.svelte-vscode",
-    "visualstudioexptteam.vscodeintellicode",
-    "visualstudioexptteam.intellicode-api-usage-examples"
+    "svelte.svelte-vscode"
   ]
 }

@@ -1,0 +1,29 @@
+name: Deploy to Firebase Hosting on merge
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+jobs:
+  build_and_deploy:
+    env:
+      WORK_DIR: $RUNNER_TEMP/work
+      GOOGLE_APPLICATION_CREDENTIALS: $RUNNER_TEMP/work/service-account.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+      - run: npm ci --prefix functions
+      - name: Set secret
+        run: |
+          mkdir $WORK_DIR
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}' \
+          > $GOOGLE_APPLICATION_CREDENTIALS
+      - name: Deploy Functions
+        run: npx firebase deploy --only functions # --except functions:test_deployment,functions:test_functions --force
