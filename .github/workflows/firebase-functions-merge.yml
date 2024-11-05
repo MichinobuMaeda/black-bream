@@ -26,4 +26,10 @@ jobs:
           mkdir $WORK_DIR
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}' \
           > $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase deploy --only functions # --except functions:test_deployment,functions:test_functions --force
+          npx firebase deploy --only functions # --except functions:uiTestData --force
+      - name: Set dataVersion
+        env:
+          WORK_DIR: $RUNNER_TEMP/work
+          GOOGLE_APPLICATION_CREDENTIALS: $RUNNER_TEMP/work/service-account.json
+        run: |
+          npx firebase firestore:delete service/dataVersion

@@ -1,41 +1,24 @@
 const { onDocumentDeleted } = require("firebase-functions/v2/firestore");
+const { onCall } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
-const { getRandomValues } = require("node:crypto");
-const logger = require("firebase-functions/logger");
+const { getAuth } = require("firebase-admin/auth");
+
+const { updateData } = require("./deployment");
+const { createUiTestData } = require("./ui_test_data");
 
 const app = initializeApp();
+const db = getFirestore(app);
+const auth = getAuth(app);
 const region = "asia-northeast2";
-const charSetStd =
-  "!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-exports.deploy = onDocumentDeleted(
-  { document: "service/{deployment}", region },
-  async (event) => {
-    const db = getFirestore(app);
-    const conf = await db.collection("service").doc("config").get();
-    if (!conf.exists) {
-      logger.info("'service/conf' not found");
-      try {
-        const email = event.data.get("email");
-        const randoms = new Uint32Array(32);
-        getRandomValues(randoms);
-        const generated = randoms
-          .map((val) => val % charSetStd.length)
-          .reduce((ret, cur) => ret + charSetStd.substring(cur, cur + 1), "");
-        await db.collection("mail").add({
-          to: email,
-          message: {
-            subject: "Invitation from Black bream",
-            text: `Please change your initial password.
-Your temporary password is ${generated}`,
-          },
-        });
-      } catch (e) {
-        logger.error(e);
-      }
-    } else {
-      logger.info("'service/conf' found");
-    }
-  },
+exports.onDataVersionDeleted = onDocumentDeleted(
+  { document: "service/dataVersion", region },
+  (event) => updateData(auth, db, event.data),
+);
+
+// [Caution!!] Don't deploy this function to production
+// eslint-disable-next-line no-unused-vars
+exports.uiTestData = onCall({ region }, (data, context) =>
+  createUiTestData(auth, db),
 );

@@ -18,6 +18,13 @@ export default [
     rules: {},
   },
   {
-    ignores: ["build/", ".svelte-kit/", "dist/", "src/lib/PWABadge.svelte"],
+    ignores: [
+      "build/",
+      ".svelte-kit/",
+      "dist/",
+      "src/lib/PWABadge.svelte",
+      "coverage/",
+      "functions/coverage/",
+    ],
   },
 ];

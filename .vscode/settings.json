@@ -1,11 +1,15 @@
 {
   "cSpell.words": [
     "ABCDEFGHJKLMNPRSTUVWXY",
+    "appspot",
+    "firebaseapp",
     "firestore",
+    "lcov",
     "Maeda",
     "Michinobu",
     "michinobumaeda",
     "passwordless",
+    "tailwindcss",
     "Zabcdefghijkmnopqrstuvwxyz"
   ],
   "eslint.validate": ["javascript", "javascriptreact", "svelte"],

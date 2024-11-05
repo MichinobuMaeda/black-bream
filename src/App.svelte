@@ -1,50 +1,113 @@
 <script>
-  import svelteLogo from './assets/svelte.svg'
-  import appLogo from '/favicon.svg'
-  import Counter from './lib/Counter.svelte'
-  import PWABadge from './lib/PWABadge.svelte'
+  import PWABadge from "./lib/PWABadge.svelte";
+
+  import { authUser, conf, activePage } from "./lib/state.svelte";
+  import Header from "./lib/Header.svelte";
+  import Loading from "./lib/Loading.svelte";
+  import { PAGE_UNSETTLED } from "./lib/const.svelte";
 </script>
 
-<main>
-  <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={appLogo} class="logo" alt="black-bream Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+<div
+  class="@apply flex flex-row justify-center
+    bg-lightSurfaceVariant dark:bg-darkSurfaceVariant"
+>
+  <div
+    class="flex flex-col w-full max-w-screen-sm
+      bg-lightBackground dark:bg-darkBackground
+      text-lightOnBackground dark:text-darkOnBackground"
+  >
+    <div class="flex flex-col min-h-screen justify-between">
+      <Header
+        top={true}
+        user={null}
+        page={$activePage}
+        onClick={(page) => activePage.set(page)}
+      />
+      <main class="flex justify-center mb-auto">
+        {#if $activePage === PAGE_UNSETTLED}
+          <Loading />
+        {:else}
+          <div class="flex flex-col px-2 pt-2 sm:pt-8 pb-6 gap-4 sm:gap-8">
+            <p>Page: {$activePage}</p>
+            {#if $authUser === undefined}
+              <p>Loading auth ...</p>
+            {:else}
+              <p>Auth has been loaded.</p>
+              {#if $authUser === null}
+                <p>User: guest</p>
+              {:else}
+                <p>User: {$authUser.uid}</p>
+              {/if}
+            {/if}
+            {#if $conf === undefined}
+              <p>Loading conf ...</p>
+            {:else}
+              <p>Conf has been loaded.</p>
+            {/if}
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+            <p>Quick fox jumps over the lazy dog.</p>
+          </div>
+        {/if}
+      </main>
+      <Header
+        top={false}
+        user={null}
+        page={$activePage}
+        onClick={(page) => activePage.set(page)}
+      />
+    </div>
   </div>
-  <h1>black-bream</h1>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
-</main>
+</div>
 
 <PWABadge />
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
 </style>
