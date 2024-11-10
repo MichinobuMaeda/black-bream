@@ -1,5 +1,5 @@
 <div
-  class="flex flex-col p-8 justify-center opacity-50 relative top-8 gap-16
+  class="flex flex-col items-center pt-16 gap-16 opacity-50
   text-lightTertiary dark:text-darkTertiary"
 >
   <div class="animate-pulse">Loading ...</div>

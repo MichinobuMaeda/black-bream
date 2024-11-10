@@ -1,104 +1,56 @@
 <script>
   import appLogo from "/favicon.svg";
-  import {
-    APP_NAME,
-    PAGE_OVERVIEW,
-    PAGE_SETTINGS,
-    PAGE_LOGIN,
-    PAGE_INFO,
-  } from "./const.svelte";
-  import ButtonText from "./ButtonText.svelte";
-  import IconButton from "./IconButton.svelte";
-  import SvgOverview from "./SvgOverview.svelte";
-  import SvgSettings from "./SvgSettings.svelte";
-  import SvgLogin from "./SvgLogin.svelte";
-  import SvgInfo from "./SvgInfo.svelte";
+  import { APP_NAME } from "./const.svelte";
 
   /**
    * @typedef {Object} Props
-   * @property {boolean} [top]
-   * @property {string} user
+   * @property {array} pages
    * @property {string} page
-   * @property {function} onClick
    */
 
   /** @type {Props} */
-  let { top, user, page, onClick } = $props();
-
-  const items =
-    user === null
-      ? [
-          { id: PAGE_LOGIN, icon: SvgLogin, label: "ログイン" },
-          { id: PAGE_INFO, icon: SvgInfo, label: "情報" },
-        ]
-      : [
-          { id: PAGE_OVERVIEW, icon: SvgOverview, label: "概要" },
-          { id: PAGE_SETTINGS, icon: SvgSettings, label: "設定" },
-          { id: PAGE_INFO, icon: SvgInfo, label: "情報" },
-        ];
-
-  if (items.map((item) => item.id).indexOf(page) < 0) {
-    onClick(items[0].id);
-  }
+  let { pages, page = $bindable() } = $props();
 </script>
 
-{#if top}
-  <header
-    class="flex flex-row sticky top-0 h-9 invisible sm:visible
-      bg-lightPrimaryContainer dark:bg-darkPrimaryContainer
-      text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer"
-  >
-    <div class="flex flex-auto">
-      <img
-        src={appLogo}
-        alt={APP_NAME}
-        class="size-10 relative top-0.5 ml-0.5"
-      />
+{#snippet navItem(id, Icon, label, selected)}
+  <div class="flex flex-col justify-center">
+    <button
+      {id}
+      type="button"
+      class={"flex flex-row text-base rounded-full py-1 px-4 xl:px-2 xl:w-[224px] gap-2 " +
+        "justify-center xl:justify-start " +
+        (selected
+          ? "text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer " +
+            "bg-lightSecondaryContainer dark:bg-darkSecondaryContainer"
+          : "text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant")}
+      onclick={() => {
+        page = id;
+      }}
+    >
+      <Icon />
+      <div class="hidden xl:flex">{label}</div>
+    </button>
+    <div
+      class={"flex flex-row justify-center text-xs xl:hidden " +
+        (selected
+          ? "text-lightOnSurface dark:text-darkOnSurface"
+          : "text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant")}
+    >
+      {label}
     </div>
-    <div class="flex flex-row gap-2 px-2 py-0.5">
-      {#each items as item}
-        <div
-          class={page === item.id
-            ? "py-1 border-b-2 border-lightPrimary dark:border-darkPrimary"
-            : "py-1"}
-        >
-          <ButtonText
-            id={item.id}
-            icon={item.icon}
-            label={item.label}
-            onClick={() => (page === item.id ? null : onClick(item.id))}
-          />
-        </div>
-      {/each}
-    </div>
-  </header>
-{:else}
-  <header
-    class="flex flex-row sticky bottom-0 h-9 visible sm:invisible
-      bg-lightPrimaryContainer dark:bg-darkPrimaryContainer
-      text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer"
-  >
-    <div class="flex flex-auto">
-      <img
-        src={appLogo}
-        alt={APP_NAME}
-        class="size-10 relative bottom-0.5 ml-0.5"
-      />
-    </div>
-    <div class="flex flex-row gap-1 px-2 py-0.5">
-      {#each items as item}
-        <div
-          class={page === item.id
-            ? "py-1 border-t-2 border-lightPrimary dark:border-darkPrimary"
-            : "py-1"}
-        >
-          <IconButton
-            id={item.id}
-            icon={item.icon}
-            onClick={() => (page === item.id ? null : onClick(item.id))}
-          />
-        </div>
-      {/each}
-    </div>
-  </header>
-{/if}
+  </div>
+{/snippet}
+
+<header
+  class="flex flex-row sm:flex-col gap-2 p-2 items-center
+    sm:h-screen sticky bottom-8 sm:top-0 xl:w-[240px] xl:items-start
+    bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow"
+>
+  <div class="flex flex-auto sm:flex-grow-0 gap-2">
+    <img src={appLogo} alt={APP_NAME} class="size-10" />
+    <span class="hidden xl:flex p-1 text-xl">{APP_NAME}</span>
+  </div>
+  {#each pages as item}
+    {@render navItem(item.id, item.icon, item.label, page === item.id)}
+  {/each}
+</header>
