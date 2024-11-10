@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 8000",
+    "lint": "eslint",
     "build": "vite build",
     "start": "npx firebase emulators:exec --only functions,storage,auth,firestore --ui 'npm run test:data && npm run dev'",
     "test:data": "curl -X POST -H 'Content-Type: application/json' -d '{\"data\":{}}' http://127.0.0.1:5001/black-bream/asia-northeast2/uiTestData",

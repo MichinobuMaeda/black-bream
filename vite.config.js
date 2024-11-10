@@ -20,6 +20,8 @@ export default defineConfig({
         short_name: "black-bream",
         description: "black-bream",
         theme_color: "#FFDE3F",
+        background_color: "#FFDE3F",
+        lang: "ja",
       },
 
       workbox: {
