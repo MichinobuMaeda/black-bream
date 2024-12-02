@@ -2,7 +2,7 @@
   /**
    * @typedef {Object} Props
    * @property {string} id
-   * @property {any} icon
+   * @property {import("svelte").Component} icon
    * @property {function} onClick
    * @property {boolean} [disabled]
    */
@@ -10,7 +10,7 @@
   /** @type {Props} */
   let { id, icon, onClick, disabled = false } = $props();
 
-  const SvelteComponent = $derived(icon);
+  const SvgIcon = $derived(icon);
 </script>
 
 <button
@@ -21,5 +21,5 @@
     : " text-base text-lightPrimary dark:text-darkPrimary"}
   onclick={disabled ? () => {} : () => onClick()}
 >
-  <SvelteComponent />
+  <SvgIcon />
 </button>

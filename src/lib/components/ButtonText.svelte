@@ -2,7 +2,7 @@
   /**
    * @typedef {Object} Props
    * @property {string} id
-   * @property {Object} [icon]
+   * @property {import("svelte").Component?} [icon]
    * @property {string} label
    * @property {function} onClick
    * @property {boolean} [disabled]
@@ -17,14 +17,14 @@
   type="button"
   class={"px-1 text-base " +
     (disabled
-      ? "opacity-50 text-lightOnSurface dark:text-darkOnSurface"
+      ? "opacity-50 " + "text-lightOnSurface dark:text-darkOnSurface"
       : "text-lightPrimary dark:text-darkPrimary")}
   onclick={disabled ? () => {} : () => onClick()}
 >
   <span class="flex flex-row gap-0.5">
     {#if icon !== null}
-      {@const SvelteComponent = icon}
-      <SvelteComponent />
+      {@const SvgIcon = icon}
+      <SvgIcon />
     {/if}
     {label}
   </span>

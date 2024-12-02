@@ -1,9 +1,12 @@
 <script>
+  // @ts-nocheck
+
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
-  // periodic sync is disabled, change the value to enable it, the period is in milliseconds
-  // You can remove onRegisteredSW callback and registerPeriodicSync function
-  const period = 0;
+  import { m } from "./i18n.svelte.js";
+
+  // check for updates every hour
+  const period = 60 * 60 * 1000;
 
   /**
    * This function will register a periodic sync check every hour, you can modify the interval as needed.
@@ -42,60 +45,21 @@
       }
     },
   });
-
-  function close() {
-    needRefresh.set(false);
-  }
-
-  let toast = $derived($needRefresh);
-  let message = $derived($needRefresh
-    ? "新しいUIが利用可能です。更新ボタンをクリックしてください。"
-    : "");
 </script>
 
-{#if toast}
-  <div class="pwa-toast" role="alert" aria-labelledby="toast-message">
-    <div class="message">
-      <span id="toast-message">
-        {message}
-      </span>
-    </div>
-    <div class="buttons">
-      {#if $needRefresh}
-        <button type="button" onclick={() => updateServiceWorker(true)}>
-          更新
-        </button>
-      {/if}
-      <!-- <button type="button" on:click={close}> Close </button> -->
-    </div>
+{#if $needRefresh}
+  <div
+    class="flex justify-center py-0.5 sticky top-0 z-50
+      bg-lightErrorContainer dark:bg-darkErrorContainer"
+  >
+    <button
+      type="button"
+      class="bg-lightError dark:bg-darkError
+        text-lightOnError dark:text-darkOnError
+        py-0.5 px-4 rounded-full"
+      onclick={() => updateServiceWorker(true)}
+    >
+      {m().updateApp()}
+    </button>
   </div>
 {/if}
-
-<style>
-  .pwa-toast {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    margin: 16px;
-    padding: 12px;
-    border: 1px solid #8885;
-    border-radius: 4px;
-    z-index: 2;
-    text-align: left;
-    box-shadow: 3px 4px 5px 0 #8885;
-    background-color: white;
-  }
-  .pwa-toast .message {
-    margin-bottom: 8px;
-  }
-  .pwa-toast .buttons {
-    display: flex;
-  }
-  .pwa-toast button {
-    border: 1px solid #8885;
-    outline: none;
-    margin-right: 5px;
-    border-radius: 2px;
-    padding: 3px 10px;
-  }
-</style>

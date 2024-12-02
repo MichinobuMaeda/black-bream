@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
       registerType: "prompt",
       injectRegister: false,
 
@@ -16,18 +19,16 @@ export default defineConfig({
       },
 
       manifest: {
-        name: "black-bream",
-        short_name: "black-bream",
-        description: "black-bream",
+        name: "Black bream",
+        short_name: "Black bream",
+        description: "Black bream",
         theme_color: "#FFDE3F",
         background_color: "#FFDE3F",
         lang: "ja",
       },
 
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
       },
 
       devOptions: {
