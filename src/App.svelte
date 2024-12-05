@@ -1,17 +1,12 @@
-<script module>
-  import { initStore } from "./lib/store.svelte";
-
-  initStore();
-</script>
-
 <script>
   import { activateI18n } from "./lib/i18n.svelte";
   import { activateStore } from "./lib/store.svelte";
   import Router from "svelte-spa-router";
   import PWABadge from "./lib/PWABadge.svelte";
   import { getStore } from "./lib/store.svelte";
-  import Header from "./lib/Header.svelte";
+  import MainMenu from "./lib/MainMenu.svelte";
   import Loading from "./lib/Loading.svelte";
+  import Header from "./lib/Header.svelte";
   import Login from "./routes/Login.svelte";
   import Home from "./routes/Home.svelte";
   import Info from "./routes/Info.svelte";
@@ -29,26 +24,36 @@
   class="flex flex-col-reverse sm:flex-row
     bg-lightSurfaceDim dark:bg-darkSurfaceDim"
 >
-  <Header />
-  <div
-    class="min-h-screen w-full lg:w-[1048px]
-    bg-lightBackground dark:bg-darkBackground
-    text-lightOnBackground dark:text-darkOnBackground"
-  >
-    <main class="flex flex-col mb-auto">
-      {#if store.loading}
-        <Loading />
-      {:else}
-        <Router
-          routes={{
-            "/": store.authUser ? Home : Login,
-            "/account": store.authUser ? Account : Login,
-            "/settings": store.authUser ? Settings : Login,
-            "/info": Info,
-            "*": NotFound,
-          }}
-        />
-      {/if}
-    </main>
-  </div>
+  {#if store.loading}
+    <Loading />
+  {:else}
+    <MainMenu />
+    <div
+      class="min-h-screen w-full lg:w-[1048px]
+      bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
+      text-lightOnSurface dark:text-darkOnSurface"
+    >
+      <main class="flex flex-col mb-auto">
+        <Header />
+        {#if store.authUser}
+          <Router
+            routes={{
+              "/": Home,
+              "/account": Account,
+              "/settings": Settings,
+              "/info": Info,
+              "*": NotFound,
+            }}
+          />
+        {:else}
+          <Router
+            routes={{
+              "/info": Info,
+              "*": Login,
+            }}
+          />
+        {/if}
+      </main>
+    </div>
+  {/if}
 </div>

@@ -1,7 +1,12 @@
-<div
-  class="flex flex-col p-2 sm:p-4 lg:p-8 gap-2 sm:gap-4 lg:gap-8 text-base
-  bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
-  text-lightOnSurface dark:text-darkOnSurface"
->
-  <p>Page: Info</p>
-</div>
+<script>
+  import Content from "../lib/Content.svelte";
+  import MarkDown from "../lib/MarkDown.svelte";
+  import { getStore } from "../lib/store.svelte";
+
+  const store = getStore();
+  let desc = $derived(store.conf?.desc ?? "");
+</script>
+
+<Content>
+  <MarkDown src={desc} />
+</Content>

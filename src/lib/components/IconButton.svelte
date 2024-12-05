@@ -21,5 +21,5 @@
     : " text-base text-lightPrimary dark:text-darkPrimary"}
   onclick={disabled ? () => {} : () => onClick()}
 >
-  <SvgIcon />
+  <span class="flex w-6 h-6"><SvgIcon /></span>
 </button>

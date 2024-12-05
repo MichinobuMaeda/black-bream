@@ -26,4 +26,7 @@ export default [
       "functions/coverage/",
     ],
   },
+  rules: {
+    "svelte/no-at-html-tags": "off",
+  }
 ];

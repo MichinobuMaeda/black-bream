@@ -1,50 +1,54 @@
 <script>
   import active from "svelte-spa-router/active";
 
-  import { m } from "./i18n.svelte";
-  import { getStore } from "./store.svelte.js";
-  import SvgHome from "./icons/SvgHome.svelte";
+  import SvgCheck from "./icons/SvgCheck.svelte";
   import SvgSettings from "./icons/SvgSettings.svelte";
   import SvgAccountCircle from "./icons/SvgAccountCircle.svelte";
-  import SvgLogin from "./icons/SvgLogin.svelte";
-  import SvgInfo from "./icons/SvgInfo.svelte";
+  import { getStore } from "./store.svelte.js";
+  import { locales, getLocale, setLocale } from "./i18n.svelte.js";
 
   let store = getStore();
 </script>
 
-{#snippet navItem(Icon, label, path)}
+{#snippet navItem(Icon, path)}
   <div class="flex flex-col justify-center">
     <a
-      class="flex flex-row text-base rounded-full py-1 px-4 xl:px-2 xl:w-[224px] gap-2
-        justify-center xl:justify-start
-        text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer
-        bg-lightSecondaryContainer dark:bg-darkSecondaryContainer"
+      class="text-base text-lightPrimary dark:text-darkPrimary"
       href={`/#${path}`}
-      use:active={{ path: path, className: "activeMenuItem" }}
+      use:active={{ path: path, className: "activeHeaderMenuItem" }}
     >
-      <Icon />
-      <div class="hidden xl:flex">{label}</div>
+      <span class="flex h-6 w-6"><Icon /></span>
     </a>
   </div>
 {/snippet}
 
-<header
-  class="flex flex-row sm:flex-col gap-2 p-2 items-center
-    sm:h-screen sticky bottom-0 sm:top-0 xl:w-[240px] xl:items-start
-    bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow"
+<div
+  class="flex flex-row mb-0.5 px-2 py-0.5 sm:px-4 sm:py-1 gap-2 sm:gap-4 justify-end
+  bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
+  text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant"
 >
-  <div class="flex flex-auto sm:flex-grow-0 gap-2">
-    <img src="/favicon.svg" alt={m().appTitle()} class="size-10" />
-    <span class="hidden xl:flex p-1 text-xl">{m().appTitle()}</span>
-  </div>
-  {#if !store.loading}
-    {#if store.authUser === null}
-      {@render navItem(SvgLogin, m().login(), "/")}
+  {#each locales as locale}
+    {#if getLocale() === locale.value}
+      <button id={`locale-${locale.value}`} type="button">
+        <span class="flex flex-row gap-0.5 text-sm opacity-50 items-center">
+          <span class="flex h-4 w-4"><SvgCheck /></span>
+          {locale.label}
+        </span>
+      </button>
     {:else}
-      {@render navItem(SvgHome, m().home(), "/")}
-      {@render navItem(SvgSettings, m().settings(), "/settings")}
-      {@render navItem(SvgAccountCircle, m().account(), "/account")}
+      <button
+        id={`locale-${locale.value}`}
+        type="button"
+        onclick={() => setLocale(locale.value)}
+      >
+        <span class="flex flex-row gap-0.5 text-sm">
+          {locale.label}
+        </span>
+      </button>
     {/if}
+  {/each}
+  {#if store.authUser}
+    {@render navItem(SvgSettings, "/settings")}
+    {@render navItem(SvgAccountCircle, "/account")}
   {/if}
-  {@render navItem(SvgInfo, m().info(), "/info")}
-</header>
+</div>

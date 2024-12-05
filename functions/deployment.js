@@ -19,11 +19,11 @@ const updateDataV1 = async (auth, db, deleted) => {
       .collection("service")
       .doc("conf")
       .set({
-        desc: `# Privacy Policy
+        desc: `## Privacy Policy
 
 This website is for my personal use only. If you would like to create a website with similar functionality, please contact me at the email address below.
 
-${process.env.SITE_MANAGER}
+site.manager@example.com
 `,
         createdAt: new Date(),
         updatedAt: new Date(),

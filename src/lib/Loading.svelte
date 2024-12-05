@@ -1,10 +1,17 @@
+<script>
+  import { m } from "./i18n.svelte";
+</script>
+
 <div
-  class="flex flex-col items-center pt-16 gap-16 opacity-50
+  class="flex flex-col min-h-screen w-full justify-center items-center gap-4
+  bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow
   text-lightTertiary dark:text-darkTertiary"
 >
+  <img src="/favicon.svg" alt={m().appTitle()} class="size-24" />
+  <div class="text-xl">{m().appTitle()}</div>
   <div class="animate-pulse">Loading ...</div>
   <svg
-    class="animate-spin size-20"
+    class="animate-spin size-48 opacity-50"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 -960 960 960"
     fill="currentColor"

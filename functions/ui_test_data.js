@@ -1,7 +1,5 @@
 const { logger } = require("firebase-functions/v2");
-
 const { updateData } = require("./deployment");
-const { createAccount } = require("./account");
 
 /**
  * Create test data for UI testing.
@@ -17,53 +15,25 @@ const createUiTestData = async (auth, db) => {
       logger.error("This function can only be run in the emulator");
       return { error: "This function can only be run in the emulator" };
     }
-
-    const refConf = db.collection("service").doc("conf");
-    const conf = await refConf.get();
-    if (conf.exists) {
-      logger.error("service/conf already exists");
-      return { error: "service/conf already exists" };
+    if (
+      !process.env.WEB_APP_URL.includes("localhost") &&
+      !process.env.WEB_APP_URL.includes("127.0.0.1")
+    ) {
+      logger.error("This function can only be run at localhost");
+      return { error: "This function can only be run at localhost" };
     }
-    await refConf.set({
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
 
-    const [err, uid] = await createAccount(
-      auth,
-      db,
-      "Primary User",
-      "primary@example.com",
-    );
+    const emailPrimaryUser = "primary@example.com";
+    const passwordPrimaryUser = "password";
+    const dataVersionRef = db.collection("service").doc("dataVersion");
+    await dataVersionRef.set({ email: emailPrimaryUser });
+    const dataVersion = await dataVersionRef.get();
+    const [err, ver] = await updateData(auth, db, dataVersion);
     if (err) {
-      logger.error(err);
       return { error: err };
     }
-    await auth.updateUser(uid, { password: "password" });
-    db.collection("groups")
-      .doc("admins")
-      .set({
-        users: [uid],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    db.collection("groups")
-      .doc("managers")
-      .set({
-        users: [uid],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-    const refDataVersion = db.collection("service").doc("dataVersion");
-    await refDataVersion.set({
-      ver: 1,
-      err: null,
-      updatedAt: new Date(),
-    });
-    const dataVersion = await refDataVersion.get();
-
-    await updateData(auth, db, dataVersion);
+    const primary = await auth.getUserByEmail(emailPrimaryUser);
+    await auth.updateUser(primary.uid, { password: passwordPrimaryUser });
 
     logger.info("END  : createUiTestData");
     return { result: "ok" };

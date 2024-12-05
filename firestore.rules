@@ -15,14 +15,11 @@ service cloud.firestore {
       allow read, update: if isManager();
       allow read: if true;
     }
-    match /service/uiVersion {
-      allow read: if true;
-    }
     match /users/{user} {
       allow read, write: if isManager() ||  request.auth.uid == user;
       allow read: if isActiveAccount();
     }
-    match /users/{groups} {
+    match /groups/{groups} {
       allow read, write: if isManager();
       allow read: if isActiveAccount();
     }
