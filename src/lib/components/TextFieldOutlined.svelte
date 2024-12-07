@@ -10,6 +10,7 @@
    * @property {boolean} [readonly]
    * @property {boolean} [disabled]
    * @property {boolean} [monospace]
+   * @property {number} [lines]
    */
 
   /** @type {Props} */
@@ -23,10 +24,19 @@
     readonly = false,
     disabled = false,
     monospace = false,
+    lines = 1,
   } = $props();
+
+  const onChange = (event) => {
+    value = event.target.value;
+  };
 </script>
 
-<div class={"flex flex-col h-8 grow" + (disabled ? " opacity-40" : "")}>
+<div
+  class={"flex flex-col grow" +
+    (lines === 1 ? " h-14" : "") +
+    (disabled ? " opacity-40" : "")}
+>
   <label
     for={id}
     class="mt-2 py-2 px-2 relative block rounded-md border
@@ -35,18 +45,45 @@
       bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
       text-lightOnSurface dark:text-darkOnSurface"
   >
-    <input
-      {id}
-      {type}
-      bind:value
-      class={"peer border-none w-full text-base " +
-        "focus:border-none focus:outline-none focus:ring-0 " +
-        "placeholder-lightSurface dark:placeholder-darkSurface" +
-        (monospace ? " font-mono" : "")}
-      placeholder={label}
-      {readonly}
-      {disabled}
-    />
+    {#if lines === 1}
+      <input
+        {id}
+        {type}
+        bind:value
+        class={"peer border-none w-full text-base " +
+          "focus:border-none focus:outline-none focus:ring-0 " +
+          "placeholder-lightSurface dark:placeholder-darkSurface " +
+          "bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest " +
+          "text-lightOnSurface dark:text-darkOnSurface" +
+          (monospace ? " font-mono" : "")}
+        placeholder={label}
+        {readonly}
+        {disabled}
+      />
+    {:else}
+      <textarea
+        {id}
+        bind:value
+        class={"peer border-none w-full text-base " +
+          "focus:border-none focus:outline-none focus:ring-0 " +
+          "placeholder-lightSurface dark:placeholder-darkSurface " +
+          "bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest " +
+          "text-lightOnSurface dark:text-darkOnSurface" +
+          (monospace ? " font-mono" : "")}
+        placeholder={label}
+        rows={lines}
+        {readonly}
+        {disabled}
+        onchange={onChange}>{value}</textarea
+      >
+    {/if}
+
+    {#if disabled}
+      <div
+        class="absolute inset-0 bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest opacity-50"
+      ></div>
+    {/if}
+
     <span
       class="peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm
         peer-focus:top-0 peer-focus:text-xs pointer-events-none

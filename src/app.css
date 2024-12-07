@@ -21,17 +21,24 @@ li {
   @apply text-base ml-2;
 }
 :not(.markdown) > h2 {
+  @apply flex px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 gap-2 text-3xl items-center
+    text-lightPrimary dark:text-darkPrimary;
+}
+:not(.markdown) > h2 > svg {
+  @apply h-8 w-8;
+}
+:not(.markdown) > h3 {
   @apply flex sticky top-0 mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-xl
     bg-lightPrimaryContainer dark:bg-darkPrimaryContainer
     text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer;
 }
-:not(.markdown) > h3 {
+:not(.markdown) > h4 {
   @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-lg
     bg-lightSecondaryContainer dark:bg-darkSecondaryContainer
     text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer;
 }
-:not(.markdown) > h4 {
-  @apply flex mb-0.5 px-2 sm:px-4 lg:px-8 py-0.5 sm:py-1 lg:py-2 text-base
+:not(.markdown) > h5 {
+  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-base
   bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
   text-lightOnSurface dark:text-darkOnSurface;
 }
@@ -52,4 +59,12 @@ li {
 }
 .markdown h6 {
   @apply text-base font-bold my-1;
+}
+a,
+.text-link {
+  @apply text-[#1e90ff] underline;
+}
+hr {
+  @apply my-8 border-solid border-2
+    border-lightOutline dark:border-darkOutline;
 }

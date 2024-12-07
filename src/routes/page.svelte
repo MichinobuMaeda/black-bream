@@ -1,20 +1,21 @@
 <script>
   import Content from "../lib/Content.svelte";
-  import { getStore } from "../lib/store.svelte";
-
-  let state = getStore();
+  import SvgHome from "../lib/icons/SvgHome.svelte";
+  import { store } from "../lib/store.svelte";
+  import { m } from "../lib/i18n.svelte";
 </script>
 
-<h2>Sticky header</h2>
-<h3>Sticky header level 3</h3>
-<h4>Sticky header level 4</h4>
+<h2><SvgHome /> {m().home()}</h2>
+<h3>Sticky header</h3>
+<h4>header level 4</h4>
+<h5>header level 5</h5>
 <Content>
   <div>Page: Home</div>
   <div>Auth has been loaded.</div>
-  {#if state.authUser === null}
+  {#if store.authUser === null}
     <div>User: guest</div>
   {:else}
-    <div>User: {state.authUser.uid}</div>
+    <div>User: {store.authUser.uid}</div>
   {/if}
   <div>Conf has been loaded.</div>
   <div>Quick fox jumps over the lazy dog.</div>
@@ -35,7 +36,7 @@
   <div>Quick fox jumps over the lazy dog.</div>
   <div>Quick fox jumps over the lazy dog.</div>
 </Content>
-<h2>Sticky header 2</h2>
+<h3>Sticky header 2</h3>
 <Content>
   <div>Quick fox jumps over the lazy dog.</div>
   <div>Quick fox jumps over the lazy dog.</div>
@@ -45,7 +46,7 @@
   <div>Quick fox jumps over the lazy dog.</div>
   <div>Quick fox jumps over the lazy dog.</div>
 </Content>
-<h2>Sticky header 3</h2>
+<h3>Sticky header 3</h3>
 <Content>
   <div>Quick fox jumps over the lazy dog.</div>
   <div>Quick fox jumps over the lazy dog.</div>

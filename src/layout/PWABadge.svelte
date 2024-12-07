@@ -3,7 +3,7 @@
 
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
-  import { m } from "./i18n.svelte.js";
+  import { m } from "../lib/i18n.svelte.js";
 
   // check for updates every hour
   const period = 60 * 60 * 1000;

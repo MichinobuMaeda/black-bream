@@ -16,7 +16,7 @@ service cloud.firestore {
       allow read: if true;
     }
     match /users/{user} {
-      allow read, write: if isManager() ||  request.auth.uid == user;
+      allow read, write: if isManager() || (isActiveAccount() && request.auth.uid == user);
       allow read: if isActiveAccount();
     }
     match /groups/{groups} {

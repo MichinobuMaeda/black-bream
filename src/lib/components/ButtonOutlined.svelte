@@ -15,13 +15,12 @@
 <button
   {id}
   type="button"
-  class={"px-4 py-1.5 border-none rounded-full h-10 text-base " +
+  class={"px-4 py-1.5 border rounded-full h-10 text-base " +
+    "bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest " +
+    "border-lightOutline dark:border-darkOutline " +
     (disabled
-      ? "opacity-50 " +
-        "bg-lightSurfaceDim dark:bg-darkSurfaceDim " +
-        "text-lightOnSurface dark:text-darkOnSurface"
-      : "bg-lightPrimary dark:bg-darkPrimary " +
-        "text-lightOnPrimary dark:text-darkOnPrimary")}
+      ? "opacity-30 " + "text-lightOnSurface dark:text-darkOnSurface"
+      : "text-lightPrimary dark:text-darkPrimary")}
   onclick={disabled ? () => {} : () => onClick()}
 >
   <span class="flex flex-row gap-0.5">

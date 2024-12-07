@@ -3,6 +3,15 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Michinobu Maeda",
+    "email": "michinobumaeda@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MichinobuMaeda/black-bream"
+  },
   "scripts": {
     "dev": "vite --port 8000",
     "lint": "eslint",
