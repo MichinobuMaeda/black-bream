@@ -41,6 +41,7 @@ site.manager@example.com
     db.collection("groups")
       .doc("admins")
       .set({
+        name: "System Administrators",
         users: [uid],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -48,6 +49,7 @@ site.manager@example.com
     db.collection("groups")
       .doc("managers")
       .set({
+        name: "Managers",
         users: [uid],
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -20,51 +20,57 @@ dt {
 li {
   @apply text-base ml-2;
 }
+hr {
+  @apply my-8 mx-4 border-solid border-2
+    border-lightOutline dark:border-darkOutline;
+}
+.markdown > h1 {
+  @apply text-4xl my-4;
+}
+.markdown > h2 {
+  @apply text-3xl my-3;
+}
+.markdown > h3 {
+  @apply text-2xl my-2;
+}
+.markdown > h4 {
+  @apply text-xl my-1.5;
+}
+.markdown > h5 {
+  @apply text-lg my-1;
+}
+.markdown > h6 {
+  @apply text-base font-bold my-1;
+}
+.markdown a {
+  @apply text-lightLink dark:text-darkLink underline;
+}
 :not(.markdown) > h2 {
-  @apply flex px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 gap-2 text-3xl items-center
+  @apply flex px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 gap-2
+    text-3xl items-center
     text-lightPrimary dark:text-darkPrimary;
 }
 :not(.markdown) > h2 > svg {
   @apply h-8 w-8;
 }
 :not(.markdown) > h3 {
-  @apply flex sticky top-0 mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-xl
+  @apply flex sticky top-0 h-11 mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
+    text-xl items-center
     bg-lightPrimaryContainer dark:bg-darkPrimaryContainer
     text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer;
 }
 :not(.markdown) > h4 {
-  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-lg
+  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
+    text-lg items-center
     bg-lightSecondaryContainer dark:bg-darkSecondaryContainer
     text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer;
 }
 :not(.markdown) > h5 {
-  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-base
+  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
+    text-base items-center
   bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
   text-lightOnSurface dark:text-darkOnSurface;
 }
-.markdown h1 {
-  @apply text-4xl my-4;
-}
-.markdown h2 {
-  @apply text-3xl my-3;
-}
-.markdown h3 {
-  @apply text-2xl my-2;
-}
-.markdown h4 {
-  @apply text-xl my-1.5;
-}
-.markdown h5 {
-  @apply text-lg my-1;
-}
-.markdown h6 {
-  @apply text-base font-bold my-1;
-}
-a,
-.text-link {
-  @apply text-[#1e90ff] underline;
-}
-hr {
-  @apply my-8 border-solid border-2
-    border-lightOutline dark:border-darkOutline;
+:not(.markdown) > h6 {
+  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-base font-bold;
 }

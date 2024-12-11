@@ -2,9 +2,11 @@
   import Router from "svelte-spa-router";
 
   import Login from "./routes/login/page.svelte";
-  import Home from "./routes/page.svelte";
+  import Home from "./routes/home/page.svelte";
   import Info from "./routes/info/page.svelte";
   import Account from "./routes/account/page.svelte";
+  import Groups from "./routes/groups/page.svelte";
+  import Users from "./routes/users/page.svelte";
   import Settings from "./routes/settings/page.svelte";
   import NotFound from "./routes/NotFound.svelte";
   import { store } from "./lib/store.svelte.js";
@@ -15,6 +17,8 @@
     routes={{
       "/": Home,
       "/account": Account,
+      "/groups/:item?/:action?": Groups,
+      "/users/:item?/:action?": Users,
       "/settings": Settings,
       "/info": Info,
       "*": NotFound,
@@ -25,6 +29,8 @@
     routes={{
       "/": Home,
       "/account": Account,
+      "/groups/:item?": Groups,
+      "/users/:item?": Users,
       "/info": Info,
       "*": NotFound,
     }}

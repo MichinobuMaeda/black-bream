@@ -7,9 +7,16 @@
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
+  import SvgGroup from "../lib/icons/SvgGroup.svelte";
+  import SvgPerson from "../lib/icons/SvgPerson.svelte";
 </script>
 
-{#snippet navItem(Icon, label, path)}
+{#snippet navItem(
+  /** @type {__sveltets_2_IsomorphicComponent<{ [x: string]: never; }, { [evt: string]: CustomEvent<any>; }, {}, {}, string>} */ Icon,
+  /** @type {string} */ label,
+  /** @type {string} */ path,
+  /** @type {string?} */ activePath,
+)}
   <a
     class="hidden xl:flex flex-row text-base rounded-full h-10 p-2 w-[224px] gap-2
         justify-center xl:justify-start align-start xl:items-center no-underline
@@ -17,7 +24,7 @@
         text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer"
     href={path}
     use:link
-    use:active={{ path: path, className: "activeMainMenuItem" }}
+    use:active={{ path: activePath ?? path, className: "activeMainMenuItem" }}
   >
     <span class="flex h-6 w-6"><Icon /></span>
     {label}
@@ -31,7 +38,7 @@
     <span
       class="flex h-8 w-14 p-1 rounded-full
         bg-lightSecondaryContainer dark:bg-darkSecondaryContainer"
-      use:active={{ path: path, className: "activeMainMenuItem" }}
+      use:active={{ path: activePath ?? path, className: "activeMainMenuItem" }}
       ><Icon /></span
     >
     {label}
@@ -50,11 +57,11 @@
         ><img src="/favicon.svg" alt={m().appTitle()} class="size-10" /></button
       >
     {:else if history.length > 2}
-      <button class="h-10 w-10" on:click={() => pop()}
+      <button class="size-10 p-1.5" on:click={() => pop()}
         ><SvgArrowBackIosNew /></button
       >
     {:else}
-      <button class="h-10 w-10" on:click={() => replace("/")}
+      <button class="size-10 p-1.5" on:click={() => replace("/")}
         ><SvgArrowBackIosNew /></button
       >
     {/if}
@@ -62,6 +69,8 @@
   </div>
   {#if store.user}
     {@render navItem(SvgHome, m().home(), "/")}
+    {@render navItem(SvgGroup, m().groups(), "/groups", "/groups|/groups/*")}
+    {@render navItem(SvgPerson, m().users(), "/users", "/users|/users/*")}
   {:else}
     {@render navItem(SvgLogin, m().login(), "/")}
   {/if}

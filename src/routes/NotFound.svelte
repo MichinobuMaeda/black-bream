@@ -14,14 +14,18 @@
   <div class="flex flex-row gap-8 justify-center">
     {#if window.history.length > 2}
       <button
-        class="text-link flex flex-row gap-1"
+        class="text-link flex flex-row text-lightLink dark:text-darkLink gap-1"
         on:click={() => history.back()}
       >
         <span class="h-6"><SvgArrowBackIosNew /></span>
         {m().goBack()}
       </button>
     {/if}
-    <a href="/" use:link class="flex flex-row gap-1">
+    <a
+      href="/"
+      use:link
+      class="flex flex-row text-lightLink dark:text-darkLink gap-1"
+    >
       <span class="h-6"><SvgHome /></span>
       {m().home()}
     </a>

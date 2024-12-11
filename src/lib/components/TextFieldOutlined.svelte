@@ -42,7 +42,7 @@
     class="mt-2 py-2 px-2 relative block rounded-md border
       border-lightOutline dark:border-darkOutline
       focus-within:border-lightOutline focus-within:dark:border-darkOutline
-      bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
+      bg-lightForm dark:bg-darkForm
       text-lightOnSurface dark:text-darkOnSurface"
   >
     {#if lines === 1}
@@ -53,7 +53,7 @@
         class={"peer border-none w-full text-base " +
           "focus:border-none focus:outline-none focus:ring-0 " +
           "placeholder-lightSurface dark:placeholder-darkSurface " +
-          "bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest " +
+          "bg-lightForm dark:bg-darkForm " +
           "text-lightOnSurface dark:text-darkOnSurface" +
           (monospace ? " font-mono" : "")}
         placeholder={label}
@@ -67,7 +67,7 @@
         class={"peer border-none w-full text-base " +
           "focus:border-none focus:outline-none focus:ring-0 " +
           "placeholder-lightSurface dark:placeholder-darkSurface " +
-          "bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest " +
+          "bg-lightForm dark:bg-darkForm " +
           "text-lightOnSurface dark:text-darkOnSurface" +
           (monospace ? " font-mono" : "")}
         placeholder={label}
@@ -77,18 +77,11 @@
         onchange={onChange}>{value}</textarea
       >
     {/if}
-
-    {#if disabled}
-      <div
-        class="absolute inset-0 bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest opacity-50"
-      ></div>
-    {/if}
-
     <span
       class="peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm
         peer-focus:top-0 peer-focus:text-xs pointer-events-none
         absolute start-2 top-0 -translate-y-1/2 p-0.5 text-xs transition-all
-        bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
+        bg-lightForm dark:bg-darkForm
         text-lightOnSurface dark:text-darkOnSurface"
     >
       {label}

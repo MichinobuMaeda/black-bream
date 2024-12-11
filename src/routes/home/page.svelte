@@ -1,8 +1,8 @@
 <script>
-  import Content from "../lib/Content.svelte";
-  import SvgHome from "../lib/icons/SvgHome.svelte";
-  import { store } from "../lib/store.svelte";
-  import { m } from "../lib/i18n.svelte";
+  import Content from "../../lib/Content.svelte";
+  import SvgHome from "../../lib/icons/SvgHome.svelte";
+  import { store } from "../../lib/store.svelte";
+  import { m } from "../../lib/i18n.svelte";
 </script>
 
 <h2><SvgHome /> {m().home()}</h2>
