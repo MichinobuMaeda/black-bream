@@ -6,23 +6,31 @@
   import ButtonOutlined from "../../lib/components/ButtonOutlined.svelte";
   import SvgClose from "../../lib/icons/SvgClose.svelte";
   import { m } from "../../lib/i18n.svelte";
-  import { store, updateConf } from "../../lib/store.svelte";
+  import { store, updateDocument } from "../../lib/store.svelte";
 
   let desc = $state(store.conf.desc);
+  let result = $state(undefined);
 </script>
 
 <h3>{m().siteDesc()}</h3>
 <Content>
-  <div class="flex flex-row">
+  <div class="flex flex-col">
     <TextFieldOutlined
       id="siteDesc"
       label={m().siteDesc()}
       type="text"
       bind:value={desc}
       lines={10}
-      message={m().inMarkdown()}
+      message={result !== null || desc !== store.conf.desc
+        ? m().inMarkdown()
+        : m().savedData()}
       error={desc ? "" : m().errorRequired()}
     />
+    {#if result}
+      <div class="flex mt-2 text-lightError dark:text-darkError">
+        {m().errorOnDataSave()}
+      </div>
+    {/if}
   </div>
   <div class="flex flex-row gap-4 lg:gap-6 justify-end">
     <ButtonOutlined
@@ -39,7 +47,7 @@
       icon={SvgCheck}
       label={m().save()}
       onClick={async () => {
-        await updateConf({ desc });
+        result = await updateDocument("service", "conf", { desc });
       }}
       disabled={!desc || desc === store.conf.desc}
     />

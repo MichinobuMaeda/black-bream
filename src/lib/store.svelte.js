@@ -14,6 +14,7 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  addDoc,
 } from "firebase/firestore";
 
 import firebaseConfig from "../firebaseConfig";
@@ -63,24 +64,32 @@ let groupsUnsub = null;
 
 /**
  * Unsubscribe user data
+ * @return {Promise<string|null>}
  */
-function unsubscribeUserData() {
-  console.log("unsubscribeUserData()");
+async function unsubscribeUserData() {
+  try {
+    console.log("unsubscribeUserData()");
 
-  if (usersUnsub) {
-    usersUnsub();
-    usersUnsub = null;
-    users = [];
-  }
+    if (usersUnsub) {
+      usersUnsub();
+      usersUnsub = null;
+      users = [];
+    }
 
-  if (groupsUnsub) {
-    groupsUnsub();
-    groupsUnsub = null;
-    groups = [];
-  }
+    if (groupsUnsub) {
+      groupsUnsub();
+      groupsUnsub = null;
+      groups = [];
+    }
 
-  if (authUser) {
-    signOut(auth);
+    if (authUser) {
+      await signOut(auth);
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`unsubscribeUserData: ${error}`);
+    return "error";
   }
 }
 
@@ -96,7 +105,7 @@ function subscribeUserData() {
       users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     },
     (error) => {
-      console.log(`groups: ${error}`);
+      console.error(`groups: ${error}`);
       unsubscribeUserData();
       users = [];
     },
@@ -108,7 +117,7 @@ function subscribeUserData() {
       groups = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     },
     (error) => {
-      console.log(`groups: ${error}`);
+      console.error(`groups: ${error}`);
       unsubscribeUserData();
       groups = [];
     },
@@ -164,49 +173,101 @@ export const activateStore = () => {
 };
 
 /**
- * Update conf
- * @param {object} conf
+ * Update document
+ * @param {string} collection
+ * @param {string} id
+ * @param {object} data
+ * @return {Promise<string|null>}
  */
-export const updateConf = async (conf) => {
-  await updateDoc(doc(db, "service", "conf"), {
-    ...conf,
-    updatedAt: new Date(),
-  });
+export const updateDocument = async (collection, id, data) => {
+  try {
+    await updateDoc(doc(db, collection, id), {
+      ...data,
+      updatedAt: new Date(),
+    });
+
+    return null;
+  } catch (error) {
+    console.error(`updateDocument: ${error}`);
+    return "error";
+  }
 };
 
 /**
- * Update profile
- * @param {object} profile
+ * Create document
+ * @param {string} collection
+ * @param {object} data
+ * @return {Promise<string|null>}
  */
-export const updateProfile = async (profile) => {
-  await updateDoc(doc(db, "users", user.id), {
-    ...profile,
-    updatedAt: new Date(),
-  });
+export const createDocument = async (collection, data) => {
+  try {
+    await addDoc(doc(db, collection), {
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return null;
+  } catch (error) {
+    console.error(`createDocument: ${error}`);
+    return "error";
+  }
 };
 
 /**
  * Login with email and password
  * @param {string} email
  * @param {string} password
+ * @return {Promise<string|null>}
  */
 export const login = async (email, password) => {
-  await signInWithEmailAndPassword(auth, email, password);
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+
+    return null;
+  } catch (error) {
+    const messages = `${error}`;
+    if (
+      messages.includes("auth/user-not-found") ||
+      messages.includes("auth/wrong-password") ||
+      messages.includes("auth/invalid-email")
+    ) {
+      return "credentialError";
+    }
+    console.error(`login: ${error}`);
+    return "error";
+  }
 };
 
 /**
  * Logout
+ * @return {Promise<string|null>}
  */
 export const logout = async () => {
-  unsubscribeUserData();
+  try {
+    await unsubscribeUserData();
+
+    return null;
+  } catch (error) {
+    console.error(`logout: ${error}`);
+    return "error";
+  }
 };
 
 /**
  * Change password
  * @param {string} originalPassword
  * @param {string} newPassword
+ * @return {Promise<string|null>}
  */
 export const changePassword = async (originalPassword, newPassword) => {
-  await signInWithEmailAndPassword(auth, authUser.email, originalPassword);
-  await updatePassword(authUser, newPassword);
+  try {
+    await signInWithEmailAndPassword(auth, authUser.email, originalPassword);
+    await updatePassword(authUser, newPassword);
+
+    return null;
+  } catch (error) {
+    console.error(`changePassword: ${error}`);
+    return "error";
+  }
 };

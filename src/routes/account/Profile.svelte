@@ -6,22 +6,30 @@
   import ButtonOutlined from "../../lib/components/ButtonOutlined.svelte";
   import SvgClose from "../../lib/icons/SvgClose.svelte";
   import { m } from "../../lib/i18n.svelte";
-  import { store, updateProfile } from "../../lib/store.svelte";
+  import { store, updateDocument } from "../../lib/store.svelte";
 
   let displayName = $state(store.user.name);
+  let result = $state(undefined);
 </script>
 
 <h3>{m().profile()}</h3>
 <Content>
-  <div class="flex flex-row max-w-96">
+  <div class="flex flex-col max-w-96">
     <TextFieldOutlined
       id="displayName"
       label={m().displayName()}
       type="text"
       bind:value={displayName}
-      message={`${m().current()}: ${store.user.name}`}
+      message={result !== null || displayName !== store.user.name
+        ? `${m().current()}: ${store.user.name}`
+        : m().savedData()}
       error={displayName ? "" : m().errorRequired()}
     />
+    {#if result}
+      <div class="flex mt-2 text-lightError dark:text-darkError">
+        {m().authError()}
+      </div>
+    {/if}
   </div>
   <div class="flex flex-row gap-4 lg:gap-6 max-w-96 justify-end">
     <ButtonOutlined
@@ -38,7 +46,9 @@
       icon={SvgCheck}
       label={m().save()}
       onClick={async () => {
-        await updateProfile({ name: displayName });
+        result = await updateDocument("users", store.user.id, {
+          name: displayName,
+        });
       }}
       disabled={!displayName || displayName === store.user.name}
     />

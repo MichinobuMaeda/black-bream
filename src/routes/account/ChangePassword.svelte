@@ -1,9 +1,6 @@
 <script>
   import Content from "../../lib/Content.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import IconButton from "../../lib/components/IconButton.svelte";
-  import SvgVisibilityOff from "../../lib/icons/SvgVisibilityOff.svelte";
-  import SvgVisibilityOn from "../../lib/icons/SvgVisibilityOn.svelte";
+  import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
   import SvgCheck from "../../lib/icons/SvgCheck.svelte";
   import ButtonOutlined from "../../lib/components/ButtonOutlined.svelte";
@@ -16,9 +13,7 @@
   let currentPassword = $state("");
   let newPassword = $state("");
   let confirmNewPassword = $state("");
-  let currentPasswordVisible = $state(false);
-  let newPasswordVisible = $state(false);
-  let confirmNewPasswordVisible = $state(false);
+  let result = $state(undefined);
 
   let passwordStrength = $derived(
     !newPassword || validatePassword(newPassword),
@@ -31,9 +26,6 @@
     currentPassword = "";
     newPassword = "";
     confirmNewPassword = "";
-    currentPasswordVisible = false;
-    newPasswordVisible = false;
-    confirmNewPasswordVisible = false;
   };
 </script>
 
@@ -41,52 +33,35 @@
 <Content>
   <div>{m().passwordRequirements()}</div>
   <div class="flex flex-row max-w-96">
-    <TextFieldOutlined
+    <PasswordFieldOutlined
       id="currentPassword"
       label={m().currentPassword()}
-      type={currentPasswordVisible ? "text" : "password"}
       bind:value={currentPassword}
       error={newPassword && !currentPassword ? m().errorRequired() : ""}
     />
-    <div class="flex py-4 px-2">
-      <IconButton
-        id="currentPasswordVisible"
-        icon={currentPasswordVisible ? SvgVisibilityOn : SvgVisibilityOff}
-        onClick={() => (currentPasswordVisible = !currentPasswordVisible)}
-      />
-    </div>
   </div>
   <div class="flex flex-row max-w-96">
-    <TextFieldOutlined
+    <PasswordFieldOutlined
       id="newPassword"
       label={m().newPassword()}
-      type={newPasswordVisible ? "text" : "password"}
       bind:value={newPassword}
       error={!passwordStrength ? m().errorPasswordStrength() : ""}
     />
-    <div class="flex py-4 px-2">
-      <IconButton
-        id="newPasswordVisible"
-        icon={newPasswordVisible ? SvgVisibilityOn : SvgVisibilityOff}
-        onClick={() => (newPasswordVisible = !newPasswordVisible)}
-      />
-    </div>
   </div>
-  <div class="flex flex-row max-w-96">
-    <TextFieldOutlined
-      id="confirmNewPassword"
-      label={m().confirmNewPassword()}
-      type={confirmNewPasswordVisible ? "text" : "password"}
-      bind:value={confirmNewPassword}
-      error={!passwordConfirmation ? m().errorPasswordConfirmation() : ""}
-    />
-    <div class="flex py-4 px-2">
-      <IconButton
-        id="confirmNewPasswordVisible"
-        icon={confirmNewPasswordVisible ? SvgVisibilityOn : SvgVisibilityOff}
-        onClick={() => (confirmNewPasswordVisible = !confirmNewPasswordVisible)}
+  <div class="flex flex-col">
+    <div class="flex flex-row max-w-96">
+      <PasswordFieldOutlined
+        id="confirmNewPassword"
+        label={m().confirmNewPassword()}
+        bind:value={confirmNewPassword}
+        error={!passwordConfirmation ? m().errorPasswordConfirmation() : ""}
       />
     </div>
+    {#if result}
+      <div class="flex mt-2 text-lightError dark:text-darkError">
+        {m().errorOnDataSave()}
+      </div>
+    {/if}
   </div>
   <div class="flex flex-row gap-4 lg:gap-6 max-w-96 justify-end">
     <ButtonOutlined
@@ -101,7 +76,7 @@
       icon={SvgCheck}
       label={m().save()}
       onClick={async () => {
-        await changePassword(currentPassword, newPassword);
+        result = await changePassword(currentPassword, newPassword);
         resetPasswordChange();
       }}
       disabled={!currentPassword ||

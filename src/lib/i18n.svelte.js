@@ -58,6 +58,12 @@ const messages = (() => {
   m.ja.admin = () => "システム管理者";
   m.en.manager = () => "Manager";
   m.ja.manager = () => "管理者";
+  m.en.onSystemError = () =>
+    " Check your connection and try again. If the operation does not work," +
+    " contact your system administrator.";
+  m.ja.onSystemError = () =>
+    "通信状態を確認してやり直してもうまくいかない場合は、" +
+    "システム管理者に連絡してください。";
   m.en.email = () => "Email";
   m.ja.email = () => "メールアドレス";
   m.en.changeEmail = () => "Change email address";
@@ -68,6 +74,12 @@ const messages = (() => {
     "ログイン用のメールアドレスの変更は管理者に依頼してください。";
   m.en.password = () => "Password";
   m.ja.password = () => "パスワード";
+  m.en.passwordAuthError = () => "Invalid user ID or password";
+  m.ja.passwordAuthError = () => "ユーザーIDまたはパスワードが正しくありません";
+  m.en.authError = () =>
+    "An error occurred during authentication." + m.en.onSystemError();
+  m.ja.authError = () =>
+    "認証の処理中にエラーが発生しました。" + m.ja.onSystemError();
   m.en.changePassword = () => "Change password";
   m.ja.changePassword = () => "パスワード変更";
   m.en.currentPassword = () => "Current password";
@@ -108,6 +120,12 @@ const messages = (() => {
     "削除されたか、名前が変更されたか、一時的に利用できない状態になっている可能性があります。";
   m.en.tryAgain = () => "Change the settings and try again";
   m.ja.tryAgain = () => "設定を変更してやり直してください";
+  m.en.savedData = () => "The data has been saved.";
+  m.ja.savedData = () => "データを保存しました。";
+  m.en.errorOnDataSave = () =>
+    "An error occurred while saving data." + m.en.onSystemError();
+  m.ja.errorOnDataSave = () =>
+    "データの保存中にエラーが発生しました。" + m.ja.onSystemError();
   m.en.length = ({ len }) => `Length: ${len}`;
   m.ja.length = ({ len }) => `${len}文字`;
 
