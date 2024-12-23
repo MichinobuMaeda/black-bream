@@ -23,12 +23,7 @@
 </h3>
 <Content>
   {#each store.users.filter((user) => store.manager || !user.deletedAt) as user}
-    <a
-      class="flex flex-row gap-1
-      text-lightLink dark:text-darkLink underline"
-      href="/users/{user.id}"
-      use:link
-    >
+    <a class="flex flex-row gap-1" href="/users/{user.id}" use:link>
       <span class="size-6">
         {#if user.deletedAt}
           <SvgBlock />

@@ -2,7 +2,6 @@
   import { pop } from "svelte-spa-router";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import Switch from "../../lib/components/Switch.svelte";
@@ -39,51 +38,50 @@
 </h3>
 {#if store.manager}
   <Content>
-    <Wrap>
-      <Fields>
-        <TextFieldOutlined
-          id="displayName"
-          label={m().displayName()}
-          type="text"
-          bind:value={name}
-          message={result !== null || name !== user.name
-            ? `${m().current()}: ${user.name}`
-            : m().savedData()}
-          error={!name
-            ? m().required()
-            : result !== null &&
-                name !== user.name &&
-                !isUniqueUserName(user.id, name)
-              ? m().nameInUse()
-              : ""}
-        />
-        {#if store.user.id !== user.id}
-          <div class="flex grow gap-4 items-center">
-            <Switch id="unavailable" bind:checked={unavailable} />
-            {m().unavailable()}
-          </div>
-        {/if}
-      </Fields>
-      <Fields>
-        <ActionSave
-          id="saveUser"
-          changed={name !== user.name || unavailable !== !!user.deletedAt}
-          valid={!!name && isUniqueUserName(user.id, name)}
-          onCancel={cancel}
-          onSave={async () => {
-            name = name.trim();
-            result = null;
-            result = await updateDocument("users", user.id, {
-              name,
-              deletedAt: unavailable ? new Date() : null,
-            });
-            if (!result) {
-              await cancel();
-            }
-          }}
-          error={result ? m().errorOnDataSave() : ""}
-        />
-      </Fields>
-    </Wrap>
+    <Fields>
+      <TextFieldOutlined
+        id="displayName"
+        label={m().displayName()}
+        type="text"
+        bind:value={name}
+        message={result !== null || name !== user.name
+          ? `${m().current()}: ${user.name}`
+          : m().savedData()}
+        error={!name
+          ? m().required()
+          : result !== null &&
+              name !== user.name &&
+              !isUniqueUserName(user.id, name)
+            ? m().nameInUse()
+            : ""}
+      />
+      {#if store.user.id !== user.id}
+        <div class="flex grow gap-4 items-center">
+          <Switch id="unavailable" bind:checked={unavailable} />
+          {m().unavailable()}
+        </div>
+      {/if}
+    </Fields>
+  </Content>
+  <Content>
+    <ActionSave
+      id="saveUser"
+      changed={name !== user.name || unavailable !== !!user.deletedAt}
+      valid={!!name && isUniqueUserName(user.id, name)}
+      onCancel={cancel}
+      onSave={async () => {
+        name = name.trim();
+        result = null;
+        result = await updateDocument("users", user.id, {
+          name,
+          deletedAt: unavailable ? new Date() : null,
+        });
+        if (!result) {
+          await cancel();
+        }
+      }}
+      error={result ? m().errorOnDataSave() : ""}
+      wide
+    />
   </Content>
 {/if}

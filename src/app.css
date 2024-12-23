@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.activeMainMenuItem {
-  @apply bg-lightPrimaryContainer dark:bg-darkPrimaryContainer;
-}
 p,
 ul,
 ol,
@@ -39,7 +36,7 @@ hr {
 .markdown > h6 {
   @apply text-base font-bold my-1;
 }
-.markdown a {
+a {
   @apply text-lightLink dark:text-darkLink underline;
 }
 :not(.markdown) > h2 {

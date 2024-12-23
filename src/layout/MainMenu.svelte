@@ -1,7 +1,5 @@
 <script>
-  import active from "svelte-spa-router/active";
-  import { link, location, pop, replace } from "svelte-spa-router";
-
+  import { location, push, pop, replace } from "svelte-spa-router";
   import { m } from "../lib/i18n.svelte";
   import { store } from "../lib/store.svelte.js";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
@@ -9,6 +7,13 @@
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
   import SvgGroup from "../lib/icons/SvgGroup.svelte";
   import SvgPerson from "../lib/icons/SvgPerson.svelte";
+
+  const linkColor = (location, path) =>
+    location === path
+      ? " bg-lightPrimaryContainer dark:bg-darkPrimaryContainer" +
+        " text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer"
+      : " bg-lightSecondaryContainer dark:bg-darkSecondaryContainer" +
+        " text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer";
 </script>
 
 {#snippet navItem(
@@ -17,32 +22,29 @@
   /** @type {string} */ path,
   /** @type {string?} */ activePath,
 )}
-  <a
-    class="hidden xl:flex flex-row text-base rounded-full h-10 p-2 w-[224px] gap-2
-        justify-center xl:justify-start align-start xl:items-center no-underline
-        bg-lightSecondaryContainer dark:bg-darkSecondaryContainer
-        text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer"
-    href={path}
-    use:link
-    use:active={{ path: activePath ?? path, className: "activeMainMenuItem" }}
+  <button
+    class={"hidden xl:flex flex-row text-lg h-10 px-4 w-[224px] gap-2" +
+      " justify-start items-center rounded-full" +
+      linkColor($location, path)}
+    on:click={() => push(path)}
   >
-    <span class="flex h-6 w-6"><Icon /></span>
+    <span class="flex size-6"><Icon /></span>
     {label}
-  </a>
-  <a
-    class="xl:hidden flex flex-col text-sm items-center no-underline
-      text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer"
-    href={path}
-    use:link
+  </button>
+  <button
+    class="xl:hidden flex flex-col items-center"
+    on:click={() => push(path)}
   >
-    <span
-      class="flex h-8 w-14 p-1 rounded-full
-        bg-lightSecondaryContainer dark:bg-darkSecondaryContainer"
-      use:active={{ path: activePath ?? path, className: "activeMainMenuItem" }}
-      ><Icon /></span
+    <div
+      class={"flex h-8 w-14 justify-center items-center rounded-full" +
+        linkColor($location, path)}
     >
-    {label}
-  </a>
+      <span class="size-6"><Icon /></span>
+    </div>
+    <div class="text-sm text-lightOnSurface dark:text-darkOnSurface">
+      {label}
+    </div>
+  </button>
 {/snippet}
 
 <header

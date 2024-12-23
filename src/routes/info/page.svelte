@@ -16,8 +16,6 @@
     <span class="text-2xl">{m().appTitle()}</span>
     <span class="text-sm">Ver.{version}</span>
   </div>
-  <a href={url} class="text-sm text-lightLink dark:text-darkLink underline"
-    >{url}</a
-  >
+  <a href={url} class="text-sm">{url}</a>
   <MarkDown src={desc} />
 </Content>

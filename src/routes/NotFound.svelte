@@ -21,11 +21,7 @@
         {m().goBack()}
       </button>
     {/if}
-    <a
-      href="/"
-      use:link
-      class="flex flex-row text-lightLink dark:text-darkLink gap-1"
-    >
+    <a href="/" use:link class="flex flex-row gap-1">
       <span class="h-6"><SvgHome /></span>
       {m().home()}
     </a>

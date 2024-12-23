@@ -3,6 +3,7 @@
   import IconButtonOutlined from "../../lib/components/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
+  import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/Content.svelte";
   import { store } from "../../lib/store.svelte";
   import { m } from "../../lib/i18n.svelte";
@@ -15,7 +16,14 @@
   /** @type {Props} */
   let { item } = $props();
 
-  let group = store.groups.find((group) => group.id === item);
+  let group = $state(store.groups.find((group) => group.id === item));
+  let users = $derived(
+    store.users.filter(
+      (user) =>
+        (store.manager || !user.deletedAt) &&
+        (group.users ?? []).includes(user.id),
+    ),
+  );
 </script>
 
 <h3>
@@ -32,14 +40,15 @@
 
 <h4>{m().members()}</h4>
 <Content>
-  {#each store.users.filter( (user) => (group.users ?? []).includes(user.id), ) as user}
-    <a
-      class="flex flex-row gap-1
-      text-lightLink dark:text-darkLink underline"
-      href="/users/{user.id}"
-      use:link
-    >
-      <span class="size-6"><SvgPerson /></span>
+  {#each users as user}
+    <a class="flex flex-row gap-1" href="/users/{user.id}" use:link>
+      <span class="size-6">
+        {#if user.deletedAt}
+          <SvgBlock />
+        {:else}
+          <SvgPerson />
+        {/if}
+      </span>
       {user.name}
     </a>
   {/each}

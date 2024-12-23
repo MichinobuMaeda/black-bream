@@ -23,12 +23,7 @@
 </h3>
 <Content>
   {#each store.groups.filter((group) => store.manager || !group.deletedAt) as group}
-    <a
-      class="flex flex-row gap-1
-      text-lightLink dark:text-darkLink underline"
-      href="/groups/{group.id}"
-      use:link
-    >
+    <a class="flex flex-row gap-1" href="/groups/{group.id}" use:link>
       <span class="size-6">
         {#if group.deletedAt}
           <SvgBlock />
