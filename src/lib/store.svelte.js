@@ -174,14 +174,14 @@ export const activateStore = () => {
 
 /**
  * Update document
- * @param {string} collection
+ * @param {string} col
  * @param {string} id
  * @param {object} data
  * @return {Promise<string|null>}
  */
-export const updateDocument = async (collection, id, data) => {
+export const updateDocument = async (col, id, data) => {
   try {
-    await updateDoc(doc(db, collection, id), {
+    await updateDoc(doc(db, col, id), {
       ...data,
       updatedAt: new Date(),
     });
@@ -195,13 +195,13 @@ export const updateDocument = async (collection, id, data) => {
 
 /**
  * Create document
- * @param {string} collection
+ * @param {string} col
  * @param {object} data
  * @return {Promise<string|null>}
  */
-export const createDocument = async (collection, data) => {
+export const createDocument = async (col, data) => {
   try {
-    await addDoc(doc(db, collection), {
+    await addDoc(collection(db, col), {
       ...data,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -271,3 +271,25 @@ export const changePassword = async (originalPassword, newPassword) => {
     return "error";
   }
 };
+
+/**
+ * Check if the user name is unique
+ * @param {string|null} id
+ * @param {string} name
+ * @return {boolean}
+ */
+export const isUniqueUserName = (id, name) =>
+  store.users.find(
+    (user) => user.id !== id && user.name === (name ?? "").trim(),
+  ) === undefined;
+
+/**
+ * Check if the group name is unique
+ * @param {string|null} id
+ * @param {string} name
+ * @return {boolean}
+ */
+export const isUniqueGroupName = (id, name) =>
+  store.groups.find(
+    (group) => group.id !== id && group.name === (name ?? "").trim(),
+  ) === undefined;

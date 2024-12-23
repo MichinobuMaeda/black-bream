@@ -22,7 +22,7 @@
       bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
       text-lightOnSurface dark:text-darkOnSurface"
     >
-      <main class="flex flex-col mb-auto">
+      <main class="flex flex-col mb-auto pb-4">
         <Header />
         {@render children()}
       </main>

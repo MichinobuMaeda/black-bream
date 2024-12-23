@@ -12,7 +12,7 @@
 </script>
 
 {#snippet navItem(
-  /** @type {__sveltets_2_IsomorphicComponent<{ [x: string]: never; }, { [evt: string]: CustomEvent<any>; }, {}, {}, string>} */ Icon,
+  /** @type {object} */ Icon,
   /** @type {string} */ label,
   /** @type {string} */ path,
   /** @type {string?} */ activePath,

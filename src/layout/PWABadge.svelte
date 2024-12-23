@@ -3,6 +3,7 @@
 
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
+  import ButtonFilled from "../lib/components/ButtonFilled.svelte";
   import { m } from "../lib/i18n.svelte.js";
 
   // check for updates every hour
@@ -52,14 +53,12 @@
     class="flex justify-center py-0.5 sticky top-0 z-50
       bg-lightErrorContainer dark:bg-darkErrorContainer"
   >
-    <button
-      type="button"
-      class="bg-lightError dark:bg-darkError
-        text-lightOnError dark:text-darkOnError
-        py-0.5 px-4 rounded-full"
-      onclick={() => updateServiceWorker(true)}
-    >
-      {m().updateApp()}
-    </button>
+    <ButtonFilled
+      id="updateApp"
+      label={m().updateApp()}
+      onClick={() => updateServiceWorker(true)}
+      danger
+      dense
+    />
   </div>
 {/if}

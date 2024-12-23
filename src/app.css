@@ -5,9 +5,6 @@
 .activeMainMenuItem {
   @apply bg-lightPrimaryContainer dark:bg-darkPrimaryContainer;
 }
-.activeHeaderMenuItem {
-  @apply opacity-50;
-}
 p,
 ul,
 ol,
@@ -51,13 +48,16 @@ hr {
     text-lightPrimary dark:text-darkPrimary;
 }
 :not(.markdown) > h2 > svg {
-  @apply h-8 w-8;
+  @apply size-8;
 }
 :not(.markdown) > h3 {
-  @apply flex sticky top-0 h-11 mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
-    text-xl items-center
+  @apply flex sticky top-0 mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
+    text-xl items-center gap-2 z-40
     bg-lightPrimaryContainer dark:bg-darkPrimaryContainer
     text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer;
+}
+:not(.markdown) > h3:has(button) {
+  @apply py-0 sm:py-0.5 lg:py-1.5;
 }
 :not(.markdown) > h4 {
   @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
@@ -72,5 +72,6 @@ hr {
   text-lightOnSurface dark:text-darkOnSurface;
 }
 :not(.markdown) > h6 {
-  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 text-base font-bold;
+  @apply flex mb-0.5 px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2
+    text-base font-bold items-center;
 }

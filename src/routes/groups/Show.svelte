@@ -1,5 +1,6 @@
 <script>
-  import { link } from "svelte-spa-router";
+  import { link, push } from "svelte-spa-router";
+  import IconButtonOutlined from "../../lib/components/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import Content from "../../lib/Content.svelte";
@@ -17,22 +18,21 @@
   let group = store.groups.find((group) => group.id === item);
 </script>
 
-<h3 class="flex flex-row gap-2 h-11 items-center">
+<h3>
+  <span class="flex grow">{group.name}</span>
   {#if store.manager}
-    <a
-      class="h-8 w-8 px-1 py-0.5 border-none rounded-full text-base
-    bg-lightPrimary dark:bg-darkPrimary
-    text-lightOnPrimary dark:text-darkOnPrimary"
-      href="/groups/{group.id}/edit"
-      use:link><SvgEdit /></a
-    >
+    <IconButtonOutlined
+      id="edit"
+      icon={SvgEdit}
+      onClick={() => push(`/groups/${group.id}/edit`)}
+      dense
+    />
   {/if}
-  {group.name}
 </h3>
 
 <h4>{m().members()}</h4>
 <Content>
-  {#each store.users.filter((user) => group.users.includes(user.id)) as user}
+  {#each store.users.filter( (user) => (group.users ?? []).includes(user.id), ) as user}
     <a
       class="flex flex-row gap-1
       text-lightLink dark:text-darkLink underline"

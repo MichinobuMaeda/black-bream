@@ -22,9 +22,7 @@ const messages = (() => {
   m.ja.save = () => "保存";
   m.en.goBack = () => "Go back";
   m.ja.goBack = () => "戻る";
-  m.en.logoutWarning = () => "Normally there is no need to log out.";
-  m.ja.logoutWarning = () => "通常はログアウトする必要はありません。";
-  m.en.info = () => "Info";
+  m.en.info = () => "Information";
   m.ja.info = () => "情報";
   m.en.home = () => "Home";
   m.ja.home = () => "ホーム";
@@ -58,20 +56,16 @@ const messages = (() => {
   m.ja.admin = () => "システム管理者";
   m.en.manager = () => "Manager";
   m.ja.manager = () => "管理者";
-  m.en.onSystemError = () =>
-    " Check your connection and try again. If the operation does not work," +
-    " contact your system administrator.";
-  m.ja.onSystemError = () =>
-    "通信状態を確認してやり直してもうまくいかない場合は、" +
-    "システム管理者に連絡してください。";
+  m.en.siteDesc = () => "Site description";
+  m.ja.siteDesc = () => "サイトの説明";
+  m.en.current = () => "Current";
+  m.ja.current = () => "変更前";
+  m.en.unavailable = () => "Unavailable";
+  m.ja.unavailable = () => "無効";
   m.en.email = () => "Email";
   m.ja.email = () => "メールアドレス";
   m.en.changeEmail = () => "Change email address";
   m.ja.changeEmail = () => "メールアドレス変更";
-  m.en.guideChangingEmail = () =>
-    "Please ask your administrator to change the email address for login.";
-  m.ja.guideChangingEmail = () =>
-    "ログイン用のメールアドレスの変更は管理者に依頼してください。";
   m.en.password = () => "Password";
   m.ja.password = () => "パスワード";
   m.en.passwordAuthError = () => "Invalid user ID or password";
@@ -98,18 +92,34 @@ const messages = (() => {
     " lowercase letters, uppercase letters, numbers, and symbols.";
   m.ja.passwordRequirements = () =>
     "パスワードは 8 文字以上で、小文字、大文字、数字、記号のうち少なくとも 3 つを使用してください。";
+  m.en.guideChangingEmail = () =>
+    "Please ask your administrator to change the email address for login.";
+  m.ja.guideChangingEmail = () =>
+    "ログイン用のメールアドレスの変更は管理者に依頼してください。";
+  m.en.onSystemError = () =>
+    " Check your connection and try again. If the operation does not work," +
+    " contact your system administrator.";
+  m.ja.onSystemError = () =>
+    "通信状態を確認してやり直してもうまくいかない場合は、" +
+    "システム管理者に連絡してください。";
   m.en.inMarkdown = () => "Write in Markdown";
   m.ja.inMarkdown = () => "Markdown で記述してください";
-  m.en.siteDesc = () => "Site description";
-  m.ja.siteDesc = () => "サイトの説明";
   m.en.aboutLicense = ({ license }) =>
     `This app is distributed under the ${license} license.`;
   m.ja.aboutLicense = ({ license }) =>
     `このアプリは ${license} ライセンスに基づいて配布されます。`;
-  m.en.current = () => "Current";
-  m.ja.current = () => "変更前";
-  m.en.errorRequired = () => "Required";
-  m.ja.errorRequired = () => "入力必須です";
+  m.en.timeoutMinutes = () => "Timeout minutes";
+  m.ja.timeoutMinutes = () => "タイムアウト時間（分）";
+  m.en.guideOfWatchdogTimeout = () =>
+    "Enter the time in minutes before automatically logging off" +
+    " after the screen loses focus." +
+    " If you do not want to use this feature, enter 0.";
+  m.ja.guideOfWatchdogTimeout = () =>
+    "画面がフォーカスを失った後、自動でログオフするまでの時間を" +
+    "分単位で入力してください。" +
+    "この機能を使用しない場合は、0 を入力してください。";
+  m.en.logoutNow = () => "Logout now";
+  m.ja.logoutNow = () => "今すぐログアウトする";
   m.en.pageNotFound = () => "Page Not Found";
   m.ja.pageNotFound = () => "見つかりません";
   m.en.NavigationForPageNotFound = () =>
@@ -128,6 +138,13 @@ const messages = (() => {
     "データの保存中にエラーが発生しました。" + m.ja.onSystemError();
   m.en.length = ({ len }) => `Length: ${len}`;
   m.ja.length = ({ len }) => `${len}文字`;
+  m.en.required = () => "Required.";
+  m.ja.required = () => "入力必須です。";
+  m.en.greaterOrEqual = ({ num }) =>
+    `Enter a value greater than or equal to ${num}.`;
+  m.ja.greaterOrEqual = ({ num }) => `${num} 以上の値を入力してください。`;
+  m.en.nameInUse = () => "The name is already in use.";
+  m.ja.nameInUse = () => "既に使われている名称です。";
 
   return m;
 })();

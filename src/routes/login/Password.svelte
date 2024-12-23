@@ -1,5 +1,9 @@
 <script>
   import Content from "../../lib/Content.svelte";
+  import Wrap from "../../lib/Wrap.svelte";
+  import Fields from "../../lib/Fields.svelte";
+  import Actions from "../../lib/Actions.svelte";
+  import ErrorMessage from "../../lib/ErrorMessage.svelte";
   import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
@@ -13,42 +17,40 @@
 </script>
 
 <Content>
-  <div class="flex flex-row max-w-96">
-    <TextFieldOutlined
-      id="email"
-      label={m().email()}
-      type="email"
-      bind:value={email}
-    />
-  </div>
-  <div class="flex flex-row max-w-96">
-    <PasswordFieldOutlined
-      id="password"
-      label={m().password()}
-      bind:value={password}
-    />
-  </div>
-  {#if result === "credentialError"}
-    <div class="flex mt-2 text-lightError dark:text-darkError">
-      {m().passwordAuthError()}
-    </div>
-  {:else if result}
-    <div class="flex mt-2 text-lightError dark:text-darkError">
-      {m().authError()}
-    </div>
-  {/if}
-  <div class="flex flex-row max-w-96 justify-end">
-    <ButtonFilled
-      id="login"
-      label={m().login()}
-      onClick={async () => {
-        result = await login(email, password);
-        if (result === null) {
-          email = "";
-          password = "";
-        }
-      }}
-      disabled={!email || !password}
-    />
-  </div>
+  <Wrap>
+    <Fields>
+      <TextFieldOutlined
+        id="email"
+        label={m().email()}
+        type="email"
+        bind:value={email}
+      />
+      <PasswordFieldOutlined
+        id="password"
+        label={m().password()}
+        bind:value={password}
+      />
+    </Fields>
+    <Fields>
+      {#if result === "credentialError"}
+        <ErrorMessage>{m().passwordAuthError()}</ErrorMessage>
+      {:else if result}
+        <ErrorMessage>{m().authError()}</ErrorMessage>
+      {/if}
+      <Actions>
+        <ButtonFilled
+          id="login"
+          label={m().login()}
+          onClick={async () => {
+            result = await login(email, password);
+            if (result === null) {
+              email = "";
+              password = "";
+            }
+          }}
+          disabled={!email || !password}
+        />
+      </Actions>
+    </Fields>
+  </Wrap>
 </Content>

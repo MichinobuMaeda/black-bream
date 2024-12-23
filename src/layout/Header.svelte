@@ -1,7 +1,7 @@
 <script>
-  import active from "svelte-spa-router/active";
-  import { link } from "svelte-spa-router";
-
+  import { location, push } from "svelte-spa-router";
+  import ButtonText from "../lib/components/ButtonText.svelte";
+  import IconButton from "../lib/components/IconButton.svelte";
   import SvgCheck from "../lib/icons/SvgCheck.svelte";
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
@@ -10,38 +10,35 @@
   import { store } from "../lib/store.svelte.js";
 </script>
 
-{#snippet localeItem(value, label)}
-  <button id={`locale-${value}`} type="button" onclick={() => setLocale(value)}>
-    <span class="flex flex-row gap-0.5 text-sm items-center">
-      {#if getLocale() === value}
-        <span class="flex h-4 w-4 opacity-50"><SvgCheck /></span>
-        <span class="opacity-50">{label}</span>
-      {:else}
-        {label}
-      {/if}
-    </span>
-  </button>
+{#snippet localeItem(/** @type {string} */ value, /** @type {string} */ label)}
+  <ButtonText
+    id={`locale-${value}`}
+    icon={getLocale() === value ? SvgCheck : null}
+    {label}
+    onClick={() => setLocale(value)}
+    disabled={getLocale() === value}
+  />
 {/snippet}
 
-{#snippet navItem(Icon, path)}
-  <a
-    class="text-base mx-1 text-lightPrimary dark:text-darkPrimary"
-    href={path}
-    use:link
-    use:active={{ path: path, className: "activeHeaderMenuItem" }}
-  >
-    <span class="flex h-6 w-6"><Icon /></span>
-  </a>
+{#snippet navItem(/** @type {object} */ Icon, /** @type {string} */ path)}
+  <IconButton
+    id={`nav-${path}`}
+    icon={Icon}
+    onClick={() => push(path)}
+    disabled={$location === path}
+  />
 {/snippet}
 
 <div
-  class="flex flex-row mb-0.5 px-2 sm:px-4 py-0.5 sm:py-1 gap-4 justify-end
+  class="flex flex-row mb-0.5 px-2 sm:px-4 py-0.5 sm:py-1 gap-6 justify-end
     bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
     text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant"
 >
-  {#each locales as locale}
-    {@render localeItem(locale.value, locale.label)}
-  {/each}
+  <div class="flex gap-2">
+    {#each locales as locale}
+      {@render localeItem(locale.value, locale.label)}
+    {/each}
+  </div>
   {#if store.user}
     {#if store.admin || store.manager}
       {@render navItem(SvgSettings, "/settings")}

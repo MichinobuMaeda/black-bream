@@ -109,8 +109,9 @@
     {/if}
     {#if error}
       <span
-        class="absolute end-2 top-2 w-6 h-6
-          text-lightError dark:text-darkError"
+        class={"absolute top-2 size-6" +
+          (type === "number" ? " end-8" : " end-2") +
+          " text-lightError dark:text-darkError"}
       >
         <SvgErrorFill />
       </span>
