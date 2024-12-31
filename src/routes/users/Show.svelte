@@ -5,8 +5,7 @@
   import SvgGroup from "../../lib/icons/SvgGroup.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/Content.svelte";
-  import { store } from "../../lib/store.svelte";
-  import { m } from "../../lib/i18n.svelte";
+  import { store, m } from "../../lib/store.svelte.js";
 
   /**
    * @typedef {Object} Props

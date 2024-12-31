@@ -22,6 +22,8 @@
     "test:ui": "vitest --run",
     "test:merge-coverage": "npx istanbul-merge --out coverage/coverage.json coverage/coverage-final.json functions/coverage/coverage-final.json",
     "test": "npm run test:functions && npm run test:ui && npm run test:merge-coverage",
+    "prettier:check": "npx prettier -c src functions",
+    "prettier:fix": "npx prettier -w src functions",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -39,6 +41,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jest": "^28.10.0",
     "eslint-plugin-svelte": "^2.46.0",
     "firebase-functions-test": "^3.3.0",
     "firebase-tools": "^13.20.2",

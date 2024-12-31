@@ -5,7 +5,7 @@
   import ErrorMessage from "./ErrorMessage.svelte";
   import SvgClose from "./icons/SvgClose.svelte";
   import SvgCheck from "./icons/SvgCheck.svelte";
-  import { m } from "./i18n.svelte";
+  import { m } from "./store.svelte.js";
 
   /**
    * @typedef {Object} Props

@@ -4,7 +4,7 @@
   import ChangeEmail from "./ChangeEmail.svelte";
   import ChangePassword from "./ChangePassword.svelte";
   import Logout from "./Logout.svelte";
-  import { m } from "../../lib/i18n.svelte";
+  import { m } from "../../lib/store.svelte.js";
 </script>
 
 <h2><SvgAccountCircle /> {m().account()}</h2>

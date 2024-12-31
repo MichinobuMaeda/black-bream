@@ -1,4 +1,5 @@
 <script>
+  import { pop } from "svelte-spa-router";
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
@@ -7,12 +8,11 @@
   import Switch from "../../lib/components/Switch.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
   import SvgLogout from "../../lib/icons/SvgLogout.svelte";
-  import { m } from "../../lib/i18n.svelte";
   import {
     getWatchdogTimeout,
     setWatchdogTimeout,
   } from "../../lib/watchdog.svelte.js";
-  import { logout } from "../../lib/store.svelte";
+  import { m, logout } from "../../lib/store.svelte.js";
 
   let changed = $state(getWatchdogTimeout());
   let logoutNow = $state(false);
@@ -57,7 +57,7 @@
           id="logout"
           icon={SvgLogout}
           label={m().logout()}
-          onClick={() => logout()}
+          onClick={() => logout(pop)}
           disabled={!logoutNow}
           danger
         />

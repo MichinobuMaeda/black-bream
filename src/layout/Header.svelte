@@ -6,17 +6,19 @@
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
   import SvgInfo from "../lib/icons/SvgInfo.svelte";
-  import { locales, getLocale, setLocale } from "../lib/i18n.svelte.js";
+  import { locales } from "../lib/i18n.svelte.js";
   import { store } from "../lib/store.svelte.js";
 </script>
 
 {#snippet localeItem(/** @type {string} */ value, /** @type {string} */ label)}
   <ButtonText
     id={`locale-${value}`}
-    icon={getLocale() === value ? SvgCheck : null}
+    icon={store.locale === value ? SvgCheck : null}
     {label}
-    onClick={() => setLocale(value)}
-    disabled={getLocale() === value}
+    onClick={() => {
+      store.locale = value;
+    }}
+    disabled={store.locale === value}
   />
 {/snippet}
 

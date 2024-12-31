@@ -1,509 +1,242 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { logger } = require("firebase-functions/v2");
+const { createAuthUser } = require("./account.js");
 
-const { updateData } = require("./deployment.js");
+const { updateDataV1 } = require("./deployment.js");
+
+jest.mock("firebase-functions/logger");
+jest.mock("./account.js");
 
 afterEach(() => {
-  const { jest } = require("@jest/globals");
   jest.clearAllMocks();
 });
 
-describe("updateData", () => {
-  const { jest } = require("@jest/globals");
-
-  jest.mock("axios");
-  jest.mock("firebase-functions/v2");
-  logger.info = jest.fn();
-  logger.error = jest.fn();
-
-  const email = "user@example.com";
-  const savedOnV1Error = {
-    ver: 0,
-    err: expect.any(String),
-    updatedAt: expect.any(Date),
-  };
-  const savedOnSuccess = {
-    ver: 1,
-    err: null,
-    updatedAt: expect.any(Date),
-  };
-  const deleted = {
-    exists: true,
-    id: "service/dataVersion",
-    get: jest.fn((key) => (key == "email" ? email : undefined)),
-    ref: {
-      set: jest.fn(),
-    },
-  };
-  const auth = {
-    getUserByEmail: jest.fn(() => {
-      throw { code: "auth/user-not-found" };
-    }),
-    updateUser: jest.fn(),
-    createUser: jest.fn(() => ({ uid: "234567" })),
-  };
+describe("updateDataV1", () => {
+  const uid = "123456";
+  const email = "test@example.com";
+  const auth = { getUser: jest.fn(), updateUser: jest.fn() };
+  const get = jest.fn();
   const add = jest.fn();
   const set = jest.fn();
-  const doc = jest.fn(() => ({ set }));
-  const db = {
-    collection: jest.fn(() => ({
-      doc,
-      add,
-    })),
+  const doc = jest.fn(() => ({ get, set }));
+  const db = { collection: jest.fn(() => ({ doc, add })) };
+  const conf = {
+    exists: true,
+    id: "conf",
+    get: jest.fn(),
   };
-  const emailParam = {
-    to: email,
-    message: {
-      subject: "Invitation from Black bream",
-      text: expect.stringMatching(`Please change your initial password.
-Your temporary password is `),
-    },
+  const deleted = {
+    id: "dataVersion",
+    exists: true,
+    get: jest.fn(),
+    ref: { set: jest.fn() },
   };
+  const invitationSubject = "Invitation from Black bream";
+  const invitationBody = "Please change your initial password: PASSWORD";
+  const webAppUrl = process.env.WEB_APP_URL;
+  const autoSendEmail = process.env.AUTO_SEND_EMAIL;
+  const createdAt = expect.any(Date);
+  const updatedAt = expect.any(Date);
 
-  it("returns [null, 1] if the current data version is 0 with email address.", async () => {
-    // Prepare
-    auth.getUserByEmail.mockImplementationOnce(() => ({ uid: "123456" }));
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([null, 1]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnSuccess]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-      ["Sent an email to user@example.com"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([
-      ["123456", { email, password: expect.any(String) }],
-    ]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([
-      ["service"],
-      ["users"],
-      ["mail"],
-      ["groups"],
-      ["groups"],
-    ]);
-    expect(add.mock.calls).toEqual([[emailParam]]);
-    expect(doc.mock.calls).toEqual([
-      ["conf"],
-      ["123456"],
-      ["admins"],
-      ["managers"],
-    ]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          name: "Primary User",
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          users: ["123456"],
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          users: ["123456"],
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with exception on deleted.get(key).", async () => {
-    // Prepare
-    deleted.get.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(set.mock.calls).toEqual([]);
-  });
-
-  it("returns [error, 0] with unknown exception on getUserByEmail().", async () => {
-    // Prepare
-    auth.getUserByEmail.mockImplementationOnce(() => {
-      throw new Error("Unknown error");
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([["conf"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with unknown exception on updateUser().", async () => {
-    // Prepare
-    auth.getUserByEmail.mockImplementationOnce(() => ({ uid: "123456" }));
-    auth.updateUser.mockImplementationOnce(() => {
-      throw new Error("Unknown error");
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([
-      ["123456", { email, password: expect.any(String) }],
-    ]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([["conf"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with unknown exception on createUser().", async () => {
-    // Prepare
-    auth.createUser.mockImplementationOnce(() => {
-      throw new Error("Unknown error");
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([
-      [{ email, password: expect.any(String) }],
-    ]);
-
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([["conf"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with exception on collection(key).doc(key).set({}).", async () => {
-    // Prepare
-    set.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([["Current dataVersion: 0"]]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([["conf"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with exception on collection(key).add({}).", async () => {
-    // Prepare
-    add.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnV1Error]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([
-      [{ email, password: expect.any(String) }],
-    ]);
-
-    expect(db.collection.mock.calls).toEqual([
-      ["service"],
-      ["users"],
-      ["mail"],
-    ]);
-    expect(add.mock.calls).toEqual([[emailParam]]);
-    expect(doc.mock.calls).toEqual([["conf"], ["234567"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          name: "Primary User",
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] with exception on deleted.ref.set({}).", async () => {
-    // Prepare
-    deleted.ref.set.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    // Call
-    const ret = await updateData(auth, db, deleted);
-
-    // Evaluate
-    expect(ret).toEqual([expect.any(String), 1]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnSuccess]]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-      ["Sent an email to user@example.com"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[expect.any(Error)]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([[email]]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([
-      [{ email, password: expect.any(String) }],
-    ]);
-
-    expect(db.collection.mock.calls).toEqual([
-      ["service"],
-      ["users"],
-      ["mail"],
-      ["groups"],
-      ["groups"],
-    ]);
-    expect(add.mock.calls).toEqual([[emailParam]]);
-    expect(doc.mock.calls).toEqual([
-      ["conf"],
-      ["234567"],
-      ["admins"],
-      ["managers"],
-    ]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          name: "Primary User",
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          users: ["234567"],
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          users: ["234567"],
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-  });
-
-  it("returns [error, 0] if the current data version is 0 without email address.", async () => {
+  it("should update data ver.0 to ver.1", async () => {
     // Prepare
     deleted.get
-      .mockImplementationOnce(() => undefined)
-      .mockImplementationOnce(() => undefined);
-    const error = "undefined: email";
+      .mockImplementationOnce(() => 0)
+      .mockImplementationOnce(() => email);
+    add.mockImplementationOnce(() => ({ id: uid }));
+    createAuthUser.mockImplementationOnce(() => undefined);
 
     // Call
-    const ret = await updateData(auth, db, deleted);
+    let [err, ver] = await updateDataV1(auth, db, deleted, null);
 
     // Evaluate
-    expect(ret).toEqual([error, 0]);
-    expect(deleted.get.mock.calls).toEqual([["ver"], ["email"]]);
+    expect(err).toBeUndefined();
+    expect(ver).toEqual(1);
+    expect(db.collection.mock.calls).toEqual([
+      ["service"],
+      ["users"],
+      ["groups"],
+      ["groups"],
+    ]);
+    expect(doc.mock.calls).toEqual([[conf.id], ["admins"], ["managers"]]);
+    expect(set.mock.calls).toEqual([
+      [
+        {
+          desc: expect.stringMatching(/## Privacy Policy/),
+          invitationSubject,
+          invitationBody,
+          webAppUrl,
+          autoSendEmail,
+          createdAt,
+          updatedAt,
+        },
+      ],
+      [
+        {
+          name: "System Administrators",
+          users: [uid],
+          createdAt,
+          updatedAt,
+        },
+      ],
+      [
+        {
+          name: "Managers",
+          users: [uid],
+          createdAt,
+          updatedAt,
+        },
+      ],
+    ]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          name: "Primary User",
+          createdAt,
+          updatedAt,
+        },
+      ],
+    ]);
+    expect(createAuthUser.mock.calls).toEqual([[auth, db, uid, email]]);
     expect(deleted.ref.set.mock.calls).toEqual([
       [
         {
-          ver: 0,
-          err: error,
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-
-    expect(logger.info.mock.calls).toEqual([
-      ["Current dataVersion: 0"],
-      ["Created 'service/conf'"],
-    ]);
-    expect(logger.error.mock.calls).toEqual([[error]]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(add.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([["conf"]]);
-    expect(set.mock.calls).toEqual([
-      [
-        {
-          desc: expect.any(String),
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
+          ver: 1,
+          err: undefined,
+          updatedAt,
         },
       ],
     ]);
   });
 
-  it("returns [null, 1] if the current data version is 1.", async () => {
+  it("should return error if email is missing", async () => {
+    // Prepare
+    deleted.get
+      .mockImplementationOnce(() => 0)
+      .mockImplementationOnce(() => undefined);
+
+    // Call
+    let [err, ver] = await updateDataV1(auth, db, deleted, null);
+
+    // Evaluate
+    expect(err).toBe("missing-email");
+    expect(ver).toEqual(0);
+    expect(db.collection.mock.calls).toEqual([]);
+    expect(doc.mock.calls).toEqual([]);
+    expect(set.mock.calls).toEqual([]);
+    expect(add.mock.calls).toEqual([]);
+    expect(createAuthUser.mock.calls).toEqual([]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+  });
+
+  it("should return error if set returns error", async () => {
+    // Prepare
+    deleted.get
+      .mockImplementationOnce(() => 0)
+      .mockImplementationOnce(() => email);
+    set.mockImplementationOnce(() => Promise.reject("error"));
+
+    // Call
+    let [err, ver] = await updateDataV1(auth, db, deleted, null);
+
+    // Evaluate
+    expect(err).toEqual("error");
+    expect(ver).toEqual(0);
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(doc.mock.calls).toEqual([[conf.id]]);
+    expect(set.mock.calls).toEqual([
+      [
+        {
+          desc: expect.stringMatching(/## Privacy Policy/),
+          invitationSubject,
+          invitationBody,
+          webAppUrl,
+          autoSendEmail,
+          createdAt,
+          updatedAt,
+        },
+      ],
+    ]);
+    expect(add.mock.calls).toEqual([]);
+    expect(createAuthUser.mock.calls).toEqual([]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+  });
+
+  it("should return error if createAuthUser returns error", async () => {
+    // Prepare
+    deleted.get
+      .mockImplementationOnce(() => 0)
+      .mockImplementationOnce(() => email);
+    add.mockImplementationOnce(() => ({ id: uid }));
+    createAuthUser.mockImplementationOnce(() => "error");
+
+    // Call
+    let [err, ver] = await updateDataV1(auth, db, deleted, null);
+
+    // Evaluate
+    expect(err).toEqual("error");
+    expect(ver).toEqual(0);
+    expect(db.collection.mock.calls).toEqual([["service"], ["users"]]);
+    expect(doc.mock.calls).toEqual([[conf.id]]);
+    expect(set.mock.calls).toEqual([
+      [
+        {
+          desc: expect.stringMatching(/## Privacy Policy/),
+          invitationSubject,
+          invitationBody,
+          webAppUrl,
+          autoSendEmail,
+          createdAt,
+          updatedAt,
+        },
+      ],
+    ]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          name: "Primary User",
+          createdAt,
+          updatedAt,
+        },
+      ],
+    ]);
+    expect(createAuthUser.mock.calls).toEqual([[auth, db, uid, email]]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+  });
+
+  it("should not update data of ver.1", async () => {
     // Prepare
     deleted.get.mockImplementationOnce(() => 1);
 
     // Call
-    const ret = await updateData(auth, db, deleted);
+    let [err, ver] = await updateDataV1(auth, db, deleted, null);
 
     // Evaluate
-    expect(ret).toEqual([null, 1]);
-    expect(deleted.ref.set.mock.calls).toEqual([[savedOnSuccess]]);
-
-    expect(logger.info.mock.calls).toEqual([["Current dataVersion: 1"]]);
-    expect(logger.error.mock.calls).toEqual([]);
-
-    expect(auth.getUserByEmail.mock.calls).toEqual([]);
-    expect(auth.updateUser.mock.calls).toEqual([]);
-    expect(auth.createUser.mock.calls).toEqual([]);
-
+    expect(err).toBeUndefined();
+    expect(ver).toEqual(1);
     expect(db.collection.mock.calls).toEqual([]);
-    expect(add.mock.calls).toEqual([]);
     expect(doc.mock.calls).toEqual([]);
     expect(set.mock.calls).toEqual([]);
+    expect(add.mock.calls).toEqual([]);
+    expect(createAuthUser.mock.calls).toEqual([]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+  });
+
+  it("should call next", async () => {
+    // Prepare
+    deleted.get.mockImplementationOnce(() => 1);
+    const next = jest.fn(() => Promise.resolve([undefined, 2]));
+
+    // Call
+    let [err, ver] = await updateDataV1(auth, db, deleted, next);
+
+    // Evaluate
+    expect(err).toBeUndefined();
+    expect(ver).toEqual(2);
+    expect(db.collection.mock.calls).toEqual([]);
+    expect(doc.mock.calls).toEqual([]);
+    expect(set.mock.calls).toEqual([]);
+    expect(add.mock.calls).toEqual([]);
+    expect(createAuthUser.mock.calls).toEqual([]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(next.mock.calls).toEqual([[]]);
   });
 });

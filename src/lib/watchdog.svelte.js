@@ -1,11 +1,12 @@
-import { logout } from "./store.svelte";
+/* global $state */
+import { logout } from "./store.svelte.js";
 
 const localeKey = "black_bream_watchdog";
 
 let watchdogTimeout = $state(0);
 let timeoutId = null;
 
-watchdogTimeout = Number(localStorage.getItem(localeKey)) ?? 0;
+watchdogTimeout = Number(localStorage.getItem(localeKey)) || 0;
 console.log("watchdogThresholdMinute", watchdogTimeout);
 
 const startWatchDog = () => {

@@ -3,7 +3,8 @@
   import { m } from "../../lib/store.svelte.js";
 </script>
 
-<h3>{m().changeEmail()}</h3>
 <Content>
-  <div>{m().guideChangingEmail()}</div>
+  <div>{m().descPasswordLink()}</div>
+  <div>{m().allowEmailsFrom()}</div>
+  <div>{m().sentPasswordLink()}</div>
 </Content>

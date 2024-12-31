@@ -5,7 +5,7 @@
   import Content from "../lib/Content.svelte";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
-  import { m } from "../lib/i18n.svelte.js";
+  import { m } from "../lib/store.svelte.js";
 </script>
 
 <h2><SvgError /> {m().pageNotFound()}</h2>

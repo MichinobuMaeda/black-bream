@@ -2,11 +2,17 @@ import prettier from "eslint-config-prettier";
 import js from "@eslint/js";
 import svelte from "eslint-plugin-svelte";
 import globals from "globals";
+import jest from "eslint-plugin-jest";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   js.configs.recommended,
   ...svelte.configs["flat/recommended"],
+  {
+    rules: {
+      "svelte/no-at-html-tags": "off", // for parsed markdown
+    },
+  },
   prettier,
   ...svelte.configs["flat/prettier"],
   {
@@ -18,6 +24,13 @@ export default [
     },
   },
   {
+    files: ["test/**", "**/*.test.js", "**/*.spec.js"],
+    ...jest.configs["flat/recommended"],
+    rules: {
+      ...jest.configs["flat/recommended"].rules,
+    },
+  },
+  {
     ignores: [
       "build/",
       ".svelte-kit/",
@@ -26,7 +39,4 @@ export default [
       "functions/coverage/",
     ],
   },
-  rules: {
-    "svelte/no-at-html-tags": "off",
-  }
 ];

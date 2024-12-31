@@ -3,6 +3,10 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   connectAuthEmulator,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  sendPasswordResetEmail,
+  sendSignInLinkToEmail,
   signInWithEmailAndPassword,
   updatePassword,
   signOut,
@@ -17,6 +21,11 @@ import {
   addDoc,
 } from "firebase/firestore";
 
+import { messages } from "./i18n.svelte";
+
+const localeKeyEmail = "black_bream_email";
+const localeKey = "black_bream_locale";
+
 import firebaseConfig from "../firebaseConfig";
 
 const app = initializeApp(firebaseConfig);
@@ -27,6 +36,18 @@ if (import.meta.env.DEV) {
   console.log("connect to emulator");
   connectAuthEmulator(auth, "http://127.0.0.1:9099");
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
+
+if (isSignInWithEmailLink(auth, window.location.href)) {
+  let email = window.localStorage.getItem(localeKeyEmail);
+  if (email) {
+    console.log(`signInWithEmailLink(${email})`);
+    await signInWithEmailLink(auth, email, window.location.href);
+    window.localStorage.removeItem(localeKeyEmail);
+    if (window.location.href.includes("?")) {
+      window.location.replace(window.location.href.split("?")[0]);
+    }
+  }
 }
 
 console.log("init auth");
@@ -46,6 +67,7 @@ let conf = $state(undefined);
 let user = $state(undefined);
 let users = $state([]);
 let groups = $state([]);
+let locale = $state(localStorage.getItem(localeKey) ?? "ja");
 
 let admin = $derived(
   groups.find((group) => group.id === "admins")?.users.includes(user?.id) ??
@@ -146,7 +168,16 @@ export const store = {
   get groups() {
     return groups;
   },
+  get locale() {
+    return locale;
+  },
+  set locale(value) {
+    locale = value;
+  },
 };
+
+let localizedMessage = $derived(messages[locale]);
+export const m = () => localizedMessage;
 
 export const activateStore = () => {
   console.log("activateStore()");
@@ -169,6 +200,11 @@ export const activateStore = () => {
     } else {
       user = undefined;
     }
+  });
+
+  $effect(() => {
+    localStorage.setItem(localeKey, locale);
+    auth.languageCode = locale;
   });
 };
 
@@ -215,12 +251,37 @@ export const createDocument = async (col, data) => {
 };
 
 /**
+ * Login with email link
+ * @param {string} email
+ * @param {string} url
+ * @return {Promise<string|null>}
+ */
+export const loginWithEmailLink = async (email, url) => {
+  try {
+    await sendSignInLinkToEmail(auth, email, { url, handleCodeInApp: true });
+    localStorage.setItem(localeKeyEmail, email);
+
+    return null;
+  } catch (error) {
+    const messages = `${error}`;
+    if (
+      messages.includes("auth/user-not-found") ||
+      messages.includes("auth/invalid-email")
+    ) {
+      return "credentialError";
+    }
+    console.error(`login: ${error}`);
+    return "error";
+  }
+};
+
+/**
  * Login with email and password
  * @param {string} email
  * @param {string} password
  * @return {Promise<string|null>}
  */
-export const login = async (email, password) => {
+export const loginWithPassword = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
 
@@ -241,15 +302,42 @@ export const login = async (email, password) => {
 
 /**
  * Logout
+ *
+ * @param {function} next
  * @return {Promise<string|null>}
  */
-export const logout = async () => {
+export const logout = async (next) => {
   try {
     await unsubscribeUserData();
+    next();
 
     return null;
   } catch (error) {
     console.error(`logout: ${error}`);
+    return "error";
+  }
+};
+
+/**
+ * Send password reset link
+ *
+ * @param {string|undefined} email
+ * @return {Promise<string|null>}
+ */
+export const sendPasswordResetLink = async (email = null) => {
+  try {
+    await sendPasswordResetEmail(auth, email || authUser.email);
+
+    return null;
+  } catch (error) {
+    const messages = `${error}`;
+    if (
+      messages.includes("auth/user-not-found") ||
+      messages.includes("auth/invalid-email")
+    ) {
+      return "credentialError";
+    }
+    console.error(`login: ${error}`);
     return "error";
   }
 };

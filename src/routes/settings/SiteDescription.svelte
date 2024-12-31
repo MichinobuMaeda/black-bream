@@ -2,8 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import { m } from "../../lib/i18n.svelte";
-  import { store, updateDocument } from "../../lib/store.svelte";
+  import { store, m, updateDocument } from "../../lib/store.svelte.js";
 
   let desc = $state(store.conf.desc);
   let result = $state(undefined);

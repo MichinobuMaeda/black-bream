@@ -1,7 +1,6 @@
 <script>
   import { location, push, pop, replace } from "svelte-spa-router";
-  import { m } from "../lib/i18n.svelte";
-  import { store } from "../lib/store.svelte.js";
+  import { store, m } from "../lib/store.svelte.js";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
@@ -20,7 +19,6 @@
   /** @type {object} */ Icon,
   /** @type {string} */ label,
   /** @type {string} */ path,
-  /** @type {string?} */ activePath,
 )}
   <button
     class={"hidden xl:flex flex-row text-lg h-10 px-4 w-[224px] gap-2" +
@@ -71,8 +69,8 @@
   </div>
   {#if store.user}
     {@render navItem(SvgHome, m().home(), "/")}
-    {@render navItem(SvgGroup, m().groups(), "/groups", "/groups|/groups/*")}
-    {@render navItem(SvgPerson, m().users(), "/users", "/users|/users/*")}
+    {@render navItem(SvgGroup, m().groups(), "/groups")}
+    {@render navItem(SvgPerson, m().users(), "/users")}
   {:else}
     {@render navItem(SvgLogin, m().login(), "/")}
   {/if}

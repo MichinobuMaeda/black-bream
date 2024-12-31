@@ -2,8 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import SvgInfo from "../../lib/icons/SvgInfo.svelte";
   import MarkDown from "../../lib/MarkDown.svelte";
-  import { store } from "../../lib/store.svelte";
-  import { m } from "../../lib/i18n.svelte";
+  import { store, m } from "../../lib/store.svelte.js";
   import { version, repository } from "../../../package.json";
 
   let desc = $derived(store.conf?.desc ?? "");

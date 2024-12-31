@@ -4,12 +4,12 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte";
   import {
     store,
+    m,
     updateDocument,
     isUniqueUserName,
-  } from "../../lib/store.svelte";
+  } from "../../lib/store.svelte.js";
 
   let name = $state(store.user.name);
   let result = $state(undefined);

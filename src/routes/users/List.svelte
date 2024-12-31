@@ -5,8 +5,7 @@
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
-  import { m } from "../../lib/i18n.svelte";
-  import { store } from "../../lib/store.svelte";
+  import { store, m } from "../../lib/store.svelte.js";
 </script>
 
 <h3>

@@ -6,12 +6,12 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte";
   import {
     store,
+    m,
     createDocument,
     isUniqueGroupName,
-  } from "../../lib/store.svelte";
+  } from "../../lib/store.svelte.js";
 
   let name = $state("");
   let result = $state(undefined);

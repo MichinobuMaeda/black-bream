@@ -1,5 +1,5 @@
 <script>
-  import { m } from "../lib/i18n.svelte";
+  import { m } from "../lib/store.svelte.js";
 </script>
 
 <div

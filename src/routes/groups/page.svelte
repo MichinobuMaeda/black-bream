@@ -1,6 +1,6 @@
 <script>
   import SvgGroup from "../../lib/icons/SvgGroup.svelte";
-  import { m } from "../../lib/i18n.svelte";
+  import { m } from "../../lib/store.svelte.js";
   import List from "./List.svelte";
   import Create from "./Create.svelte";
   import Show from "./Show.svelte";

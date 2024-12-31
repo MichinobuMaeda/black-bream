@@ -7,15 +7,16 @@
   import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
-  import { login } from "../../lib/store.svelte";
-  import { m } from "../../lib/i18n.svelte";
+  import { loginWithPassword } from "../../lib/store.svelte.js";
+  import { m } from "../../lib/store.svelte.js";
+  import { validateEmail } from "../../lib/validator";
 
   let email = $state("");
   let password = $state("");
-  let passwordVisible = $state(false);
   let result = $state(undefined);
 </script>
 
+<h4>{m().loginWithPassword()}</h4>
 <Content>
   <Wrap>
     <Fields>
@@ -24,6 +25,7 @@
         label={m().email()}
         type="email"
         bind:value={email}
+        error={!email || validateEmail(email) ? "" : m().validEmailAddress()}
       />
       <PasswordFieldOutlined
         id="password"
@@ -42,13 +44,13 @@
           id="login"
           label={m().login()}
           onClick={async () => {
-            result = await login(email, password);
+            result = await loginWithPassword(email, password);
             if (result === null) {
               email = "";
               password = "";
             }
           }}
-          disabled={!email || !password}
+          disabled={!validateEmail(email) || !password}
         />
       </Actions>
     </Fields>

@@ -1,5 +1,5 @@
-const { logger } = require("firebase-functions/v2");
-const { updateData } = require("./deployment");
+const { info, error } = require("firebase-functions/logger");
+const { updateDataV1 } = require("./deployment");
 
 /**
  * Create test data for UI testing.
@@ -9,17 +9,17 @@ const { updateData } = require("./deployment");
  * @returns {Promise<[string|null, number]>}
  */
 const createUiTestData = async (auth, db) => {
-  logger.info("START: createUiTestData");
+  info("START: createUiTestData");
   try {
     if (!process.env.FUNCTIONS_EMULATOR) {
-      logger.error("This function can only be run in the emulator");
+      error("This function can only be run in the emulator");
       return { error: "This function can only be run in the emulator" };
     }
     if (
       !process.env.WEB_APP_URL.includes("localhost") &&
       !process.env.WEB_APP_URL.includes("127.0.0.1")
     ) {
-      logger.error("This function can only be run at localhost");
+      error("This function can only be run at localhost");
       return { error: "This function can only be run at localhost" };
     }
 
@@ -28,17 +28,18 @@ const createUiTestData = async (auth, db) => {
     const dataVersionRef = db.collection("service").doc("dataVersion");
     await dataVersionRef.set({ email: emailPrimaryUser });
     const dataVersion = await dataVersionRef.get();
-    const [err, ver] = await updateData(auth, db, dataVersion);
+    const [err, ver] = await updateDataV1(auth, db, dataVersion, null);
+    info(`dataVersion: ${ver}`);
     if (err) {
       return { error: err };
     }
     const primary = await auth.getUserByEmail(emailPrimaryUser);
     await auth.updateUser(primary.uid, { password: passwordPrimaryUser });
 
-    logger.info("END  : createUiTestData");
+    info("END  : createUiTestData");
     return { result: "ok" };
   } catch (e) {
-    logger.error(e.toString());
+    error(e.toString());
     return { error: e.toString() };
   }
 };

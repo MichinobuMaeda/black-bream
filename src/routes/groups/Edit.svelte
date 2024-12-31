@@ -7,12 +7,12 @@
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import Switch from "../../lib/components/Switch.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte";
   import {
     store,
+    m,
     isUniqueGroupName,
     updateDocument,
-  } from "../../lib/store.svelte";
+  } from "../../lib/store.svelte.js";
 
   /**
    * @typedef {Object} Props
