@@ -4,24 +4,13 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
-const {
-  gateForGroupMembers,
-  generatePassword,
-  setPassword,
-  createAuthUser,
-} = require("./account");
+const { gateForGroupMembers, createAuthUser } = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
 
 const region = "asia-northeast2";
 
 const app = initializeApp();
-
-exports.updatePassword = onCall({ region }, ({ data, auth }) =>
-  gateForGroupMembers(getFirestore(app), "managers", auth, () =>
-    setPassword(getAuth(app), getFirestore(app), generatePassword, data?.uid),
-  ),
-);
 
 exports.addAuthUser = onCall({ region }, ({ data, auth }) =>
   gateForGroupMembers(getFirestore(app), "managers", auth, () =>

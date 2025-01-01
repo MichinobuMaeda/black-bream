@@ -36,8 +36,6 @@ please contact me at the email address below.
 
 site.manager@example.com
 `,
-          invitationSubject: "Invitation from Black bream",
-          invitationBody: "Please change your initial password: PASSWORD",
           webAppUrl: process.env.WEB_APP_URL,
           autoSendEmail: process.env.AUTO_SEND_EMAIL,
           createdAt: new Date(),

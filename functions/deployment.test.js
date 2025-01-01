@@ -29,8 +29,6 @@ describe("updateDataV1", () => {
     get: jest.fn(),
     ref: { set: jest.fn() },
   };
-  const invitationSubject = "Invitation from Black bream";
-  const invitationBody = "Please change your initial password: PASSWORD";
   const webAppUrl = process.env.WEB_APP_URL;
   const autoSendEmail = process.env.AUTO_SEND_EMAIL;
   const createdAt = expect.any(Date);
@@ -61,8 +59,6 @@ describe("updateDataV1", () => {
       [
         {
           desc: expect.stringMatching(/## Privacy Policy/),
-          invitationSubject,
-          invitationBody,
           webAppUrl,
           autoSendEmail,
           createdAt,
@@ -146,8 +142,6 @@ describe("updateDataV1", () => {
       [
         {
           desc: expect.stringMatching(/## Privacy Policy/),
-          invitationSubject,
-          invitationBody,
           webAppUrl,
           autoSendEmail,
           createdAt,
@@ -180,8 +174,6 @@ describe("updateDataV1", () => {
       [
         {
           desc: expect.stringMatching(/## Privacy Policy/),
-          invitationSubject,
-          invitationBody,
           webAppUrl,
           autoSendEmail,
           createdAt,
