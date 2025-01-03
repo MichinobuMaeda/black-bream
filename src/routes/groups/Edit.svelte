@@ -27,7 +27,7 @@
   let unavailable = $state(!!group.deletedAt);
   let result = $state(undefined);
 
-  let allUsers = store.users.filter((user) => store.manager || !user.deletedAt);
+  let allUsers = store.users.filter((user) => !user.deletedAt);
   let userItems = allUsers.map((user) => ({
     value: user.id,
     label: user.name,
@@ -38,9 +38,8 @@
       .map((group) => group.id);
   let users = $state(getSelectedUsers());
   const isSelectedUsersChanged = () =>
-    JSON.stringify(users.toSorted()) !==
-    JSON.stringify(getSelectedUsers().toSorted());
-
+    users.length !== getSelectedUsers().length ||
+    !users.every((id) => getSelectedUsers().includes(id));
   const cancel = async () => {
     name = group.name;
     pop();
@@ -78,7 +77,7 @@
       {/if}
     </Fields>
   </Content>
-  <h4>{m().memberOf()}</h4>
+  <h4>{m().member()}</h4>
   <Content>
     <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
   </Content>

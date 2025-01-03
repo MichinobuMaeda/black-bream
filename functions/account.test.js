@@ -1,6 +1,10 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 
-const { gateForGroupMembers, createAuthUser } = require("./account.js");
+const {
+  gateForGroupMembers,
+  createAuthUser,
+  removeAuthUser,
+} = require("./account.js");
 
 jest.mock("firebase-functions/logger");
 
@@ -92,7 +96,10 @@ describe("createAuthUser", () => {
   const uid = "123456";
   const email = "text@example.com";
   const auth = { createUser: jest.fn() };
-  const db = { collection: jest.fn() };
+  const get = jest.fn();
+  const update = jest.fn();
+  const doc = jest.fn(() => ({ get, update }));
+  const db = { collection: jest.fn(() => ({ doc })) };
 
   it("returns 'missing-uid' if uid is missing.", async () => {
     // Prepare
@@ -104,6 +111,9 @@ describe("createAuthUser", () => {
     expect(ret).toBe("missing-uid");
     expect(auth.createUser.mock.calls).toEqual([]);
     expect(db.collection.mock.calls).toEqual([]);
+    expect(doc.mock.calls).toEqual([]);
+    expect(get.mock.calls).toEqual([]);
+    expect(update.mock.calls).toEqual([]);
   });
 
   it("returns 'missing-email' if email is missing.", async () => {
@@ -116,10 +126,32 @@ describe("createAuthUser", () => {
     expect(ret).toBe("missing-email");
     expect(auth.createUser.mock.calls).toEqual([]);
     expect(db.collection.mock.calls).toEqual([]);
+    expect(doc.mock.calls).toEqual([]);
+    expect(get.mock.calls).toEqual([]);
+    expect(update.mock.calls).toEqual([]);
+  });
+
+  it("returns 'missing-user-doc' if user document is missing.", async () => {
+    // Prepare
+    const user = { exists: false };
+    get.mockImplementationOnce(() => Promise.resolve(user));
+
+    // Call
+    const ret = await createAuthUser(auth, db, uid, email);
+
+    // Evaluate
+    expect(ret).toBe(`missing-user-doc ${uid}`);
+    expect(auth.createUser.mock.calls).toEqual([]);
+    expect(db.collection.mock.calls).toEqual([["users"]]);
+    expect(doc.mock.calls).toEqual([[uid]]);
+    expect(get.mock.calls).toEqual([[]]);
+    expect(update.mock.calls).toEqual([]);
   });
 
   it("returns null if all processes are successful.", async () => {
     // Prepare
+    const user = { exists: true };
+    get.mockImplementationOnce(() => Promise.resolve(user));
 
     // Call
     const ret = await createAuthUser(auth, db, uid, email);
@@ -127,10 +159,23 @@ describe("createAuthUser", () => {
     // Evaluate
     expect(ret).toBeNull();
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
+    expect(db.collection.mock.calls).toEqual([["users"]]);
+    expect(doc.mock.calls).toEqual([[uid]]);
+    expect(get.mock.calls).toEqual([[]]);
+    expect(update.mock.calls).toEqual([
+      [
+        {
+          email: true,
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
   });
 
   it("returns error if exception occurs in auth.createUser", async () => {
     // Prepare
+    const user = { exists: true };
+    get.mockImplementationOnce(() => Promise.resolve(user));
     auth.createUser.mockImplementationOnce(() => Promise.reject("test/error"));
 
     // Call
@@ -139,5 +184,48 @@ describe("createAuthUser", () => {
     // Evaluate
     expect(ret).toBe("test/error");
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
+    expect(db.collection.mock.calls).toEqual([["users"]]);
+    expect(doc.mock.calls).toEqual([[uid]]);
+    expect(get.mock.calls).toEqual([[]]);
+    expect(update.mock.calls).toEqual([]);
+  });
+});
+
+describe("removeAuthUser", () => {
+  const uid = "123456";
+  const auth = { deleteUser: jest.fn() };
+
+  it("returns 'missing-uid' if uid is missing.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await removeAuthUser(auth, {}, "");
+
+    // Evaluate
+    expect(ret).toBe("missing-uid");
+    expect(auth.deleteUser.mock.calls).toEqual([]);
+  });
+
+  it("returns null if all processes are successful.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await removeAuthUser(auth, {}, uid);
+
+    // Evaluate
+    expect(ret).toBeNull();
+    expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
+  });
+
+  it("returns error if exception occurs in auth.deleteUser", async () => {
+    // Prepare
+    auth.deleteUser.mockImplementationOnce(() => Promise.reject("test/error"));
+
+    // Call
+    const ret = await removeAuthUser(auth, {}, uid);
+
+    // Evaluate
+    expect(ret).toBe("test/error");
+    expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
   });
 });

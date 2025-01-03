@@ -42,10 +42,24 @@ const createAuthUser = async (auth, db, uid, email) => {
     error("missing-email");
     return "missing-email";
   }
+
+  const userRef = db.collection("users").doc(uid);
+
   try {
+    const user = await userRef.get();
+    if (!user.exists) {
+      error(`missing-user-doc ${uid}`);
+      return `missing-user-doc ${uid}`;
+    }
+
     await auth.createUser({
       uid,
       email,
+    });
+
+    await userRef.update({
+      email: true,
+      updatedAt: new Date(),
     });
 
     info(`Create auth user ${uid}, ${email}`);
@@ -57,7 +71,34 @@ const createAuthUser = async (auth, db, uid, email) => {
   return null;
 };
 
+/**
+ * Remove auth user of uid
+ *
+ * @param {Auth} auth
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {string|null|undefined} uid
+ * @returns {Promise<string|null>}
+ */
+const removeAuthUser = async (auth, db, uid) => {
+  if (!uid) {
+    error("missing-uid");
+    return "missing-uid";
+  }
+
+  try {
+    await auth.deleteUser(uid);
+
+    info(`Remove auth user ${uid}`);
+  } catch (e) {
+    error(e);
+    return e.toString();
+  }
+
+  return null;
+};
+
 module.exports = {
   gateForGroupMembers,
   createAuthUser,
+  removeAuthUser,
 };

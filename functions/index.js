@@ -4,7 +4,11 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
-const { gateForGroupMembers, createAuthUser } = require("./account");
+const {
+  gateForGroupMembers,
+  createAuthUser,
+  deleteAuthUser,
+} = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
 
@@ -15,6 +19,12 @@ const app = initializeApp();
 exports.addAuthUser = onCall({ region }, ({ data, auth }) =>
   gateForGroupMembers(getFirestore(app), "managers", auth, () =>
     createAuthUser(getAuth(app), getFirestore(app), data?.uid, data?.email),
+  ),
+);
+
+exports.deleteAuthUser = onCall({ region }, ({ data, auth }) =>
+  gateForGroupMembers(getFirestore(app), "managers", auth, () =>
+    deleteAuthUser(getAuth(app), getFirestore(app), data?.uid),
   ),
 );
 
