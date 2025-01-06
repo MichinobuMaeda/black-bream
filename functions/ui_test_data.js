@@ -28,8 +28,8 @@ const createUiTestData = async (auth, db) => {
     const dataVersionRef = db.collection("service").doc("dataVersion");
     await dataVersionRef.set({ email: emailPrimaryUser });
     const dataVersion = await dataVersionRef.get();
-    const [err, ver] = await updateDataV1(auth, db, dataVersion, null);
-    info(`dataVersion: ${ver}`);
+    const { err, data } = await updateDataV1(auth, db, dataVersion);
+    info(`dataVersion: ${data}`);
     if (err) {
       return { error: err };
     }

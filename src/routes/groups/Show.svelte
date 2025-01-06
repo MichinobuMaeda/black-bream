@@ -5,7 +5,8 @@
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/Content.svelte";
-  import { store, m } from "../../lib/store.svelte.js";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -15,7 +16,7 @@
   /** @type {Props} */
   let { item } = $props();
 
-  let group = $state(store.groups.find((group) => group.id === item));
+  let group = $derived(store.groups.find((group) => group.id === item));
   let users = $derived(
     store.users.filter(
       (user) =>
@@ -37,7 +38,7 @@
   {/if}
 </h3>
 
-<h4>{m().members()}</h4>
+<h4>{m.members()}</h4>
 <Content>
   {#each users as user}
     <a class="flex flex-row gap-1" href="/users/{user.id}" use:link>

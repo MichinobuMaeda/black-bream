@@ -2,64 +2,101 @@
   import { pop } from "svelte-spa-router";
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
   import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
+  import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
   import {
-    store,
-    m,
     createDocument,
+    updateDocument,
     isUniqueUserName,
-  } from "../../lib/store.svelte.js";
+  } from "../../lib/repository.svelte.js";
 
+  // Fields
   let name = $state("");
-  let result = $state(undefined);
+  let groupItems = store.groups.map((group) => ({
+    value: group.id,
+    label: group.name,
+  }));
+  let groups = $state([]);
 
-  const cancel = async () => {
+  let errorDisplayName = $derived(
+    !name ? m.required() : !isUniqueUserName(name) ? m.nameInUse() : "",
+  );
+
+  // Actions
+  let result = $state(null);
+  const changed = true;
+  let valid = $derived(!errorDisplayName);
+  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+
+  const onCancel = async () => {
     name = "";
     pop();
+  };
+
+  const onSave = async () => {
+    name = name.trim();
+
+    result = await createDocument("users", { name, auth: false });
+    const uid = result?.data;
+
+    if (!result.err) {
+      await onCancel();
+      let actions = [];
+      actions.concat(
+        store.groups
+          .filter((group) => groups.includes(group.id))
+          .map((group) =>
+            updateDocument("groups", group.id, {
+              users: [...group.users.filter((id) => id !== uid), uid],
+            }),
+          ),
+      );
+      result.err = (await Promise.all(actions)).reduce(
+        (acc, cur) => (cur?.err ? cur?.err : acc),
+        undefined,
+      );
+    }
+    if (!result.err) {
+      await onCancel();
+    }
   };
 </script>
 
 <h3>
   <span class="size-6"><SvgPersonAdd /></span>
-  {m().create()}
+  {m.create()}
 </h3>
 {#if store.manager}
   <Content>
-    <Wrap>
-      <Fields>
-        <TextFieldOutlined
-          id="displayName"
-          label={m().displayName()}
-          type="text"
-          bind:value={name}
-          message={result !== null || !!name ? m().required() : m().savedData()}
-          error={!name
-            ? m().required()
-            : result !== null && !isUniqueUserName(null, name)
-              ? m().nameInUse()
-              : ""}
-        />
-      </Fields>
-      <Fields>
-        <ActionSave
-          id="updateProfile"
-          changed={true}
-          valid={!!name && isUniqueUserName(null, name)}
-          onCancel={cancel}
-          onSave={async () => {
-            name = name.trim();
-            result = null;
-            result = await createDocument("users", { name, users: [] });
-            if (!result) {
-              await cancel();
-            }
-          }}
-          error={result ? m().errorOnDataSave() : ""}
-        />
-      </Fields>
-    </Wrap>
+    <Fields>
+      <TextFieldOutlined
+        id="displayName"
+        label={m.displayName()}
+        type="text"
+        bind:value={name}
+        message={m.required()}
+        error={errorDisplayName}
+      />
+    </Fields>
+  </Content>
+  <h4>{m.memberOf()}</h4>
+  <Content>
+    <GroupedCheckBox id="groups" items={groupItems} bind:value={groups} />
+  </Content>
+  <Content>
+    <Fields>
+      <ActionSave
+        id="updateProfile"
+        {changed}
+        {valid}
+        {onCancel}
+        {onSave}
+        {error}
+      />
+    </Fields>
   </Content>
 {/if}

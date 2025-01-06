@@ -1,6 +1,7 @@
 <script>
   import { location, push, pop, replace } from "svelte-spa-router";
-  import { store, m } from "../lib/store.svelte.js";
+  import { m } from "../lib/i18n.svelte.js";
+  import { store } from "../lib/store.svelte.js";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
@@ -54,7 +55,7 @@
   <div class="flex flex-auto sm:flex-grow-0 gap-2 xl:items-start items-center">
     {#if $location === "/"}
       <button on:click={() => pop()}
-        ><img src="/favicon.svg" alt={m().appTitle()} class="size-10" /></button
+        ><img src="/favicon.svg" alt={m.appTitle()} class="size-10" /></button
       >
     {:else if history.length > 2}
       <button class="size-10 p-1.5" on:click={() => pop()}
@@ -65,13 +66,13 @@
         ><SvgArrowBackIosNew /></button
       >
     {/if}
-    <span class="hidden xl:flex p-1 text-xl">{m().appTitle()}</span>
+    <span class="hidden xl:flex p-1 text-xl">{m.appTitle()}</span>
   </div>
   {#if store.user}
-    {@render navItem(SvgHome, m().home(), "/")}
-    {@render navItem(SvgGroup, m().groups(), "/groups")}
-    {@render navItem(SvgPerson, m().users(), "/users")}
+    {@render navItem(SvgHome, m.home(), "/")}
+    {@render navItem(SvgGroup, m.groups(), "/groups")}
+    {@render navItem(SvgPerson, m.users(), "/users")}
   {:else}
-    {@render navItem(SvgLogin, m().login(), "/")}
+    {@render navItem(SvgLogin, m.login(), "/")}
   {/if}
 </header>

@@ -1,6 +1,6 @@
 const { info, error } = require("firebase-functions/logger");
 
-const { createAuthUser } = require("./account");
+const { addAuthUser } = require("./account");
 
 /**
  * Deploy on workflows
@@ -8,10 +8,10 @@ const { createAuthUser } = require("./account");
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @param {function} next
- * @returns {Promise<[string|undefined, number]>}
+ * @param {function|null} next
+ * @returns {Promise<object>}
  */
-const updateDataV1 = async (auth, db, deleted, next) => {
+const updateDataV1 = async (auth, db, deleted, next = null) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 1) {
@@ -21,7 +21,7 @@ const updateDataV1 = async (auth, db, deleted, next) => {
       const email = deleted.get("email");
       if (!email) {
         error("missing-email");
-        return ["missing-email", 0];
+        return { err: "missing-email", data: ver };
       }
 
       await db
@@ -50,9 +50,9 @@ site.manager@example.com
       });
       const uid = user.id;
 
-      const err = await createAuthUser(auth, db, uid, email);
+      const { err } = await addAuthUser(auth, db, uid, email);
       if (err) {
-        return [err, ver];
+        return { err, data: ver };
       }
 
       await db
@@ -75,20 +75,19 @@ site.manager@example.com
           updatedAt: new Date(),
         });
 
-      ver = 1;
-
       await deleted.ref.set({
-        ver,
-        err,
+        ver: 1,
+        err: err ?? null,
         updatedAt: new Date(),
       });
     } catch (e) {
-      error(e);
-      err = e.toString();
+      error(e.code ?? e.toString());
+      err = e.code ?? e.toString();
+      return { err: err, data: ver };
     }
   }
 
-  return next ? next() : [err, ver];
+  return next ? next() : { err: undefined, data: 1 };
 };
 
 module.exports = {

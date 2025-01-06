@@ -4,49 +4,60 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
   import {
-    store,
-    m,
     updateDocument,
     isUniqueUserName,
-  } from "../../lib/store.svelte.js";
+  } from "../../lib/repository.svelte.js";
 
+  // Fields
   let name = $state(store.user.name);
-  let result = $state(undefined);
+  let errorDisplayName = $derived(
+    !name
+      ? m.required()
+      : !isUniqueUserName(name, store.user.id)
+        ? m.nameInUse()
+        : "",
+  );
+
+  // Actions
+  let result = $state(null);
+  let changed = $derived(name !== store.user.name);
+  let valid = $derived(!errorDisplayName);
+  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+
+  const onCancel = () => {
+    name = store.user.name;
+  };
+
+  const onSave = async () => {
+    name = name.trim();
+    result = await updateDocument("users", store.user.id, { name });
+  };
 </script>
 
-<h3>{m().profile()}</h3>
+<h3>{m.profile()}</h3>
 <Content>
   <Wrap>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m().displayName()}
+        label={m.displayName()}
         type="text"
         bind:value={name}
-        message={result !== null || name !== store.user.name
-          ? `${m().current()}: ${store.user.name}`
-          : m().savedData()}
-        error={!name
-          ? m().required()
-          : name !== store.user.name && !isUniqueUserName(store.user.id, name)
-            ? m().nameInUse()
-            : ""}
+        message={m.current(store.user.name)}
+        error={errorDisplayName}
       />
     </Fields>
     <Fields>
       <ActionSave
         id="updateProfile"
-        changed={name !== store.user.name}
-        valid={!!name && isUniqueUserName(store.user.id, name)}
-        onCancel={() => {
-          name = store.user.name;
-        }}
-        onSave={async () => {
-          name = name.trim();
-          result = await updateDocument("users", store.user.id, { name });
-        }}
-        error={result ? m().errorOnDataSave() : ""}
+        {changed}
+        {valid}
+        {onCancel}
+        {onSave}
+        {error}
         cancelOnlyChanged
       />
     </Fields>

@@ -7,12 +7,12 @@
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import Switch from "../../lib/components/Switch.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
   import {
-    store,
-    m,
     isUniqueGroupName,
     updateDocument,
-  } from "../../lib/store.svelte.js";
+  } from "../../lib/repository.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -23,86 +23,88 @@
   let { item } = $props();
 
   let group = store.groups.find((group) => group.id === item);
+
+  // Fields
   let name = $state(group.name);
   let unavailable = $state(!!group.deletedAt);
-  let result = $state(undefined);
 
-  let allUsers = store.users.filter((user) => !user.deletedAt);
-  let userItems = allUsers.map((user) => ({
+  let errorDisplayName = $derived(
+    !name
+      ? m.required()
+      : !isUniqueGroupName(group.id, name)
+        ? m.nameInUse()
+        : "",
+  );
+
+  // Actions
+  let result = $state(null);
+
+  let userItems = store.users.map((user) => ({
     value: user.id,
     label: user.name,
   }));
-  const getSelectedUsers = () =>
-    allUsers
-      .filter((user) => (group.users ?? []).includes(user.id))
-      .map((group) => group.id);
-  let users = $state(getSelectedUsers());
+  let currentUsers = $derived(group.users ?? []);
+  let users = $state(group.users ?? []);
   const isSelectedUsersChanged = () =>
-    users.length !== getSelectedUsers().length ||
-    !users.every((id) => getSelectedUsers().includes(id));
-  const cancel = async () => {
+    users.length !== currentUsers.length ||
+    !users.every((id) => currentUsers.includes(id));
+
+  let changed = $derived(
+    name !== group.name ||
+      unavailable !== !!group.deletedAt ||
+      isSelectedUsersChanged(),
+  );
+  let valid = $derived(!errorDisplayName);
+  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+
+  const onCancel = async () => {
     name = group.name;
     pop();
+  };
+
+  const onSave = async () => {
+    name = name.trim();
+
+    result = await updateDocument("groups", group.id, {
+      name,
+      users,
+      deletedAt: unavailable ? new Date() : null,
+    });
+
+    if (!result.err) {
+      await onCancel();
+    }
   };
 </script>
 
 <h3>
   <span class="size-6"><SvgEdit /></span>
-  {m().edit()}
+  {m.edit()}
 </h3>
 {#if store.manager}
   <Content>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m().displayName()}
+        label={m.displayName()}
         type="text"
         bind:value={name}
-        message={result !== null || name !== group.name
-          ? `${m().current()}: ${group.name}`
-          : m().savedData()}
-        error={!name
-          ? m().required()
-          : result !== null &&
-              name !== group.name &&
-              !isUniqueGroupName(group.id, name)
-            ? m().nameInUse()
-            : ""}
+        message={m.current(group.name)}
+        error={errorDisplayName}
       />
       {#if !["admins", "managers"].includes(group.id)}
         <div class="flex grow gap-4 items-center">
           <Switch id="unavailable" bind:checked={unavailable} />
-          {m().unavailable()}
+          {m.unavailable()}
         </div>
       {/if}
     </Fields>
   </Content>
-  <h4>{m().member()}</h4>
+  <h4>{m.members()}</h4>
   <Content>
     <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
   </Content>
   <Content>
-    <ActionSave
-      id="saveGroup"
-      changed={name !== group.name ||
-        unavailable !== !!group.deletedAt ||
-        isSelectedUsersChanged()}
-      valid={!!name && isUniqueGroupName(group.id, name)}
-      onCancel={cancel}
-      onSave={async () => {
-        name = name.trim();
-        result = null;
-        result = await updateDocument("groups", group.id, {
-          name,
-          users,
-          deletedAt: unavailable ? new Date() : null,
-        });
-        if (!result) {
-          await cancel();
-        }
-      }}
-      error={result ? m().errorOnDataSave() : ""}
-      wide
-    />
+    <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
   </Content>
 {/if}

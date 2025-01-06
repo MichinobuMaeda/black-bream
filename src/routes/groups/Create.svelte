@@ -6,25 +6,44 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
   import {
-    store,
-    m,
     createDocument,
     isUniqueGroupName,
-  } from "../../lib/store.svelte.js";
+  } from "../../lib/repository.svelte.js";
 
+  // Fields
   let name = $state("");
-  let result = $state(undefined);
+  let errorDisplayName = $derived(
+    !name ? m.required() : !isUniqueGroupName(null, name) ? m.nameInUse() : "",
+  );
 
-  const cancel = async () => {
+  // Actions
+  let result = $state(null);
+  const changed = true;
+  let valid = $derived(!errorDisplayName);
+  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+
+  const onCancel = async () => {
     name = "";
     pop();
+  };
+
+  const onSave = async () => {
+    name = name.trim();
+
+    result = await createDocument("groups", { name, users: [] });
+
+    if (!result.err) {
+      await onCancel();
+    }
   };
 </script>
 
 <h3>
   <span class="size-6"><SvgGroupAdd /></span>
-  {m().create()}
+  {m.create()}
 </h3>
 {#if store.manager}
   <Content>
@@ -32,33 +51,15 @@
       <Fields>
         <TextFieldOutlined
           id="displayName"
-          label={m().displayName()}
+          label={m.displayName()}
           type="text"
           bind:value={name}
-          message={result !== null || !!name ? m().required() : m().savedData()}
-          error={!name
-            ? m().required()
-            : result !== null && !isUniqueGroupName(null, name)
-              ? m().nameInUse()
-              : ""}
+          message={m.required()}
+          error={errorDisplayName}
         />
       </Fields>
       <Fields>
-        <ActionSave
-          id="updateProfile"
-          changed={true}
-          valid={!!name && isUniqueGroupName(null, name)}
-          onCancel={cancel}
-          onSave={async () => {
-            name = name.trim();
-            result = null;
-            result = await createDocument("groups", { name, users: [] });
-            if (!result) {
-              await cancel();
-            }
-          }}
-          error={result ? m().errorOnDataSave() : ""}
-        />
+        <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
       </Fields>
     </Wrap>
   </Content>

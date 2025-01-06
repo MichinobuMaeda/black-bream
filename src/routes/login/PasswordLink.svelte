@@ -9,19 +9,28 @@
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
   import { m } from "../../lib/i18n.svelte.js";
   import { store } from "../../lib/store.svelte.js";
-  import { loginWithEmailLink } from "../../lib/repository.svelte.js";
+  import { sendPasswordResetLink } from "../../lib/repository.svelte.js";
   import { validateEmail } from "../../lib/validator";
 
+  // Fields
   let email = $state("");
+
+  let errorEmail = $derived(
+    !email || validateEmail(email) ? "" : m.validEmailAddress(),
+  );
+
+  // Actions
   let result = $state(null);
   let timeoutId = null;
+
+  let valid = $derived(!validateEmail(email));
 
   const onClick = async () => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
 
-    result = await loginWithEmailLink(email, store.conf.webAppUrl);
+    result = await sendPasswordResetLink(email);
 
     if (!result.err) {
       email = "";
@@ -36,31 +45,33 @@
   };
 </script>
 
-<h4>{m.loginWithoutPassword()}</h4>
+<h4>{m.setPassword()}</h4>
 <Content>
-  <p>{m.allowEmailsFrom(store.conf.autoSendEmail)}</p>
+  <div>
+    {m.descPasswordLink()}{m.allowEmailsFrom(store.conf.autoSendEmail)}
+  </div>
+  {#if result?.err}
+    <ErrorMessage>{m.errorOnDataSend()}</ErrorMessage>
+  {:else if result}
+    <SuccessMessage>{m.sentPasswordLink()}</SuccessMessage>
+  {/if}
   <Wrap>
     <Fields>
       <TextFieldOutlined
-        id="EmailLink.email"
+        id="passwordLinkSendTo"
         label={m.email()}
         type="email"
         bind:value={email}
-        error={!email || validateEmail(email) ? "" : m.validEmailAddress()}
+        error={errorEmail}
       />
     </Fields>
     <Fields>
-      {#if result?.err}
-        <ErrorMessage>{m.errorOnDataSend()}</ErrorMessage>
-      {:else if result}
-        <SuccessMessage>{m.sentEmailLink()}</SuccessMessage>
-      {/if}
       <Actions>
         <ButtonFilled
-          id="EmailLink.send"
+          id="sendPasswordResetLink"
           label={m.send()}
           {onClick}
-          disabled={!validateEmail(email)}
+          disabled={valid}
         />
       </Actions>
     </Fields>

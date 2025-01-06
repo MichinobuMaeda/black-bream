@@ -5,23 +5,28 @@
   import SvgGroupAdd from "../../lib/icons/SvgGroupAdd.svelte";
   import SvgGroup from "../../lib/icons/SvgGroup.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
-  import { store, m } from "../../lib/store.svelte.js";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
+
+  let groups = $derived(
+    store.groups.filter((group) => store.manager || !group.deletedAt),
+  );
 </script>
 
 <h3>
-  <span class="flex grow">{m().list()}</span>
+  <span class="flex grow">{m.list()}</span>
   {#if store.manager}
     <ButtonOutlined
       id="create"
       icon={SvgGroupAdd}
-      label={m().create()}
+      label={m.create()}
       onClick={() => push("/groups/new")}
       dense
     />
   {/if}
 </h3>
 <Content>
-  {#each store.groups.filter((group) => store.manager || !group.deletedAt) as group}
+  {#each groups as group}
     <a class="flex flex-row gap-1" href="/groups/{group.id}" use:link>
       <span class="size-6">
         {#if group.deletedAt}

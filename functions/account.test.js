@@ -2,8 +2,10 @@ const { describe, it, expect, afterEach } = require("@jest/globals");
 
 const {
   gateForGroupMembers,
-  createAuthUser,
+  addAuthUser,
+  updateAuthEmail,
   removeAuthUser,
+  getAuthUser,
 } = require("./account.js");
 
 jest.mock("firebase-functions/logger");
@@ -26,7 +28,7 @@ describe("gateForGroupMembers", () => {
     const ret = await gateForGroupMembers(db, {}, "group-id", action);
 
     // Evaluate
-    expect(ret).toEqual(["missing-uid", undefined]);
+    expect(ret).toEqual({ err: "missing-uid", data: undefined });
     expect(db.collection.mock.calls).toEqual([]);
     expect(doc.mock.calls).toEqual([]);
     expect(get.mock.calls).toEqual([]);
@@ -41,7 +43,7 @@ describe("gateForGroupMembers", () => {
     const ret = await gateForGroupMembers(db, { uid }, "group-id", action);
 
     // Evaluate
-    expect(ret).toEqual(["missing-user-doc", undefined]);
+    expect(ret).toEqual({ err: "missing-user-doc", data: undefined });
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
     expect(get.mock.calls).toEqual([[]]);
@@ -60,7 +62,7 @@ describe("gateForGroupMembers", () => {
     const ret = await gateForGroupMembers(db, { uid }, group.id, action);
 
     // Evaluate
-    expect(ret).toEqual(["permission-denied", undefined]);
+    expect(ret).toEqual({ err: "permission-denied", data: undefined });
     expect(db.collection.mock.calls).toEqual([["users"], ["groups"]]);
     expect(doc.mock.calls).toEqual([[uid], [group.id]]);
     expect(get.mock.calls).toEqual([[], []]);
@@ -76,14 +78,14 @@ describe("gateForGroupMembers", () => {
       .mockImplementationOnce(() => Promise.resolve(group));
     group.get.mockImplementationOnce(() => [uid]);
     action.mockImplementationOnce(() =>
-      Promise.resolve([undefined, "test-result"]),
+      Promise.resolve({ err: undefined, data: "test-result" }),
     );
 
     // Call
     const ret = await gateForGroupMembers(db, { uid }, group.id, action);
 
     // Evaluate
-    expect(ret).toEqual([undefined, "test-result"]);
+    expect(ret).toEqual({ err: undefined, data: "test-result" });
     expect(action.mock.calls).toEqual([[]]);
     expect(db.collection.mock.calls).toEqual([["users"], ["groups"]]);
     expect(doc.mock.calls).toEqual([[uid], [group.id]]);
@@ -92,43 +94,40 @@ describe("gateForGroupMembers", () => {
   });
 });
 
-describe("createAuthUser", () => {
+describe("addAuthUser", () => {
   const uid = "123456";
   const email = "text@example.com";
   const auth = { createUser: jest.fn() };
   const get = jest.fn();
-  const update = jest.fn();
-  const doc = jest.fn(() => ({ get, update }));
+  const doc = jest.fn(() => ({ get }));
   const db = { collection: jest.fn(() => ({ doc })) };
 
   it("returns 'missing-uid' if uid is missing.", async () => {
     // Prepare
 
     // Call
-    const ret = await createAuthUser(auth, db, "", email);
+    const ret = await addAuthUser(auth, db, "", email);
 
     // Evaluate
-    expect(ret).toBe("missing-uid");
+    expect(ret).toEqual({ err: "missing-uid" });
     expect(auth.createUser.mock.calls).toEqual([]);
     expect(db.collection.mock.calls).toEqual([]);
     expect(doc.mock.calls).toEqual([]);
     expect(get.mock.calls).toEqual([]);
-    expect(update.mock.calls).toEqual([]);
   });
 
   it("returns 'missing-email' if email is missing.", async () => {
     // Prepare
 
     // Call
-    const ret = await createAuthUser(auth, db, uid, "");
+    const ret = await addAuthUser(auth, db, uid, "");
 
     // Evaluate
-    expect(ret).toBe("missing-email");
+    expect(ret).toEqual({ err: "missing-email" });
     expect(auth.createUser.mock.calls).toEqual([]);
     expect(db.collection.mock.calls).toEqual([]);
     expect(doc.mock.calls).toEqual([]);
     expect(get.mock.calls).toEqual([]);
-    expect(update.mock.calls).toEqual([]);
   });
 
   it("returns 'missing-user-doc' if user document is missing.", async () => {
@@ -137,15 +136,14 @@ describe("createAuthUser", () => {
     get.mockImplementationOnce(() => Promise.resolve(user));
 
     // Call
-    const ret = await createAuthUser(auth, db, uid, email);
+    const ret = await addAuthUser(auth, db, uid, email);
 
     // Evaluate
-    expect(ret).toBe(`missing-user-doc ${uid}`);
+    expect(ret).toEqual({ err: `missing-user-doc ${uid}` });
     expect(auth.createUser.mock.calls).toEqual([]);
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
     expect(get.mock.calls).toEqual([[]]);
-    expect(update.mock.calls).toEqual([]);
   });
 
   it("returns null if all processes are successful.", async () => {
@@ -154,22 +152,14 @@ describe("createAuthUser", () => {
     get.mockImplementationOnce(() => Promise.resolve(user));
 
     // Call
-    const ret = await createAuthUser(auth, db, uid, email);
+    const ret = await addAuthUser(auth, db, uid, email);
 
     // Evaluate
-    expect(ret).toBeNull();
+    expect(ret).toEqual({ err: undefined });
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
     expect(get.mock.calls).toEqual([[]]);
-    expect(update.mock.calls).toEqual([
-      [
-        {
-          email: true,
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
   });
 
   it("returns error if exception occurs in auth.createUser", async () => {
@@ -179,15 +169,65 @@ describe("createAuthUser", () => {
     auth.createUser.mockImplementationOnce(() => Promise.reject("test/error"));
 
     // Call
-    const ret = await createAuthUser(auth, db, uid, email);
+    const ret = await addAuthUser(auth, db, uid, email);
 
     // Evaluate
-    expect(ret).toBe("test/error");
+    expect(ret).toEqual({ err: "test/error" });
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
     expect(get.mock.calls).toEqual([[]]);
-    expect(update.mock.calls).toEqual([]);
+  });
+});
+
+describe("updateAuthEmail", () => {
+  const uid = "123456";
+  const email = "test@example.com";
+  const auth = { updateUser: jest.fn() };
+
+  it("returns 'missing-uid' if uid is missing.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await updateAuthEmail(auth, "", email);
+
+    // Evaluate
+    expect(ret).toEqual({ err: "missing-uid" });
+    expect(auth.updateUser.mock.calls).toEqual([]);
+  });
+
+  it("returns 'missing-email' if email is missing.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await updateAuthEmail(auth, uid, "");
+
+    // Evaluate
+    expect(ret).toEqual({ err: "missing-email" });
+    expect(auth.updateUser.mock.calls).toEqual([]);
+  });
+
+  it("returns null if all processes are successful.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await updateAuthEmail(auth, uid, email);
+
+    // Evaluate
+    expect(ret).toEqual({ err: undefined });
+    expect(auth.updateUser.mock.calls).toEqual([[uid, { email }]]);
+  });
+
+  it("returns error if exception occurs in auth.updateEmail", async () => {
+    // Prepare
+    auth.updateUser.mockImplementationOnce(() => Promise.reject("test/error"));
+
+    // Call
+    const ret = await updateAuthEmail(auth, uid, email);
+
+    // Evaluate
+    expect(ret).toEqual({ err: "test/error" });
+    expect(auth.updateUser.mock.calls).toEqual([[uid, { email }]]);
   });
 });
 
@@ -199,10 +239,10 @@ describe("removeAuthUser", () => {
     // Prepare
 
     // Call
-    const ret = await removeAuthUser(auth, {}, "");
+    const ret = await removeAuthUser(auth, "");
 
     // Evaluate
-    expect(ret).toBe("missing-uid");
+    expect(ret).toEqual({ err: "missing-uid" });
     expect(auth.deleteUser.mock.calls).toEqual([]);
   });
 
@@ -210,10 +250,10 @@ describe("removeAuthUser", () => {
     // Prepare
 
     // Call
-    const ret = await removeAuthUser(auth, {}, uid);
+    const ret = await removeAuthUser(auth, uid);
 
     // Evaluate
-    expect(ret).toBeNull();
+    expect(ret).toEqual({ err: undefined });
     expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
   });
 
@@ -222,10 +262,65 @@ describe("removeAuthUser", () => {
     auth.deleteUser.mockImplementationOnce(() => Promise.reject("test/error"));
 
     // Call
-    const ret = await removeAuthUser(auth, {}, uid);
+    const ret = await removeAuthUser(auth, uid);
 
     // Evaluate
-    expect(ret).toBe("test/error");
+    expect(ret).toEqual({ err: "test/error" });
     expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
+  });
+});
+
+describe("getAuthUser", () => {
+  const uid = "123456";
+  const auth = { getUser: jest.fn() };
+
+  it("returns 'missing-uid' if uid is missing.", async () => {
+    // Prepare
+
+    // Call
+    const ret = await getAuthUser(auth, "");
+
+    // Evaluate
+    expect(ret).toEqual({ err: "missing-uid", data: undefined });
+    expect(auth.getUser.mock.calls).toEqual([]);
+  });
+
+  it("returns user if all processes are successful.", async () => {
+    // Prepare
+    const user = { uid };
+    auth.getUser.mockImplementationOnce(() => Promise.resolve(user));
+
+    // Call
+    const ret = await getAuthUser(auth, uid);
+
+    // Evaluate
+    expect(ret).toEqual({ err: undefined, data: user });
+    expect(auth.getUser.mock.calls).toEqual([[uid]]);
+  });
+
+  it("returns null if user is not found.", async () => {
+    // Prepare
+    auth.getUser.mockImplementationOnce(() =>
+      Promise.reject({ code: "auth/user-not-found" }),
+    );
+
+    // Call
+    const ret = await getAuthUser(auth, uid);
+
+    // Evaluate
+    expect(ret).toEqual({ err: undefined, data: null });
+    expect(auth.getUser.mock.calls).toEqual([[uid]]);
+  });
+
+  it("returns error if exception occurs in auth.getUser", async () => {
+    // Prepare
+    auth.getUser.mockImplementationOnce(() => Promise.reject("test/error"));
+
+    // Call
+    const ret = await getAuthUser(auth, uid);
+
+    // Evaluate
+    expect(ret).toEqual({ err: "test/error", data: undefined });
+    expect(auth.getUser.mock.calls).toEqual([[uid]]);
   });
 });

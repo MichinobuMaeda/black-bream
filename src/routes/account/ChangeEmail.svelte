@@ -1,9 +1,9 @@
 <script>
   import Content from "../../lib/Content.svelte";
-  import { m } from "../../lib/store.svelte.js";
+  import { m } from "../../lib/i18n.svelte.js";
 </script>
 
-<h3>{m().changeEmail()}</h3>
+<h3>{m.changeEmail()}</h3>
 <Content>
-  <div>{m().guideChangingEmail()}</div>
+  <div>{m.guideChangingEmail()}</div>
 </Content>

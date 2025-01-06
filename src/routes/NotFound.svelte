@@ -5,12 +5,12 @@
   import Content from "../lib/Content.svelte";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
-  import { m } from "../lib/store.svelte.js";
+  import { m } from "../lib/i18n.svelte.js";
 </script>
 
-<h2><SvgError /> {m().pageNotFound()}</h2>
+<h2><SvgError /> {m.pageNotFound()}</h2>
 <Content>
-  <div>{m().NavigationForPageNotFound()}</div>
+  <div>{m.NavigationForPageNotFound()}</div>
   <div class="flex flex-row gap-8 justify-center">
     {#if window.history.length > 2}
       <button
@@ -18,12 +18,12 @@
         on:click={() => history.back()}
       >
         <span class="h-6"><SvgArrowBackIosNew /></span>
-        {m().goBack()}
+        {m.goBack()}
       </button>
     {/if}
     <a href="/" use:link class="flex flex-row gap-1">
       <span class="h-6"><SvgHome /></span>
-      {m().home()}
+      {m.home()}
     </a>
   </div>
 </Content>

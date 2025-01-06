@@ -1,17 +1,23 @@
 /* global $state */
-import { logout } from "./store.svelte.js";
+import { logout } from "./repository.svelte.js";
 
-const localeKey = "black_bream_watchdog";
+const localKeyWatchdogTimeout = "black_bream_watchdog_timeout";
 
 let watchdogTimeout = $state(0);
 let timeoutId = null;
 
-watchdogTimeout = Number(localStorage.getItem(localeKey)) || 0;
+watchdogTimeout = Number(localStorage.getItem(localKeyWatchdogTimeout)) || 0;
 console.log("watchdogThresholdMinute", watchdogTimeout);
 
 const startWatchDog = () => {
   if (watchdogTimeout > 0) {
-    timeoutId = setTimeout(() => logout(), watchdogTimeout * 60 * 1000);
+    timeoutId = setTimeout(
+      () => {
+        logout();
+        timeoutId = null;
+      },
+      watchdogTimeout * 60 * 1000,
+    );
   }
 };
 
@@ -35,6 +41,6 @@ export const getWatchdogTimeout = () => watchdogTimeout;
  */
 export const setWatchdogTimeout = (value) => {
   watchdogTimeout = Number(value);
-  localStorage.setItem(localeKey, watchdogTimeout.toString());
+  localStorage.setItem(localKeyWatchdogTimeout, watchdogTimeout.toString());
   stopWatchdog();
 };

@@ -2,37 +2,49 @@
   import Content from "../../lib/Content.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import { store, m, updateDocument } from "../../lib/store.svelte.js";
+  import { m } from "../../lib/i18n.svelte.js";
+  import { store } from "../../lib/store.svelte.js";
+  import { updateDocument } from "../../lib/repository.svelte.js";
 
+  // Fields
   let desc = $state(store.conf.desc);
-  let result = $state(undefined);
+
+  let errorDesc = $derived(desc ? "" : m.required());
+
+  // Actions
+  let result = $state(null);
+  let changed = $derived(desc !== store.conf.desc);
+  let valid = $derived(!errorDesc);
+  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+
+  const onCancel = () => {
+    desc = store.conf.desc;
+  };
+
+  const onSave = async () => {
+    result = await updateDocument("service", "conf", { desc });
+  };
 </script>
 
-<h3>{m().siteDesc()}</h3>
+<h3>{m.siteDesc()}</h3>
 <Content>
   <TextFieldOutlined
     id="siteDesc"
-    label={m().siteDesc()}
+    label={m.siteDesc()}
     type="text"
     bind:value={desc}
     lines={10}
-    message={result !== null || desc !== store.conf.desc
-      ? m().inMarkdown()
-      : m().savedData()}
-    error={desc ? "" : m().required()}
+    message={m.inMarkdown()}
+    error={errorDesc}
   />
   <ActionSave
     id="siteDesc"
-    changed={desc !== store.conf.desc}
-    valid={!!desc}
-    onCancel={() => {
-      desc = store.conf.desc;
-    }}
-    onSave={async () => {
-      result = await updateDocument("service", "conf", { desc });
-    }}
-    error={!result ? "" : m().errorOnDataSave()}
+    {changed}
+    {valid}
+    {onCancel}
+    {onSave}
+    {error}
     cancelOnlyChanged
-    wide={true}
+    wide
   />
 </Content>

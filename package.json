@@ -1,7 +1,7 @@
 {
   "name": "black-bream",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -13,7 +13,7 @@
     "url": "git+https://github.com/MichinobuMaeda/black-bream"
   },
   "scripts": {
-    "dev": "vite --port 8000",
+    "dev": "vite",
     "lint": "eslint",
     "build": "vite build",
     "start": "npx firebase emulators:exec --only functions,storage,auth,firestore --ui 'npm run test:data && npm run dev'",

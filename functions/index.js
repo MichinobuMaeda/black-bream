@@ -4,11 +4,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
-const {
-  gateForGroupMembers,
-  createAuthUser,
-  deleteAuthUser,
-} = require("./account");
+const account = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
 
@@ -17,14 +13,31 @@ const region = "asia-northeast2";
 const app = initializeApp();
 
 exports.addAuthUser = onCall({ region }, ({ data, auth }) =>
-  gateForGroupMembers(getFirestore(app), "managers", auth, () =>
-    createAuthUser(getAuth(app), getFirestore(app), data?.uid, data?.email),
+  account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
+    account.addAuthUser(
+      getAuth(app),
+      getFirestore(app),
+      data?.uid,
+      data?.email,
+    ),
+  ),
+);
+
+exports.updateAuthEmail = onCall({ region }, ({ data, auth }) =>
+  account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
+    account.updateAuthEmail(getAuth(app), data?.uid, data?.email),
   ),
 );
 
 exports.deleteAuthUser = onCall({ region }, ({ data, auth }) =>
-  gateForGroupMembers(getFirestore(app), "managers", auth, () =>
-    deleteAuthUser(getAuth(app), getFirestore(app), data?.uid),
+  account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
+    account.deleteAuthUser(getAuth(app), data?.uid),
+  ),
+);
+
+exports.getAuthUser = onCall({ region }, ({ data, auth }) =>
+  account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
+    account.getAuthUser(getAuth(app), data?.uid),
   ),
 );
 
@@ -38,7 +51,6 @@ exports.onDataVersionDeleted = onDocumentDeleted(
 );
 
 // [Caution!!] Don't deploy this function to production
-// eslint-disable-next-line no-unused-vars
-exports.uiTestData = onCall({ region }, (_) =>
+exports.uiTestData = onCall({ region }, () =>
   createUiTestData(getAuth(app), getFirestore(app)),
 );

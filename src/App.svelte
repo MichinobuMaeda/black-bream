@@ -1,9 +1,9 @@
 <script>
-  import { activateStore } from "./lib/store.svelte.js";
+  import { activateRepository } from "./lib/repository.svelte.js";
   import Layout from "./layout/layout.svelte";
   import Routes from "./routes.svelte";
 
-  activateStore();
+  activateRepository();
 </script>
 
 <Layout>
