@@ -7,16 +7,15 @@
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import { sendPasswordResetLink } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { sendPasswordResetLink } from "../../lib/firebase.js";
   import { validateEmail } from "../../lib/validator";
 
   // Fields
   let email = $state("");
 
   let errorEmail = $derived(
-    !email || validateEmail(email) ? "" : m.validEmailAddress(),
+    !email || validateEmail(email) ? "" : t().validEmailAddress(),
   );
 
   // Actions
@@ -45,21 +44,21 @@
   };
 </script>
 
-<h4>{m.setPassword()}</h4>
+<h4>{t().setPassword()}</h4>
 <Content>
   <div>
-    {m.descPasswordLink()}{m.allowEmailsFrom(store.conf.autoSendEmail)}
+    {t().descPasswordLink()}{t().allowEmailsFrom(store.conf.autoSendEmail)}
   </div>
   {#if result?.err}
-    <ErrorMessage>{m.errorOnDataSend()}</ErrorMessage>
+    <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
   {:else if result}
-    <SuccessMessage>{m.sentPasswordLink()}</SuccessMessage>
+    <SuccessMessage>{t().sentPasswordLink()}</SuccessMessage>
   {/if}
   <Wrap>
     <Fields>
       <TextFieldOutlined
         id="passwordLinkSendTo"
-        label={m.email()}
+        label={t().email()}
         type="email"
         bind:value={email}
         error={errorEmail}
@@ -69,7 +68,7 @@
       <Actions>
         <ButtonFilled
           id="sendPasswordResetLink"
-          label={m.send()}
+          label={t().send()}
           {onClick}
           disabled={valid}
         />

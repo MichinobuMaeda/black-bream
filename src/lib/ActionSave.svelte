@@ -5,7 +5,7 @@
   import ErrorMessage from "./ErrorMessage.svelte";
   import SvgClose from "./icons/SvgClose.svelte";
   import SvgCheck from "./icons/SvgCheck.svelte";
-  import { m } from "./i18n.svelte.js";
+  import { t } from "./store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -36,14 +36,14 @@
   <ButtonOutlined
     id={`${id}-cancel`}
     icon={SvgClose}
-    label={m.cancel()}
+    label={t().cancel()}
     onClick={onCancel}
     disabled={cancelOnlyChanged && !changed}
   />
   <ButtonFilled
     id={`${id}-save`}
     icon={SvgCheck}
-    label={m.save()}
+    label={t().save()}
     onClick={onSave}
     disabled={!changed || !valid}
   />

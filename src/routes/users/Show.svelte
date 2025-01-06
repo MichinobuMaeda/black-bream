@@ -5,9 +5,8 @@
   import SvgGroup from "../../lib/icons/SvgGroup.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/Content.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import { groupsOfUser } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { groupsOfUser } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -18,7 +17,7 @@
   let { item } = $props();
 
   let user = $derived(store.users.find((user) => user.id === item));
-  let groups = $derived(groupsOfUser(user.id));
+  let groups = $derived(groupsOfUser(store, user.id));
 </script>
 
 <h3>
@@ -32,7 +31,7 @@
     />
   {/if}
 </h3>
-<h4>{m.memberOf()}</h4>
+<h4>{t().memberOf()}</h4>
 <Content>
   {#each groups as group}
     <a class="flex flex-row gap-1" href="/groups/{group.id}" use:link>

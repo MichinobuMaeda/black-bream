@@ -5,8 +5,7 @@
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/Content.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -38,7 +37,7 @@
   {/if}
 </h3>
 
-<h4>{m.members()}</h4>
+<h4>{t().members()}</h4>
 <Content>
   {#each users as user}
     <a class="flex flex-row gap-1" href="/users/{user.id}" use:link>

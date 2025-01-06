@@ -1,5 +1,5 @@
 <script>
-  import { m } from "../lib/i18n.svelte.js";
+  import { t } from "../lib/store.svelte.js";
 </script>
 
 <div
@@ -7,8 +7,8 @@
   bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow
   text-lightTertiary dark:text-darkTertiary"
 >
-  <img src="/favicon.svg" alt={m.appTitle()} class="size-24" />
-  <div class="text-xl">{m.appTitle()}</div>
+  <img src="/favicon.svg" alt={t().appTitle()} class="size-24" />
+  <div class="text-xl">{t().appTitle()}</div>
   <div class="animate-pulse">Loading ...</div>
   <svg
     class="animate-spin size-48 opacity-50"

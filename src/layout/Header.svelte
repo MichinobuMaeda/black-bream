@@ -6,25 +6,23 @@
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
   import SvgInfo from "../lib/icons/SvgInfo.svelte";
-  import { locales, getLocale, setLocale } from "../lib/i18n.svelte.js";
+  import { setAuthLocale } from "../lib/firebase";
+  import { locales } from "../lib/i18n.js";
+  import { saveLocale } from "../lib/localstorage";
   import { store } from "../lib/store.svelte.js";
-
-  let locale = $state(getLocale());
-
-  $effect(() => {
-    setLocale(locale);
-  });
 </script>
 
 {#snippet localeItem(/** @type {string} */ value, /** @type {string} */ label)}
   <ButtonText
     id={`locale-${value}`}
-    icon={locale === value ? SvgCheck : null}
+    icon={store.locale === value ? SvgCheck : null}
     {label}
     onClick={() => {
-      locale = value;
+      store.locale = value;
+      saveLocale(value);
+      setAuthLocale(value);
     }}
-    disabled={locale === value}
+    disabled={store.locale === value}
   />
 {/snippet}
 

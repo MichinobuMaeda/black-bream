@@ -6,13 +6,12 @@
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
   import {
     createDocument,
     updateDocument,
     isUniqueUserName,
-  } from "../../lib/repository.svelte.js";
+  } from "../../lib/firebase.js";
 
   // Fields
   let name = $state("");
@@ -23,14 +22,18 @@
   let groups = $state([]);
 
   let errorDisplayName = $derived(
-    !name ? m.required() : !isUniqueUserName(name) ? m.nameInUse() : "",
+    !name
+      ? t().required()
+      : !isUniqueUserName(store, name)
+        ? t().nameInUse()
+        : "",
   );
 
   // Actions
   let result = $state(null);
   const changed = true;
   let valid = $derived(!errorDisplayName);
-  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
     name = "";
@@ -68,22 +71,22 @@
 
 <h3>
   <span class="size-6"><SvgPersonAdd /></span>
-  {m.create()}
+  {t().create()}
 </h3>
 {#if store.manager}
   <Content>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m.displayName()}
+        label={t().displayName()}
         type="text"
         bind:value={name}
-        message={m.required()}
+        message={t().required()}
         error={errorDisplayName}
       />
     </Fields>
   </Content>
-  <h4>{m.memberOf()}</h4>
+  <h4>{t().memberOf()}</h4>
   <Content>
     <GroupedCheckBox id="groups" items={groupItems} bind:value={groups} />
   </Content>

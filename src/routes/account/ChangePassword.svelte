@@ -4,8 +4,8 @@
   import Fields from "../../lib/Fields.svelte";
   import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { changePassword } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { changePassword } from "../../lib/firebase.js";
   import { validatePassword } from "../../lib/validator";
 
   // Fields
@@ -14,17 +14,17 @@
   let confirmNewPassword = $state("");
 
   let validateCurrentPassword = $derived(
-    !newPassword || currentPassword ? "" : m.required(),
+    !newPassword || currentPassword ? "" : t().required(),
   );
   let validateNewPassword = $derived(
     !newPassword || validatePassword(newPassword)
       ? ""
-      : m.errorPasswordStrength(),
+      : t().errorPasswordStrength(),
   );
   let validateConfirmNewPassword = $derived(
     !newPassword || newPassword === confirmNewPassword
       ? ""
-      : m.errorPasswordConfirmation(),
+      : t().errorPasswordConfirmation(),
   );
 
   // Actions
@@ -41,8 +41,8 @@
     !result?.err
       ? ""
       : result.err?.includes("auth/wrong-password")
-        ? m.currentPasswordError()
-        : m.errorOnDataSave(),
+        ? t().currentPasswordError()
+        : t().errorOnDataSave(),
   );
 
   const onCancel = () => {
@@ -52,33 +52,33 @@
   };
 
   const onSave = async () => {
-    result = await changePassword(currentPassword, newPassword);
+    result = await changePassword(store, currentPassword, newPassword);
     onCancel();
   };
 </script>
 
-<h3>{m.changePassword()}</h3>
+<h3>{t().changePassword()}</h3>
 <Content>
   <div>
-    {m.passwordRequirements()}
+    {t().passwordRequirements()}
   </div>
   <Wrap>
     <Fields>
       <PasswordFieldOutlined
         id="currentPassword"
-        label={m.currentPassword()}
+        label={t().currentPassword()}
         bind:value={currentPassword}
         error={validateCurrentPassword}
       />
       <PasswordFieldOutlined
         id="newPassword"
-        label={m.newPassword()}
+        label={t().newPassword()}
         bind:value={newPassword}
         error={validateNewPassword}
       />
       <PasswordFieldOutlined
         id="confirmNewPassword"
-        label={m.confirmNewPassword()}
+        label={t().confirmNewPassword()}
         bind:value={confirmNewPassword}
         error={validateConfirmNewPassword}
       />

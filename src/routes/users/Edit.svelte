@@ -9,14 +9,13 @@
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
   import Switch from "../../lib/components/Switch.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
   import {
     isUniqueUserName,
     updateDocument,
     callFunction,
     groupsOfUser,
-  } from "../../lib/repository.svelte.js";
+  } from "../../lib/firebase.js";
   import { validateEmail } from "../../lib/validator";
 
   /**
@@ -32,20 +31,21 @@
 
   // Fields
   let name = $state(user.name);
-  let unavailable = $state(!!user.deletedAt);
+  let deleted = $state(!!user.deletedAt);
+  let restricted = $state(!!user.restrictedAt);
   let email = $state(undefined);
   let authUser = $state(undefined);
   let authUserError = $state("waiting");
 
   let validateDisplayName = $derived(
     !name
-      ? m.required()
-      : !isUniqueUserName(name, user.id)
-        ? m.nameInUse()
+      ? t().required()
+      : !isUniqueUserName(store, name, user.id)
+        ? t().nameInUse()
         : "",
   );
   let validateAuthEmail = $derived(
-    !email || validateEmail(email) ? "" : m.validEmailAddress(),
+    !email || validateEmail(email) ? "" : t().validEmailAddress(),
   );
 
   (async () => {
@@ -61,8 +61,10 @@
     value: group.id,
     label: group.name,
   }));
-  let currentGroups = $derived(groupsOfUser(user.id).map((group) => group.id));
-  let groups = $state(groupsOfUser(user.id).map((group) => group.id));
+  let currentGroups = $derived(
+    groupsOfUser(store, user.id).map((group) => group.id),
+  );
+  let groups = $state(groupsOfUser(store, user.id).map((group) => group.id));
   let isSelectedGroupsChanged = $derived(
     groups.length !== currentGroups.length ||
       !groups.every((id) => currentGroups.includes(id)),
@@ -73,11 +75,12 @@
   let changed = $derived(
     name !== user.name ||
       email !== (authUser?.email || "") ||
-      unavailable !== !!user.deletedAt ||
+      deleted !== !!user.deletedAt ||
+      restricted !== !!user.restrictedAt ||
       isSelectedGroupsChanged,
   );
   let valid = $derived(!validateDisplayName && !validateAuthEmail);
-  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
     name = user.name;
@@ -88,10 +91,15 @@
     name = name.trim();
     let actions = [];
 
-    if (name !== user.name || unavailable !== !!user.deletedAt) {
+    if (
+      name !== user.name ||
+      deleted !== !!user.deletedAt ||
+      restricted !== !!user.restrictedAt
+    ) {
       result = await updateDocument("users", uid, {
         name,
-        deletedAt: unavailable ? new Date() : null,
+        deletedAt: deleted ? new Date() : null,
+        restrictedAt: restricted ? new Date() : null,
         updatedAt: new Date(),
       });
     }
@@ -146,28 +154,34 @@
 
 <h3>
   <span class="size-6"><SvgEdit /></span>
-  {m.edit()}
+  {t().edit()}
 </h3>
 {#if store.manager}
   <Content>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m.displayName()}
+        label={t().displayName()}
         type="text"
         bind:value={name}
-        message={m.current(user.name)}
+        message={t().current(user.name)}
         error={validateDisplayName}
       />
       {#if store.user.id !== user.id}
-        <div class="flex grow gap-4 items-center">
-          <Switch id="unavailable" bind:checked={unavailable} />
-          {m.unavailable()}
+        <div class="flex flex-wrap gap-6">
+          <div class="flex flex-row gap-2 items-center">
+            <Switch id="restricted" bind:checked={restricted} />
+            {t().restricted()}
+          </div>
+          <div class="flex flex-row gap-2 items-center">
+            <Switch id="deleted" bind:checked={deleted} />
+            {t().deleted()}
+          </div>
         </div>
       {/if}
     </Fields>
   </Content>
-  <h4>{m.authentication()}</h4>
+  <h4>{t().authentication()}</h4>
   <Content>
     {#if authUserError === "waiting"}
       Loading...
@@ -178,17 +192,17 @@
         <Fields>
           <TextFieldOutlined
             id="authEmail"
-            label={m.email()}
+            label={t().email()}
             type="email"
             bind:value={email}
-            message={m.current(authUser?.email ?? "--")}
+            message={t().current(authUser?.email ?? "--")}
             error={validateAuthEmail}
           />
         </Fields>
       </Wrap>
     {/if}
   </Content>
-  <h4>{m.memberOf()}</h4>
+  <h4>{t().memberOf()}</h4>
   <Content>
     <GroupedCheckBox id="groups" items={groupItems} bind:value={groups} />
   </Content>

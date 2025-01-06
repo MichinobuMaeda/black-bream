@@ -4,20 +4,16 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import {
-    updateDocument,
-    isUniqueUserName,
-  } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { updateDocument, isUniqueUserName } from "../../lib/firebase.js";
 
   // Fields
   let name = $state(store.user.name);
   let errorDisplayName = $derived(
     !name
-      ? m.required()
-      : !isUniqueUserName(name, store.user.id)
-        ? m.nameInUse()
+      ? t().required()
+      : !isUniqueUserName(store, name, store.user.id)
+        ? t().nameInUse()
         : "",
   );
 
@@ -25,7 +21,7 @@
   let result = $state(null);
   let changed = $derived(name !== store.user.name);
   let valid = $derived(!errorDisplayName);
-  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
     name = store.user.name;
@@ -37,16 +33,16 @@
   };
 </script>
 
-<h3>{m.profile()}</h3>
+<h3>{t().profile()}</h3>
 <Content>
   <Wrap>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m.displayName()}
+        label={t().displayName()}
         type="text"
         bind:value={name}
-        message={m.current(store.user.name)}
+        message={t().current(store.user.name)}
         error={errorDisplayName}
       />
     </Fields>

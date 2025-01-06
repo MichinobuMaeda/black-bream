@@ -29,8 +29,8 @@ const gateForGroupMembers = async (db, { uid }, group, action) => {
  *
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
- * @param {string|null|undefined} uid
- * @param {string|null|undefined} email
+ * @param {string} uid
+ * @param {string} email
  * @returns {Promise<object>}
  */
 const addAuthUser = async (auth, db, uid, email) => {
@@ -69,8 +69,8 @@ const addAuthUser = async (auth, db, uid, email) => {
  * Update email of uid
  *
  * @param {Auth} auth
- * @param {string|null|undefined} uid
- * @param {string|null|undefined} email
+ * @param {string} uid
+ * @param {string} email
  * @returns {Promise<object>}
  */
 const updateAuthEmail = async (auth, uid, email) => {
@@ -98,7 +98,7 @@ const updateAuthEmail = async (auth, uid, email) => {
  * Remove auth user of uid
  *
  * @param {Auth} auth
- * @param {string|null|undefined} uid
+ * @param {string} uid
  * @returns {Promise<object>}
  */
 const removeAuthUser = async (auth, uid) => {
@@ -122,7 +122,7 @@ const removeAuthUser = async (auth, uid) => {
  * Get auth user of uid
  *
  * @param {Auth} auth
- * @param {string|null|undefined} uid
+ * @param {string} uid
  * @returns {Promise<object>}
  */
 const getAuthUser = async (auth, uid) => {

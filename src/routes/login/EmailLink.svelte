@@ -7,9 +7,8 @@
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import { loginWithEmailLink } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { loginWithEmailLink } from "../../lib/firebase.js";
   import { validateEmail } from "../../lib/validator";
 
   let email = $state("");
@@ -36,29 +35,29 @@
   };
 </script>
 
-<h4>{m.loginWithoutPassword()}</h4>
+<h4>{t().loginWithoutPassword()}</h4>
 <Content>
-  <p>{m.allowEmailsFrom(store.conf.autoSendEmail)}</p>
+  <p>{t().allowEmailsFrom(store.conf.autoSendEmail)}</p>
   <Wrap>
     <Fields>
       <TextFieldOutlined
         id="EmailLink.email"
-        label={m.email()}
+        label={t().email()}
         type="email"
         bind:value={email}
-        error={!email || validateEmail(email) ? "" : m.validEmailAddress()}
+        error={!email || validateEmail(email) ? "" : t().validEmailAddress()}
       />
     </Fields>
     <Fields>
       {#if result?.err}
-        <ErrorMessage>{m.errorOnDataSend()}</ErrorMessage>
+        <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
       {:else if result}
-        <SuccessMessage>{m.sentEmailLink()}</SuccessMessage>
+        <SuccessMessage>{t().sentEmailLink()}</SuccessMessage>
       {/if}
       <Actions>
         <ButtonFilled
           id="EmailLink.send"
-          label={m.send()}
+          label={t().send()}
           {onClick}
           disabled={!validateEmail(email)}
         />

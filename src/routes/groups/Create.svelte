@@ -6,24 +6,24 @@
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import {
-    createDocument,
-    isUniqueGroupName,
-  } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { createDocument, isUniqueGroupName } from "../../lib/firebase.js";
 
   // Fields
   let name = $state("");
   let errorDisplayName = $derived(
-    !name ? m.required() : !isUniqueGroupName(null, name) ? m.nameInUse() : "",
+    !name
+      ? t().required()
+      : !isUniqueGroupName(store, name)
+        ? t().nameInUse()
+        : "",
   );
 
   // Actions
   let result = $state(null);
   const changed = true;
   let valid = $derived(!errorDisplayName);
-  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
     name = "";
@@ -43,7 +43,7 @@
 
 <h3>
   <span class="size-6"><SvgGroupAdd /></span>
-  {m.create()}
+  {t().create()}
 </h3>
 {#if store.manager}
   <Content>
@@ -51,10 +51,10 @@
       <Fields>
         <TextFieldOutlined
           id="displayName"
-          label={m.displayName()}
+          label={t().displayName()}
           type="text"
           bind:value={name}
-          message={m.required()}
+          message={t().required()}
           error={errorDisplayName}
         />
       </Fields>

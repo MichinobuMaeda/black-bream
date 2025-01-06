@@ -3,7 +3,7 @@
 
   /**
    * @typedef {Object} Props
-   * @property {string} src
+   * @property {string} [src]
    */
 
   /** @type {Props} */

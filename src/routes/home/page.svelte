@@ -1,11 +1,10 @@
 <script>
   import Content from "../../lib/Content.svelte";
   import SvgHome from "../../lib/icons/SvgHome.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
 </script>
 
-<h2><SvgHome /> {m.home()}</h2>
+<h2><SvgHome /> {t().home()}</h2>
 <h3>Sticky header</h3>
 <h4>header level 4</h4>
 <h5>header level 5</h5>

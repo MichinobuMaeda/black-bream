@@ -1,4 +1,3 @@
-/* global $effect */
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -26,15 +25,31 @@ import {
   httpsCallable,
 } from "firebase/functions";
 
-import { store } from "./store.svelte.js";
+import { loadEmail, removeEmail, saveEmail } from "./localstorage";
 import { config, region } from "../firebaseConfig";
 
-const localKeyEmail = "black_bream_email";
-
+/**
+ * Firebase objects
+ */
 const app = initializeApp(config);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app, region);
+
+/**
+ * Initialize firebase connections.
+ *
+ * @param {string} url
+ * @return {void}
+ */
+export const initFirebaseConnections = (url) => {
+  if (url.includes("localhost") || url.includes("127.0.0.1")) {
+    console.log("connect to emulator");
+    connectAuthEmulator(auth, "http://127.0.0.1:9099");
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  }
+};
 
 /**
  * Set locale of firebase auth
@@ -45,44 +60,59 @@ export const setAuthLocale = (locale) => {
   auth.languageCode = locale;
 };
 
-if (
-  window.location.href.includes("localhost") ||
-  window.location.href.includes("127.0.0.1")
-) {
-  console.log("connect to emulator");
-  connectAuthEmulator(auth, "http://127.0.0.1:9099");
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
-  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
-}
-
-if (isSignInWithEmailLink(auth, window.location.href)) {
-  let email = window.localStorage.getItem(localKeyEmail);
-  if (email) {
-    console.log(`signInWithEmailLink(${email})`);
-    signInWithEmailLink(auth, email, window.location.href)
-      .then(() => {
-        window.localStorage.removeItem(localKeyEmail);
-        if (window.location.href.includes("?")) {
-          window.location.replace(window.location.href.split("?")[0]);
-        }
-      })
-      .catch((e) => {
-        console.error(`signInWithEmailLink: ${e}`);
-      });
+/**
+ * Handle deep links
+ *
+ * @param {string} url
+ * @param {Location} location
+ * @return {void}
+ */
+export const handleDeepLinks = (url, location) => {
+  if (isSignInWithEmailLink(auth, url)) {
+    let email = loadEmail();
+    if (email) {
+      console.log(`signInWithEmailLink(${email})`);
+      signInWithEmailLink(auth, email, url)
+        .then(() => {
+          removeEmail();
+          if (url.includes("?")) {
+            location.replace(url.split("?")[0]);
+          }
+        })
+        .catch((e) => {
+          console.error(`signInWithEmailLink: ${e}`);
+        });
+    }
   }
-}
+};
 
-console.log("init auth");
-auth.onAuthStateChanged((user) => {
-  store.authUser = user;
-  console.log(`authUser: ${store.authUser?.uid ?? store.authUser}`);
-});
+/**
+ * Subscribe conf
+ *
+ * @param {object} store
+ * @return {void}
+ */
+export const subscribeConf = (store) => {
+  console.log("init conf");
+  onSnapshot(doc(db, "service", "conf"), (doc) => {
+    store.conf = doc.data();
+    console.log(`conf: ${store.conf === undefined ? "undefined" : "loaded"}`);
+  });
+};
 
-console.log("init conf");
-onSnapshot(doc(db, "service", "conf"), (doc) => {
-  store.conf = doc.data();
-  console.log(`conf: ${store.conf === undefined ? "undefined" : "loaded"}`);
-});
+/**
+ * Subscribe auth state
+ *
+ * @param {object} store
+ * @return {void }
+ */
+export const subscribeAuthState = (store) => {
+  console.log("init auth");
+  auth.onAuthStateChanged((user) => {
+    store.authUser = user;
+    console.log(`authUser: ${store.authUser?.uid ?? store.authUser}`);
+  });
+};
 
 /** @type {import("firebase/auth").Unsubscribe|null} */
 let usersUnsub = null;
@@ -93,12 +123,12 @@ let groupsUnsub = null;
 /**
  * Unsubscribe user data
  *
+ * @param {object} store
  * @return {Promise<object>}
  */
-const unsubscribeUserData = async () => {
+export const unsubscribeUserData = async (store) => {
+  console.log("unsubscribeUserData(store)");
   try {
-    console.log("unsubscribeUserData()");
-
     if (usersUnsub) {
       usersUnsub();
       usersUnsub = null;
@@ -125,18 +155,22 @@ const unsubscribeUserData = async () => {
 /**
  * Subscribe user's data
  *
+ * @param {object} store
  * @return {void}
  */
-const subscribeUserData = () => {
+export const subscribeUserData = (store) => {
+  console.log("subscribeUserData(store)");
+
   if (!usersUnsub) {
     usersUnsub = onSnapshot(
       collection(db, "users"),
       (snap) => {
         store.users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        console.log(`users: ${store.users.length}`);
       },
       (error) => {
         console.error(`onSnapshot users: ${error}`);
-        unsubscribeUserData();
+        unsubscribeUserData(store);
       },
     );
   }
@@ -146,44 +180,14 @@ const subscribeUserData = () => {
       collection(db, "groups"),
       (snap) => {
         store.groups = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        console.log(`groups: ${store.groups.length}`);
       },
       (error) => {
         console.error(`onSnapshot groups: ${error}`);
-        unsubscribeUserData();
+        unsubscribeUserData(store);
       },
     );
   }
-};
-
-/**
- * Activate repository
- *
- * @return {void}
- */
-export const activateRepository = () => {
-  console.log("activateStore()");
-
-  $effect(() => {
-    if (store.conf && store.authUser) {
-      subscribeUserData(store);
-    }
-  });
-
-  $effect(() => {
-    if (store.authUser && store.users.length && store.groups.length) {
-      store.user = store.users.find(
-        (user) => user.id === store.authUser.uid && !user.deletedAt,
-      );
-
-      if (!store.user) {
-        unsubscribeUserData(store);
-      }
-
-      console.log(`user: ${store.user?.id ?? store.user}`);
-    } else {
-      store.user = undefined;
-    }
-  });
 };
 
 /**
@@ -240,7 +244,7 @@ export const createDocument = async (col, data) => {
 export const loginWithEmailLink = async (email, url) => {
   try {
     await sendSignInLinkToEmail(auth, email, { url, handleCodeInApp: true });
-    localStorage.setItem(localKeyEmail, email);
+    saveEmail(email);
 
     return { err: undefined };
   } catch (error) {
@@ -285,10 +289,11 @@ export const loginWithPassword = async (email, password) => {
 /**
  * Logout
  *
+ * @param {object} store
  * @param {function|null} next
  * @return {Promise<object>}
  */
-export const logout = async (next = null) => {
+export const logout = async (store, next = null) => {
   try {
     await unsubscribeUserData(store);
 
@@ -330,11 +335,12 @@ export const sendPasswordResetLink = async (email) => {
 /**
  * Change password
  *
+ * @param {object} store
  * @param {string} currentPassword
  * @param {string} newPassword
  * @return {Promise<object>}
  */
-export const changePassword = async (currentPassword, newPassword) => {
+export const changePassword = async (store, currentPassword, newPassword) => {
   try {
     await signInWithEmailAndPassword(
       auth,
@@ -353,11 +359,12 @@ export const changePassword = async (currentPassword, newPassword) => {
 /**
  * Check if the user name is unique
  *
+ * @param {object} store
  * @param {string} name
- * @param {string|null} id
+ * @param {string} [id]
  * @return {boolean}
  */
-export const isUniqueUserName = (name, id = null) =>
+export const isUniqueUserName = (store, name, id = null) =>
   store.users.find(
     (user) => user.id !== id && user.name === (name ?? "").trim(),
   ) === undefined;
@@ -365,11 +372,12 @@ export const isUniqueUserName = (name, id = null) =>
 /**
  * Check if the group name is unique
  *
- * @param {string|null} id
+ * @param {object} store
  * @param {string} name
+ * @param {string} [id]
  * @return {boolean}
  */
-export const isUniqueGroupName = (id, name) =>
+export const isUniqueGroupName = (store, name, id = null) =>
   store.groups.find(
     (group) => group.id !== id && group.name === (name ?? "").trim(),
   ) === undefined;
@@ -394,10 +402,11 @@ export const callFunction = async (name, param) => {
 /**
  * Groups which user belong to
  *
+ * @param {object} store
  * @param {string} uid
  * @return {array}
  */
-export const groupsOfUser = (uid) =>
+export const groupsOfUser = (store, uid) =>
   store.groups.filter(
     (group) =>
       (store.manager || !group.deletedAt) && (group.users ?? []).includes(uid),

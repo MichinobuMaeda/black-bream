@@ -4,7 +4,7 @@
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
   import ButtonFilled from "../lib/components/ButtonFilled.svelte";
-  import { m } from "../lib/i18n.svelte.js";
+  import { t } from "../lib/store.svelte.js";
 
   // check for updates every hour
   const period = 60 * 60 * 1000;
@@ -55,7 +55,7 @@
   >
     <ButtonFilled
       id="updateApp"
-      label={m.updateApp()}
+      label={t().updateApp()}
       onClick={() => updateServiceWorker(true)}
       danger
       dense

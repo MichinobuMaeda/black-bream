@@ -7,12 +7,8 @@
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import Switch from "../../lib/components/Switch.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
-  import {
-    isUniqueGroupName,
-    updateDocument,
-  } from "../../lib/repository.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { isUniqueGroupName, updateDocument } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -26,13 +22,13 @@
 
   // Fields
   let name = $state(group.name);
-  let unavailable = $state(!!group.deletedAt);
+  let deleted = $state(!!group.deletedAt);
 
   let errorDisplayName = $derived(
     !name
-      ? m.required()
-      : !isUniqueGroupName(group.id, name)
-        ? m.nameInUse()
+      ? t().required()
+      : !isUniqueGroupName(store, name, group.id)
+        ? t().nameInUse()
         : "",
   );
 
@@ -51,11 +47,11 @@
 
   let changed = $derived(
     name !== group.name ||
-      unavailable !== !!group.deletedAt ||
+      deleted !== !!group.deletedAt ||
       isSelectedUsersChanged(),
   );
   let valid = $derived(!errorDisplayName);
-  let error = $derived(result?.err ? m.errorOnDataSave() : "");
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
     name = group.name;
@@ -68,7 +64,7 @@
     result = await updateDocument("groups", group.id, {
       name,
       users,
-      deletedAt: unavailable ? new Date() : null,
+      deletedAt: deleted ? new Date() : null,
     });
 
     if (!result.err) {
@@ -79,28 +75,28 @@
 
 <h3>
   <span class="size-6"><SvgEdit /></span>
-  {m.edit()}
+  {t().edit()}
 </h3>
 {#if store.manager}
   <Content>
     <Fields>
       <TextFieldOutlined
         id="displayName"
-        label={m.displayName()}
+        label={t().displayName()}
         type="text"
         bind:value={name}
-        message={m.current(group.name)}
+        message={t().current(group.name)}
         error={errorDisplayName}
       />
       {#if !["admins", "managers"].includes(group.id)}
         <div class="flex grow gap-4 items-center">
-          <Switch id="unavailable" bind:checked={unavailable} />
-          {m.unavailable()}
+          <Switch id="deleted" bind:checked={deleted} />
+          {t().deleted()}
         </div>
       {/if}
     </Fields>
   </Content>
-  <h4>{m.members()}</h4>
+  <h4>{t().members()}</h4>
   <Content>
     <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
   </Content>

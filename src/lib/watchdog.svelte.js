@@ -1,5 +1,6 @@
 /* global $state */
-import { logout } from "./repository.svelte.js";
+import { store } from "./store.svelte.js";
+import { logout } from "./firebase.js";
 
 const localKeyWatchdogTimeout = "black_bream_watchdog_timeout";
 
@@ -13,7 +14,7 @@ const startWatchDog = () => {
   if (watchdogTimeout > 0) {
     timeoutId = setTimeout(
       () => {
-        logout();
+        logout(store);
         timeoutId = null;
       },
       watchdogTimeout * 60 * 1000,

@@ -5,8 +5,7 @@
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
-  import { m } from "../../lib/i18n.svelte.js";
-  import { store } from "../../lib/store.svelte.js";
+  import { t, store } from "../../lib/store.svelte.js";
 
   let users = $derived(
     store.users.filter((user) => store.manager || !user.deletedAt),
@@ -14,12 +13,12 @@
 </script>
 
 <h3>
-  <span class="flex grow">{m.list()}</span>
+  <span class="flex grow">{t().list()}</span>
   {#if store.manager}
     <ButtonOutlined
       id="create"
       icon={SvgPersonAdd}
-      label={m.create()}
+      label={t().create()}
       onClick={() => push("/users/new")}
       dense
     />
