@@ -29,9 +29,9 @@ exports.updateAuthEmail = onCall({ region }, ({ data, auth }) =>
   ),
 );
 
-exports.deleteAuthUser = onCall({ region }, ({ data, auth }) =>
+exports.removeAuthUser = onCall({ region }, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
-    account.deleteAuthUser(getAuth(app), data?.uid),
+    account.removeAuthUser(getAuth(app), data?.uid),
   ),
 );
 

@@ -8,6 +8,8 @@
   import { changePassword } from "../../lib/firebase.js";
   import { validatePassword } from "../../lib/validator";
 
+  let active = $state(false);
+
   // Fields
   let currentPassword = $state("");
   let newPassword = $state("");
@@ -30,7 +32,7 @@
   // Actions
   let result = $state(null);
   let changed = $derived(
-    !!currentPassword || !!newPassword || !!confirmNewPassword,
+    !active && (!!currentPassword || !!newPassword || !!confirmNewPassword),
   );
   let valid = $derived(
     !validateCurrentPassword &&
@@ -52,8 +54,10 @@
   };
 
   const onSave = async () => {
+    active = true;
     result = await changePassword(store, currentPassword, newPassword);
     onCancel();
+    active = false;
   };
 </script>
 

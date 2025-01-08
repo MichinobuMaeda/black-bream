@@ -28,6 +28,7 @@
 
   const uid = item;
   let user = store.users.find((user) => user.id === uid);
+  let active = $state(false);
 
   // Fields
   let name = $state(user.name);
@@ -73,11 +74,12 @@
   // Actions
   let result = $state(null);
   let changed = $derived(
-    name !== user.name ||
-      email !== (authUser?.email || "") ||
-      deleted !== !!user.deletedAt ||
-      restricted !== !!user.restrictedAt ||
-      isSelectedGroupsChanged,
+    !active &&
+      (name !== user.name ||
+        email !== (authUser?.email || "") ||
+        deleted !== !!user.deletedAt ||
+        restricted !== !!user.restrictedAt ||
+        isSelectedGroupsChanged),
   );
   let valid = $derived(!validateDisplayName && !validateAuthEmail);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
@@ -88,6 +90,7 @@
   };
 
   const onSave = async () => {
+    active = true;
     name = name.trim();
     let actions = [];
 
@@ -103,16 +106,18 @@
         updatedAt: new Date(),
       });
     }
-    if (!result.err && email !== (authUser?.email || "")) {
+
+    if (!result?.err && email !== (authUser?.email || "")) {
       if (!authUser) {
         result = await callFunction("addAuthUser", { uid, email });
       } else if (email) {
         result = await callFunction("updateAuthEmail", { uid, email });
       } else {
-        result = await callFunction("deleteAuthUser", { uid });
+        result = await callFunction("removeAuthUser", { uid });
       }
     }
-    if (!result.err) {
+
+    if (!result?.err) {
       actions.concat(
         store.groups
           .filter((group) =>
@@ -142,11 +147,14 @@
           ),
       );
     }
-    result.err = (await Promise.all(actions)).reduce(
-      (acc, cur) => (cur?.err ? cur?.err : acc),
-      undefined,
+
+    result = (await Promise.all(actions)).reduce(
+      (acc, cur) => (cur?.err ? cur : acc),
+      {},
     );
-    if (!result.err) {
+
+    active = false;
+    if (!result?.err) {
       await onCancel();
     }
   };

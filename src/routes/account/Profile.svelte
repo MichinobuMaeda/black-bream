@@ -7,6 +7,8 @@
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument, isUniqueUserName } from "../../lib/firebase.js";
 
+  let active = $state(false);
+
   // Fields
   let name = $state(store.user.name);
   let errorDisplayName = $derived(
@@ -19,7 +21,7 @@
 
   // Actions
   let result = $state(null);
-  let changed = $derived(name !== store.user.name);
+  let changed = $derived(!active && name !== store.user.name);
   let valid = $derived(!errorDisplayName);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
@@ -28,8 +30,10 @@
   };
 
   const onSave = async () => {
+    active = true;
     name = name.trim();
     result = await updateDocument("users", store.user.id, { name });
+    active = false;
   };
 </script>
 

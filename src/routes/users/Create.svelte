@@ -2,6 +2,7 @@
   import { pop } from "svelte-spa-router";
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
   import Content from "../../lib/Content.svelte";
+  import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
@@ -10,29 +11,39 @@
   import {
     createDocument,
     updateDocument,
+    callFunction,
     isUniqueUserName,
   } from "../../lib/firebase.js";
+  import { validateEmail } from "../../lib/validator";
+
+  let active = $state(false);
 
   // Fields
   let name = $state("");
+  let email = $state(undefined);
   let groupItems = store.groups.map((group) => ({
     value: group.id,
     label: group.name,
   }));
   let groups = $state([]);
 
-  let errorDisplayName = $derived(
-    !name
-      ? t().required()
-      : !isUniqueUserName(store, name)
-        ? t().nameInUse()
-        : "",
+  let validateDisplayName = $derived(
+    active
+      ? ""
+      : !name
+        ? t().required()
+        : !isUniqueUserName(store, name)
+          ? t().nameInUse()
+          : "",
+  );
+  let validateAuthEmail = $derived(
+    !email || validateEmail(email) ? "" : t().validEmailAddress(),
   );
 
   // Actions
   let result = $state(null);
-  const changed = true;
-  let valid = $derived(!errorDisplayName);
+  let changed = $derived(!active);
+  let valid = $derived(!validateDisplayName && !validateAuthEmail);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
@@ -41,13 +52,17 @@
   };
 
   const onSave = async () => {
+    active = true;
     name = name.trim();
 
     result = await createDocument("users", { name, auth: false });
     const uid = result?.data;
 
+    if (!result.err && email) {
+      result = await callFunction("addAuthUser", { uid, email });
+    }
+
     if (!result.err) {
-      await onCancel();
       let actions = [];
       actions.concat(
         store.groups
@@ -63,6 +78,8 @@
         undefined,
       );
     }
+
+    active = false;
     if (!result.err) {
       await onCancel();
     }
@@ -75,16 +92,27 @@
 </h3>
 {#if store.manager}
   <Content>
-    <Fields>
-      <TextFieldOutlined
-        id="displayName"
-        label={t().displayName()}
-        type="text"
-        bind:value={name}
-        message={t().required()}
-        error={errorDisplayName}
-      />
-    </Fields>
+    <Wrap>
+      <Fields>
+        <TextFieldOutlined
+          id="displayName"
+          label={t().displayName()}
+          type="text"
+          bind:value={name}
+          message={t().required()}
+          error={validateDisplayName}
+        />
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="authEmail"
+          label={t().email()}
+          type="email"
+          bind:value={email}
+          error={validateAuthEmail}
+        />
+      </Fields>
+    </Wrap>
   </Content>
   <h4>{t().memberOf()}</h4>
   <Content>

@@ -5,6 +5,8 @@
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
 
+  let active = $state(false);
+
   // Fields
   let desc = $state(store.conf.desc);
 
@@ -12,7 +14,7 @@
 
   // Actions
   let result = $state(null);
-  let changed = $derived(desc !== store.conf.desc);
+  let changed = $derived(!active && desc !== store.conf.desc);
   let valid = $derived(!errorDesc);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
@@ -21,7 +23,10 @@
   };
 
   const onSave = async () => {
+    desc = `${desc.trim()}\n`;
+    active = true;
     result = await updateDocument("service", "conf", { desc });
+    active = false;
   };
 </script>
 

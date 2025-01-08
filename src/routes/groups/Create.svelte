@@ -2,26 +2,36 @@
   import { pop } from "svelte-spa-router";
   import SvgGroupAdd from "../../lib/icons/SvgGroupAdd.svelte";
   import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
+  import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { createDocument, isUniqueGroupName } from "../../lib/firebase.js";
 
+  let active = $state(false);
+
   // Fields
   let name = $state("");
   let errorDisplayName = $derived(
-    !name
-      ? t().required()
-      : !isUniqueGroupName(store, name)
-        ? t().nameInUse()
-        : "",
+    active
+      ? ""
+      : !name
+        ? t().required()
+        : !isUniqueGroupName(store, name)
+          ? t().nameInUse()
+          : "",
   );
+
+  let userItems = store.users.map((user) => ({
+    value: user.id,
+    label: user.name,
+  }));
+  let users = $state([]);
 
   // Actions
   let result = $state(null);
-  const changed = true;
+  let changed = $derived(!active);
   let valid = $derived(!errorDisplayName);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
@@ -31,10 +41,12 @@
   };
 
   const onSave = async () => {
+    active = true;
     name = name.trim();
 
-    result = await createDocument("groups", { name, users: [] });
+    result = await createDocument("groups", { name, users });
 
+    active = false;
     if (!result.err) {
       await onCancel();
     }
@@ -47,20 +59,22 @@
 </h3>
 {#if store.manager}
   <Content>
-    <Wrap>
-      <Fields>
-        <TextFieldOutlined
-          id="displayName"
-          label={t().displayName()}
-          type="text"
-          bind:value={name}
-          message={t().required()}
-          error={errorDisplayName}
-        />
-      </Fields>
-      <Fields>
-        <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
-      </Fields>
-    </Wrap>
+    <Fields>
+      <TextFieldOutlined
+        id="displayName"
+        label={t().displayName()}
+        type="text"
+        bind:value={name}
+        message={t().required()}
+        error={errorDisplayName}
+      />
+    </Fields>
+    <h4>{t().members()}</h4>
+    <Content>
+      <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
+    </Content>
+    <Fields>
+      <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
+    </Fields>
   </Content>
 {/if}

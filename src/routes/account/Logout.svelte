@@ -15,15 +15,17 @@
   import { t, store } from "../../lib/store.svelte.js";
   import { logout } from "../../lib/firebase.js";
 
-  let changed = $state(getWatchdogTimeout());
+  let timeout = $state(getWatchdogTimeout());
+  let changed = $derived(timeout !== getWatchdogTimeout());
   let logoutNow = $state(false);
 
   const onCancel = () => {
-    changed = getWatchdogTimeout();
+    timeout = getWatchdogTimeout();
   };
 
   const onSave = () => {
-    setWatchdogTimeout(changed);
+    timeout = Number(timeout) || 0;
+    setWatchdogTimeout(timeout);
   };
 </script>
 
@@ -36,16 +38,16 @@
         id="displayName"
         label={t().timeoutMinutes()}
         type="number"
-        bind:value={changed}
+        bind:value={timeout}
         message={t().current(getWatchdogTimeout())}
-        error={changed < 0 ? t().greaterOrEqual(0) : ""}
+        error={timeout < 0 ? t().greaterOrEqual(0) : ""}
       />
     </Fields>
     <Fields>
       <ActionSave
         id="updateProfile"
-        changed={changed !== getWatchdogTimeout()}
-        valid={0 <= changed}
+        {changed}
+        valid={0 <= timeout}
         {onCancel}
         {onSave}
         cancelOnlyChanged

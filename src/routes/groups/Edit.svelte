@@ -19,6 +19,7 @@
   let { item } = $props();
 
   let group = store.groups.find((group) => group.id === item);
+  let active = $state(false);
 
   // Fields
   let name = $state(group.name);
@@ -32,9 +33,6 @@
         : "",
   );
 
-  // Actions
-  let result = $state(null);
-
   let userItems = store.users.map((user) => ({
     value: user.id,
     label: user.name,
@@ -45,10 +43,13 @@
     users.length !== currentUsers.length ||
     !users.every((id) => currentUsers.includes(id));
 
+  // Actions
+  let result = $state(null);
   let changed = $derived(
-    name !== group.name ||
-      deleted !== !!group.deletedAt ||
-      isSelectedUsersChanged(),
+    !active &&
+      (name !== group.name ||
+        deleted !== !!group.deletedAt ||
+        isSelectedUsersChanged()),
   );
   let valid = $derived(!errorDisplayName);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
@@ -59,6 +60,7 @@
   };
 
   const onSave = async () => {
+    active = true;
     name = name.trim();
 
     result = await updateDocument("groups", group.id, {
@@ -67,6 +69,7 @@
       deletedAt: deleted ? new Date() : null,
     });
 
+    active = false;
     if (!result.err) {
       await onCancel();
     }
