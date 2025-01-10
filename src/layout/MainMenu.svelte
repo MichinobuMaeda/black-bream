@@ -6,6 +6,7 @@
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
   import SvgGroup from "../lib/icons/SvgGroup.svelte";
   import SvgPerson from "../lib/icons/SvgPerson.svelte";
+  import SvgTask from "../lib/icons/SvgTask.svelte";
 
   const linkColor = (location, path) =>
     location === path
@@ -69,6 +70,9 @@
   </div>
   {#if store.user}
     {@render navItem(SvgHome, t().home(), "/")}
+    {#if store.operator}
+      {@render navItem(SvgTask, t().posts(), "/posts")}
+    {/if}
     {@render navItem(SvgGroup, t().groups(), "/groups")}
     {@render navItem(SvgPerson, t().users(), "/users")}
   {:else}

@@ -43,6 +43,13 @@ export class I18n {
   groups = () => (this.locale === "ja" ? "グループ" : "Groups");
   group = () => (this.locale === "ja" ? "グループ" : "Group");
   memberOf = () => (this.locale === "ja" ? "所属" : "Member of");
+  services = () => (this.locale === "ja" ? "サービス" : "Services");
+  service = () => (this.locale === "ja" ? "サービス" : "Service");
+  schedule = () => (this.locale === "ja" ? "スケジュール" : "Schedule");
+  posts = () => (this.locale === "ja" ? "投稿" : "Posts");
+  post = () => (this.locale === "ja" ? "投稿" : "Post");
+  recentPosts = () => (this.locale === "ja" ? "最近の投稿" : "Recent posts");
+  text = () => (this.locale === "ja" ? "文面" : "Text");
   authentication = () => (this.locale === "ja" ? "認証" : "Authentication");
   account = () => (this.locale === "ja" ? "アカウント" : "Account");
   profile = () => (this.locale === "ja" ? "プロフィール" : "Profile");
@@ -203,3 +210,22 @@ export class I18n {
       ? "データの保存中にエラーが発生しました。" + this.onSystemError()
       : "An error occurred while sending data." + this.onSystemError();
 }
+
+/**
+ * Format a date object to an ISO string with the browser timezone.
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+export const formatISO = (date) =>
+  new Date(date.setHours(date.getHours() - new Date().getTimezoneOffset() / 60))
+    .toISOString()
+    .substring(0, 16);
+
+/**
+ * Format a date object with the browser timezone.
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+export const formatDateTime = (date) => formatISO(date).replace("T", " ");

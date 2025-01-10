@@ -18,6 +18,9 @@ import {
   updateDoc,
   addDoc,
   onSnapshot,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import {
   getFunctions,
@@ -120,6 +123,9 @@ let usersUnsub = null;
 /** @type {import("firebase/auth").Unsubscribe|null} */
 let groupsUnsub = null;
 
+/** @type {import("firebase/auth").Unsubscribe|null} */
+let postsUnsub = null;
+
 /**
  * Unsubscribe user data
  *
@@ -139,6 +145,12 @@ export const unsubscribeUserData = async (store) => {
       groupsUnsub();
       groupsUnsub = null;
       store.groups = [];
+    }
+
+    if (postsUnsub) {
+      postsUnsub();
+      postsUnsub = null;
+      store.posts = [];
     }
 
     if (store.authUser) {
@@ -184,6 +196,24 @@ export const subscribeUserData = (store) => {
       },
       (error) => {
         console.error(`onSnapshot groups: ${error}`);
+        unsubscribeUserData(store);
+      },
+    );
+  }
+
+  if (!postsUnsub) {
+    postsUnsub = onSnapshot(
+      query(
+        collection(db, "posts"),
+        orderBy("scheduledFor", "desc"),
+        limit(1000),
+      ),
+      (snap) => {
+        store.posts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        console.log(`posts: ${store.posts.length}`);
+      },
+      (error) => {
+        console.error(`onSnapshot posts: ${error}`);
         unsubscribeUserData(store);
       },
     );

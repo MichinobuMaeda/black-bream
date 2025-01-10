@@ -7,34 +7,39 @@
   import Account from "./routes/account/page.svelte";
   import Groups from "./routes/groups/page.svelte";
   import Users from "./routes/users/page.svelte";
+  import Posts from "./routes/posts/page.svelte";
   import Settings from "./routes/settings/page.svelte";
   import NotFound from "./routes/NotFound.svelte";
   import { store } from "./lib/store.svelte.js";
 </script>
 
-{#if store.admin || store.manager}
-  <Router
-    routes={{
-      "/": Home,
-      "/account": Account,
-      "/groups/:item?/:action?": Groups,
-      "/users/:item?/:action?": Users,
-      "/settings": Settings,
-      "/info": Info,
-      "*": NotFound,
-    }}
-  />
-{:else if store.user}
-  <Router
-    routes={{
-      "/": Home,
-      "/account": Account,
-      "/groups/:item?": Groups,
-      "/users/:item?": Users,
-      "/info": Info,
-      "*": NotFound,
-    }}
-  />
+{#if store.user}
+  {#if store.admin || store.manager}
+    <Router
+      routes={{
+        "/": Home,
+        "/account": Account,
+        "/groups/:item?/:action?": Groups,
+        "/users/:item?/:action?": Users,
+        "/posts/:item?/:action?": Posts,
+        "/info": Info,
+        "/settings": Settings,
+        "*": NotFound,
+      }}
+    />
+  {:else}
+    <Router
+      routes={{
+        "/": Home,
+        "/account": Account,
+        "/groups/:item?/:action?": Groups,
+        "/users/:item?/:action?": Users,
+        "/posts/:item?/:action?": Posts,
+        "/info": Info,
+        "*": NotFound,
+      }}
+    />
+  {/if}
 {:else}
   <Router
     routes={{

@@ -10,6 +10,7 @@ let authUser = $state(undefined);
 let conf = $state(undefined);
 let users = $state([]);
 let groups = $state([]);
+let posts = $state([]);
 let user = $derived(
   authUser && users.length && groups.length
     ? users.find(
@@ -24,6 +25,10 @@ let admin = $derived(
 );
 let manager = $derived(
   groups.find((group) => group.id === "managers")?.users.includes(user?.id) ??
+    false,
+);
+let operator = $derived(
+  groups.find((group) => group.id === "operators")?.users.includes(user?.id) ??
     false,
 );
 
@@ -58,6 +63,12 @@ export const store = {
   set groups(value) {
     groups = value;
   },
+  get posts() {
+    return posts;
+  },
+  set posts(value) {
+    posts = value;
+  },
   get user() {
     return user;
   },
@@ -66,5 +77,8 @@ export const store = {
   },
   get manager() {
     return manager;
+  },
+  get operator() {
+    return operator;
   },
 };
