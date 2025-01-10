@@ -75,6 +75,16 @@ site.manager@example.com
           updatedAt: new Date(),
         });
 
+      await db
+        .collection("groups")
+        .doc("operators")
+        .set({
+          name: "Operators",
+          users: [uid],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
       await deleted.ref.set({
         ver: 1,
         err: err ?? null,

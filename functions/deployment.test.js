@@ -53,8 +53,14 @@ describe("updateDataV1", () => {
       ["users"],
       ["groups"],
       ["groups"],
+      ["groups"],
     ]);
-    expect(doc.mock.calls).toEqual([[conf.id], ["admins"], ["managers"]]);
+    expect(doc.mock.calls).toEqual([
+      [conf.id],
+      ["admins"],
+      ["managers"],
+      ["operators"],
+    ]);
     expect(set.mock.calls).toEqual([
       [
         {
@@ -76,6 +82,14 @@ describe("updateDataV1", () => {
       [
         {
           name: "Managers",
+          users: [uid],
+          createdAt,
+          updatedAt,
+        },
+      ],
+      [
+        {
+          name: "Operators",
           users: [uid],
           createdAt,
           updatedAt,

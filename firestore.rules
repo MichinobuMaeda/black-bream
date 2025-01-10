@@ -12,6 +12,9 @@ service cloud.firestore {
     function isManager() {
       return isActiveAccount() && request.auth.uid in get(/databases/$(database)/documents/groups/managers).data.users;
     }
+    function isOperator() {
+      return isActiveAccount() && request.auth.uid in get(/databases/$(database)/documents/groups/operators).data.users;
+    }
     match /service/conf {
       allow read, update: if isManager();
       allow read: if true;
@@ -20,8 +23,12 @@ service cloud.firestore {
       allow read, write: if isManager() || (isActiveAccount() && request.auth.uid == user);
       allow read: if isActiveAccount();
     }
-    match /groups/{groups} {
+    match /groups/{group} {
       allow read, write: if isManager();
+      allow read: if isActiveAccount();
+    }
+    match /posts/{post} {
+      allow read, write: if isOperator();
       allow read: if isActiveAccount();
     }
     match /{document=**} {
