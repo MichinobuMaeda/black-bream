@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting on merge
+name: Deploy to Firestore on merge
 on:
   push:
     branches:
@@ -20,8 +20,8 @@ jobs:
           npm ci --prefix functions
       - name: Deploy Firestore
         env:
-          WORK_DIR: $RUNNER_TEMP/work
-          GOOGLE_APPLICATION_CREDENTIALS: $RUNNER_TEMP/work/service-account.json
+          WORK_DIR: ${{ runner.temp }}/work
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/work/service-account.json
         run: |
           mkdir $WORK_DIR
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}' \
