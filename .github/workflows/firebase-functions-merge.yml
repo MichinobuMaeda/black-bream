@@ -33,4 +33,4 @@ jobs:
           WORK_DIR: ${{ runner.temp }}/work
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/work/service-account.json
         run: |
-          npx firebase firestore:delete service/dataVersion
+          npx firebase firestore:delete service/dataVersion --force

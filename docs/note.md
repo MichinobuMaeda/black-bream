@@ -243,4 +243,5 @@ import { writable } from "svelte/store";
 export default writable(0);
 ```
 
-Add "Service Account User" to github-action-\*@black-bream.iam.gserviceaccount.com
+Add "Service Account User" and "Editor" to
+github-action-\*@black-bream.iam.gserviceaccount.com
