@@ -12,7 +12,7 @@ const post = require("./post");
 const account = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
-const { info, error } = require("firebase-functions/logger");
+const { info } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
 
@@ -69,9 +69,8 @@ exports.onDataVersionDeleted = onDocumentDeleted(
   },
 );
 
-// [Caution!!] Don't deploy this function to production
-exports.uiTestData = onCall({ region }, () =>
-  process.env.FUNCTIONS_EMULATOR
-    ? createUiTestData(getAuth(app), getFirestore(app))
-    : error("This function is only available in the emulator."),
-);
+if (process.env.FUNCTIONS_EMULATOR) {
+  exports.uiTestData = onCall({ region }, () =>
+    createUiTestData(getAuth(app), getFirestore(app)),
+  );
+}

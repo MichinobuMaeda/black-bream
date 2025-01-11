@@ -7,7 +7,7 @@ on:
       - .github/workflows/firebase-functions-merge.yml
       - "functions/**"
 jobs:
-  build_and_deploy:
+  deploy_functions:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
           mkdir $WORK_DIR
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}' \
           > $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase deploy --only functions # --except functions:uiTestData --force
+          npx firebase deploy --only functions --force
       - name: Set dataVersion
         env:
           WORK_DIR: ${{ runner.temp }}/work
