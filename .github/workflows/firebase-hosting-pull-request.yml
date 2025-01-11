@@ -15,6 +15,14 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: Set firebase api key
+        run: |
+          sed 's/FIREBASE_API_KEY/${{ secrets.FIREBASE_API_KEY_BLACK_BREAM }}/' \
+            -i src/firebaseConfig.js
+      - name: Set firebase reCAPTCHA key
+        run: |
+          sed 's/FIREBASE_RECAPTCHA_KEY/${{ secrets.FIREBASE_RECAPTCHA_KEY_BLACK_BREAM }}/' \
+            -i src/firebaseConfig.js
       - run: |
           npm ci
           npm ci --prefix functions

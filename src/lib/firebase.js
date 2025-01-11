@@ -1,5 +1,9 @@
 import { initializeApp } from "firebase/app";
 import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
+import {
   getAuth,
   connectAuthEmulator,
   sendPasswordResetEmail,
@@ -29,7 +33,7 @@ import {
 } from "firebase/functions";
 
 import { loadEmail, removeEmail, saveEmail } from "./localstorage";
-import { config, region } from "../firebaseConfig";
+import { config, reCaptchaKey, region } from "../firebaseConfig";
 
 /**
  * Firebase objects
@@ -38,6 +42,14 @@ const app = initializeApp(config);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app, region);
+
+if (reCaptchaKey !== "FIREBASE_RECAPTCHA_KEY") {
+  // const appCheck =
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(reCaptchaKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
 /**
  * Initialize firebase connections.
@@ -420,7 +432,9 @@ export const isUniqueGroupName = (store, name, id = null) =>
  */
 export const callFunction = async (name, param) => {
   try {
-    const f = httpsCallable(functions, name);
+    const f = httpsCallable(functions, name, {
+      limitedUseAppCheckTokens: reCaptchaKey !== "FIREBASE_RECAPTCHA_KEY",
+    });
     const { data } = await f(param);
     return data;
   } catch (e) {
