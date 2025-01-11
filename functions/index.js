@@ -1,12 +1,18 @@
-const { onDocumentDeleted } = require("firebase-functions/v2/firestore");
+const {
+  onDocumentCreated,
+  onDocumentDeleted,
+} = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
+const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
+const post = require("./post");
 const account = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
+const { info, error } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
 
@@ -21,6 +27,19 @@ exports.addAuthUser = onCall({ region }, ({ data, auth }) =>
       data?.email,
     ),
   ),
+);
+
+exports.post = onTaskDispatched({ region }, async ({ data }) => {
+  console.log(`Task dispatched: ${data.id}`);
+});
+
+exports.onDataPostCreated = onDocumentCreated(
+  { document: "posts/{postsId}", region },
+  ({ data, location, project }) => {
+    process.env.FUNCTIONS_EMULATOR
+      ? info("On emulator")
+      : post.createPost(location, project, data);
+  },
 );
 
 exports.updateAuthEmail = onCall({ region }, ({ data, auth }) =>
@@ -52,5 +71,7 @@ exports.onDataVersionDeleted = onDocumentDeleted(
 
 // [Caution!!] Don't deploy this function to production
 exports.uiTestData = onCall({ region }, () =>
-  createUiTestData(getAuth(app), getFirestore(app)),
+  process.env.FUNCTIONS_EMULATOR
+    ? createUiTestData(getAuth(app), getFirestore(app))
+    : error("This function is only available in the emulator."),
 );

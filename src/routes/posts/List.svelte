@@ -32,7 +32,7 @@
       <span class="size-6">
         {#if post.deletedAt}
           <SvgScanDelete />
-        {:else if post.completedAt}
+        {:else if post.status === "completed"}
           <SvgTask />
         {:else}
           <SvgScheduledTask />
