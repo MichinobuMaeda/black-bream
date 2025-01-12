@@ -15,7 +15,7 @@ const { createUiTestData } = require("./ui_test_data");
 const { info } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
-const opts = process.env.FUNCTIONS_EMULATOR
+const optOnCall = process.env.FUNCTIONS_EMULATOR
   ? { region }
   : {
       region,
@@ -25,7 +25,20 @@ const opts = process.env.FUNCTIONS_EMULATOR
 
 const app = initializeApp();
 
-exports.addAuthUser = onCall(opts, ({ data, auth }) =>
+exports.post = onTaskDispatched({ region }, async ({ data }) => {
+  console.log(`Task dispatched: ${data.id}`);
+});
+
+exports.onDataPostCreated = onDocumentCreated(
+  { document: "posts/{postsId}", region },
+  ({ data, location, project }) => {
+    process.env.FUNCTIONS_EMULATOR
+      ? info("On emulator")
+      : post.createPost(location, project, data);
+  },
+);
+
+exports.addAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
     account.addAuthUser(
       getAuth(app),
@@ -36,39 +49,26 @@ exports.addAuthUser = onCall(opts, ({ data, auth }) =>
   ),
 );
 
-exports.post = onTaskDispatched(opts, async ({ data }) => {
-  console.log(`Task dispatched: ${data.id}`);
-});
-
-exports.onDataPostCreated = onDocumentCreated(
-  { document: "posts/{postsId}", ...opts },
-  ({ data, location, project }) => {
-    process.env.FUNCTIONS_EMULATOR
-      ? info("On emulator")
-      : post.createPost(location, project, data);
-  },
-);
-
-exports.updateAuthEmail = onCall(opts, ({ data, auth }) =>
+exports.updateAuthEmail = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
     account.updateAuthEmail(getAuth(app), data?.uid, data?.email),
   ),
 );
 
-exports.removeAuthUser = onCall(opts, ({ data, auth }) =>
+exports.removeAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
     account.removeAuthUser(getAuth(app), data?.uid),
   ),
 );
 
-exports.getAuthUser = onCall(opts, ({ data, auth }) =>
+exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
     account.getAuthUser(getAuth(app), data?.uid),
   ),
 );
 
 exports.onDataVersionDeleted = onDocumentDeleted(
-  { document: "service/dataVersion", ...opts },
+  { document: "service/dataVersion", region },
   ({ data }) => {
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -77,7 +77,7 @@ exports.onDataVersionDeleted = onDocumentDeleted(
 );
 
 if (process.env.FUNCTIONS_EMULATOR) {
-  exports.uiTestData = onCall(opts, () =>
+  exports.uiTestData = onCall({ region }, () =>
     createUiTestData(getAuth(app), getFirestore(app)),
   );
 }
