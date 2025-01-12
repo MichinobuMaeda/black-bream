@@ -82,6 +82,17 @@ export class I18n {
     this.locale === "ja" ? "新しいパスワード" : "New password";
   confirmNewPassword = () =>
     this.locale === "ja" ? "パスワードの確認" : "Confirm new password";
+  socialLogin = () =>
+    this.locale === "ja" ? "ソーシャルログイン" : "Social login";
+  aboutSocialLogin = () =>
+    this.locale === "ja"
+      ? "ソーシャルログインは、ソーシャルサービスとこのアプリのログインで" +
+        "同じメールアドレスを使用している場合、もしくは、" +
+        "このアプリにログイン後にログインに利用するソーシャルアプリを登録した場合に利用できます。"
+      : "Social login can be used if you use the same email address" +
+        " to login to the social service and this app," +
+        " or if you register a social app to use for logging in" +
+        " after logging in to this app.";
   timeoutMinutes = () =>
     this.locale === "ja" ? "タイムアウト時間（分）" : "Timeout minutes";
   logoutNow = () =>

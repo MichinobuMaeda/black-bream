@@ -13,6 +13,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updatePassword,
+  signInWithRedirect,
+  linkWithRedirect,
+  GoogleAuthProvider,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -440,6 +443,54 @@ export const callFunction = async (name, param) => {
   } catch (e) {
     console.error(`{name}: ${e}`);
     return { err: "error", data: undefined };
+  }
+};
+
+/**
+ * Social login
+ *
+ * @param {string} id
+ * @returns
+ */
+export const socialLogin = async (id) => {
+  try {
+    let provider;
+    switch (id) {
+      case "google":
+        provider = new GoogleAuthProvider();
+        break;
+      default:
+        return { err: "error" };
+    }
+    await signInWithRedirect(auth, provider);
+    return { err: undefined };
+  } catch (e) {
+    console.error(`socialLogin: ${e}`);
+    return { err: "error" };
+  }
+};
+
+/**
+ * Register social login
+ *
+ * @param {string} id
+ * @returns
+ */
+export const registerSocialLogin = async (id) => {
+  try {
+    let provider;
+    switch (id) {
+      case "google":
+        provider = new GoogleAuthProvider();
+        break;
+      default:
+        return { err: "error" };
+    }
+    await linkWithRedirect(auth.currentUser, provider);
+    return { err: undefined };
+  } catch (e) {
+    console.error(`socialLogin: ${e}`);
+    return { err: "error" };
   }
 };
 
