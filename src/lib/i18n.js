@@ -93,6 +93,15 @@ export class I18n {
         " to login to the social service and this app," +
         " or if you register a social app to use for logging in" +
         " after logging in to this app.";
+  aboutRegisterSocialLogin = () =>
+    this.locale === "ja"
+      ? "ソーシャルログインは、ソーシャルサービスとこのアプリのログインで" +
+        "同じメールアドレスを使用している場合、もしくは、" +
+        "下のボタンでログインに利用するソーシャルアプリを登録した場合に利用できます。"
+      : "Social login can be used if you use the same email address" +
+        " to login to the social service and this app," +
+        " or if you register a social app to use for logging in" +
+        " using the buttons below.";
   timeoutMinutes = () =>
     this.locale === "ja" ? "タイムアウト時間（分）" : "Timeout minutes";
   logoutNow = () =>

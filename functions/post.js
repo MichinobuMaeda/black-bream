@@ -1,68 +1,106 @@
 const { info, error } = require("firebase-functions/logger");
-const { getFunctions } = require("firebase-admin/functions");
-const { google } = require("googleapis");
 
 /**
- * Get the URL of a given v2 cloud function.
- * https://firebase.google.com/docs/functions/task-functions?gen=2nd
+ * Get queue name from location, project, and function name
  *
- * @param {string} location the function's location
- * @param {string} project the project ID
- * @param {string} name the function's name
- * @return {Promise<object>} The URL of the function
+ * @param {string} location
+ * @param {string} project
+ * @param {string} functionName
+ * @returns
  */
-const getFunctionUrl = async (location, project, name) => {
-  try {
-    const auth = new google.auth.GoogleAuth({
-      scopes: "https://www.googleapis.com/auth/cloud-platform",
-    });
-    const url =
-      "https://cloudfunctions.googleapis.com/v2beta/" +
-      `projects/${project}/locations/${location}/functions/${name}`;
+const getQueueName = (project, location, functionName) =>
+  `projects/${project}/locations/${location}/functions/${functionName}`;
 
-    const client = await auth.getClient();
-    const res = await client.request({ url });
-    const uri = res.data?.serviceConfig?.uri;
-    if (!uri) {
-      error(`Unable to retrieve uri for function at ${url}`);
-      return {
-        err: `Unable to retrieve uri for function at ${url}`,
-        data: undefined,
-      };
-    }
-    info(`uri: ${uri}`);
-    return { err: undefined, data: uri };
+/**
+ * Post
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} data
+ */
+const post = async (db, { id, service, text }) => {
+  try {
+    info(`Task dispatched: ${id} ${service} ${text.substring(0, 20)}`);
+    const ts = new Date();
+    await db
+      .collection("posts")
+      .doc(id)
+      .update({ status: "posted", [`posted.${service}`]: ts, updatedAt: ts });
+    return { err: undefined, data: "posted" };
   } catch (e) {
-    error(e.code ?? e.toString());
+    error(e);
     return { err: e.code ?? e.toString(), data: undefined };
   }
 };
 
 /**
- * Create post
+ * Create posts
  *
- * @param {string} location
- * @param {string} project
+ * @param {object} queue
  * @param {FirebaseFirestore.QueryDocumentSnapshot} data
  * @returns {Promise<object>}
  */
-const createPost = async (location, project, data) => {
+const createPosts = async (queue, data) => {
   try {
     const { id } = data;
-    const name = "post";
-    const queue = getFunctions().taskQueue(name);
-    const uri = await getFunctionUrl(location, project, name);
+    const { services, scheduledFor, ...content } = data.data();
+    info(`Enqueue posts: ${id}`);
     const requests = [];
-    requests.push(queue.enqueue({ id }, { uri }));
+    const taskIds = [];
+    let scheduleTime = new Date(
+      Math.max(scheduledFor.toDate().getTime(), new Date().getTime()),
+    );
+    services.forEach((service) => {
+      scheduleTime = new Date(scheduleTime.getTime() + 60 * 1000);
+      const taskId = `${id}-${service}`;
+      taskIds.push(taskId);
+      requests.push(
+        queue.enqueue(
+          { id, service, ...content },
+          { scheduleTime, id: taskId },
+        ),
+      );
+    });
     await Promise.all(requests);
-    await data.ref.update({ status: "queued" });
-    return { err: undefined, data: "queued" };
+    await data.ref.update({
+      status: "enqueued",
+      taskIds,
+      updatedAt: new Date(),
+    });
+    return { err: undefined, data: "enqueued" };
   } catch (e) {
-    error(e.code ?? e.toString());
+    error(e);
+    return { err: e.code ?? e.toString(), data: undefined };
+  }
+};
+
+/**
+ * Delete posts
+ *
+ * @param {object} queue
+ * @param {FirebaseFirestore.QueryDocumentSnapshot} data
+ * @returns {Promise<object>}
+ */
+const deletePosts = async (queue, data) => {
+  try {
+    const { id } = data;
+    const { taskIds } = data.data();
+    info(`Delete posts: ${id}`);
+    await Promise.all(taskIds.map((taskId) => queue.delete(taskId)));
+    await data.ref.update({
+      status: "deleted",
+      taskIds,
+      updatedAt: new Date(),
+    });
+    return { err: undefined, data: "deleted" };
+  } catch (e) {
+    error(e);
     return { err: e.code ?? e.toString(), data: undefined };
   }
 };
 
 module.exports = {
-  createPost,
+  post,
+  getQueueName,
+  createPosts,
+  deletePosts,
 };

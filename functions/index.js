@@ -1,5 +1,6 @@
 const {
   onDocumentCreated,
+  onDocumentUpdated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
@@ -7,12 +8,13 @@ const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
+const { getFunctions } = require("firebase-admin/functions");
 
 const post = require("./post");
 const account = require("./account");
 const { updateDataV1 } = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
-const { info } = require("firebase-functions/logger");
+const { info, warn } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
 const optOnCall = process.env.FUNCTIONS_EMULATOR
@@ -26,16 +28,51 @@ const optOnCall = process.env.FUNCTIONS_EMULATOR
 const app = initializeApp();
 
 exports.post = onTaskDispatched({ region }, async ({ data }) => {
-  console.log(`Task dispatched: ${data.id}`);
+  await post.post(getFirestore(app), data);
 });
+
+exports.onDataPostCreated = onDocumentUpdated(
+  { document: "posts/{postsId}", region },
+  async ({ data, location, project }) => {
+    if (process.env.FUNCTIONS_EMULATOR) {
+      info("On emulator");
+    } else {
+      const queue = getFunctions(app).taskQueue(
+        post.getQueueName(project, location, "post"),
+      );
+      const { before, after } = data;
+      if (before.data().status === "posted") {
+        warn(`Already posted: ${before.id}`);
+      } else if (before.data().deletedAt && !after.data().deletedAt) {
+        await post.createPosts(queue, after);
+      } else if (!before.data().deletedAt && after.data().deletedAt) {
+        await post.deletePosts(queue, before);
+      } else if (
+        before.data().scheduledFor?.toDate().getTime() !==
+          after.data().scheduledFor?.toDate().getTime() ||
+        before.data().services?.length !== after.data?.length ||
+        !(before.data().services ?? []).every((item) =>
+          (after.data().services ?? []).includes(item),
+        )
+      ) {
+        await post.deletePosts(queue, before);
+        await post.createPosts(queue, after);
+      }
+    }
+  },
+);
 
 exports.onDataPostCreated = onDocumentCreated(
   { document: "posts/{postsId}", region },
-  ({ data, location, project }) => {
+  ({ data, location, project }) =>
     process.env.FUNCTIONS_EMULATOR
       ? info("On emulator")
-      : post.createPost(location, project, data);
-  },
+      : post.createPosts(
+          getFunctions(app).taskQueue(
+            post.getQueueName(project, location, "post"),
+          ),
+          data,
+        ),
 );
 
 exports.addAuthUser = onCall(optOnCall, ({ data, auth }) =>

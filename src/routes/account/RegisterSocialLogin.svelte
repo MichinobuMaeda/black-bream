@@ -35,8 +35,9 @@
   };
 </script>
 
-<h4>{t().socialLogin()}</h4>
+<h3>{t().socialLogin()}</h3>
 <Content>
+  <div>{t().aboutRegisterSocialLogin()}</div>
   {#if result?.err}
     <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
   {/if}
@@ -51,5 +52,4 @@
       </div>
     {/each}
   </Wrap>
-  <div>{t().aboutSocialLogin()}</div>
 </Content>

@@ -14,11 +14,10 @@
 
   // Fields
   let text = $state("");
+  let services = $state([]);
   let errorText = $derived(active ? "" : !text ? t().required() : "");
   let schedule = $state(formatISO(new Date()));
-  let errorScheduleFor = $derived(
-    active ? "" : !schedule ? t().required() : "",
-  );
+  let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
 
   // Actions
   let result = $state(null);
@@ -37,6 +36,7 @@
 
     result = await createDocument("posts", {
       text,
+      services,
       scheduledFor: new Date(schedule),
     });
 
@@ -61,7 +61,7 @@
           type="datetime-local"
           bind:value={schedule}
           message={t().required()}
-          error={errorScheduleFor}
+          error={errorSchedule}
         />
       </Fields>
       <Fields>
