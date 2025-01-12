@@ -1,5 +1,5 @@
 const { info, error } = require("firebase-functions/logger");
-const { updateDataV1 } = require("./deployment");
+const deployment = require("./deployment");
 
 /**
  * Create test data for UI testing.
@@ -28,8 +28,16 @@ const createUiTestData = async (auth, db) => {
     const dataVersionRef = db.collection("service").doc("dataVersion");
     await dataVersionRef.set({ email: emailPrimaryUser });
     const dataVersion = await dataVersionRef.get();
-    const { err, data } = await updateDataV1(auth, db, dataVersion);
+
+    const { err, data } = await deployment.updateDataV1(
+      auth,
+      db,
+      dataVersion,
+      () => deployment.updateDataV2(db, data, null),
+    );
+
     info(`dataVersion: ${data}`);
+
     if (err) {
       return { error: err };
     }

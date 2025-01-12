@@ -6,7 +6,9 @@
   import { formatDateTime } from "../../lib/i18n";
 
   let posts = $derived(
-    store.posts.filter((post) => post.status === "completed").slice(0, 4),
+    store.posts
+      .filter((post) => ["posting", "completed"].includes(post.status))
+      .slice(0, 4),
   );
 </script>
 

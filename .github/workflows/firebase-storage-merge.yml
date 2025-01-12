@@ -16,9 +16,7 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
-      - run: |
-          npm ci
-          npm ci --prefix functions
+      - run: npm ci && npm ci --prefix functions
       - name: Deploy Storage
         env:
           WORK_DIR: ${{ runner.temp }}/work

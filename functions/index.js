@@ -12,9 +12,9 @@ const { getFunctions } = require("firebase-admin/functions");
 
 const post = require("./post");
 const account = require("./account");
-const { updateDataV1 } = require("./deployment");
+const deployment = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
-const { info, warn } = require("firebase-functions/logger");
+const { info } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
 const optOnCall = process.env.FUNCTIONS_EMULATOR
@@ -41,8 +41,8 @@ exports.onDataPostCreated = onDocumentUpdated(
         post.getQueueName(project, location, "post"),
       );
       const { before, after } = data;
-      if (before.data().status === "posted") {
-        warn(`Already posted: ${before.id}`);
+      if (before.data().status === "posting") {
+        await post.checkCompleted(before);
       } else if (before.data().deletedAt && !after.data().deletedAt) {
         await post.createPosts(queue, after);
       } else if (!before.data().deletedAt && after.data().deletedAt) {
@@ -109,7 +109,9 @@ exports.onDataVersionDeleted = onDocumentDeleted(
   ({ data }) => {
     const auth = getAuth(app);
     const db = getFirestore(app);
-    updateDataV1(auth, db, data, null);
+    deployment.updateDataV1(auth, db, data, () =>
+      deployment.updateDataV2(db, data, null),
+    );
   },
 );
 

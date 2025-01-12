@@ -1,4 +1,4 @@
-name: Deploy to Firestore on merge
+name: Firestore on merge deployment
 on:
   push:
     branches:
@@ -16,9 +16,8 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
-      - run: |
-          npm ci
-          npm ci --prefix functions
+      - run: npm ci && npm ci --prefix functions
+      - run: npm run test:firestore
       - name: Deploy Firestore
         env:
           WORK_DIR: ${{ runner.temp }}/work

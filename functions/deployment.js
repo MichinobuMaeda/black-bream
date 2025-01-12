@@ -3,7 +3,7 @@ const { info, error } = require("firebase-functions/logger");
 const { addAuthUser } = require("./account");
 
 /**
- * Deploy on workflows
+ * Update data to version 1
  *
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
@@ -100,6 +100,43 @@ site.manager@example.com
   return next ? next() : { err: undefined, data: 1 };
 };
 
+/**
+ * Update data to version 2
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
+ * @param {function|null} next
+ * @returns {Promise<object>}
+ */
+const updateDataV2 = async (db, deleted, next = null) => {
+  let ver = Number(deleted.get("ver")) || 0;
+
+  if (ver < 2) {
+    var err = undefined;
+
+    try {
+      await db.collection("service").doc("app").set({
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      info("Created 'service/app'");
+
+      await deleted.ref.set({
+        ver: 2,
+        err: err ?? null,
+        updatedAt: new Date(),
+      });
+    } catch (e) {
+      error(e.code ?? e.toString());
+      err = e.code ?? e.toString();
+      return { err: e.code ?? e.toString(), data: ver };
+    }
+  }
+
+  return next ? next() : { err: undefined, data: 2 };
+};
+
 module.exports = {
   updateDataV1,
+  updateDataV2,
 };

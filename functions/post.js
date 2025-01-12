@@ -24,8 +24,8 @@ const post = async (db, { id, service, text }) => {
     await db
       .collection("posts")
       .doc(id)
-      .update({ status: "posted", [`posted.${service}`]: ts, updatedAt: ts });
-    return { err: undefined, data: "posted" };
+      .update({ status: "posting", [`posted.${service}`]: ts, updatedAt: ts });
+    return { err: undefined, data: "posting" };
   } catch (e) {
     error(e);
     return { err: e.code ?? e.toString(), data: undefined };
@@ -98,9 +98,32 @@ const deletePosts = async (queue, data) => {
   }
 };
 
+/**
+ * Check completed posts
+ *
+ * @param {FirebaseFirestore.QueryDocumentSnapshot} data
+ * @returns {Promise<object>}
+ */
+const checkCompleted = async (data) => {
+  try {
+    const { posted, taskIds } = data.data();
+    if (taskIds.length === Object.keys(posted).length) {
+      await data.ref.update({
+        status: "completed",
+        updatedAt: new Date(),
+      });
+    }
+    return { err: undefined, data: "deleted" };
+  } catch (e) {
+    error(e);
+    return { err: e.code ?? e.toString(), data: undefined };
+  }
+};
+
 module.exports = {
   post,
   getQueueName,
   createPosts,
   deletePosts,
+  checkCompleted,
 };
