@@ -8,6 +8,7 @@ export const t = () => i18n;
 
 let authUser = $state(undefined);
 let conf = $state(undefined);
+let auth = $state(undefined);
 let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
@@ -50,6 +51,12 @@ export const store = {
   },
   set conf(value) {
     conf = value;
+  },
+  get auth() {
+    return auth;
+  },
+  set auth(value) {
+    auth = value;
   },
   get users() {
     return users;

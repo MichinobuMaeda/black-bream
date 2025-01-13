@@ -28,18 +28,20 @@
 </h3>
 <Content>
   {#each posts as post}
-    <a class="flex flex-row gap-1" href="/posts/{post.id}" use:link>
-      <span class="size-6">
-        {#if post.deletedAt}
-          <SvgScanDelete />
-        {:else if post.status === "completed"}
-          <SvgTask />
-        {:else}
-          <SvgScheduledTask />
-        {/if}
-      </span>
-      {formatDateTime(post.scheduledFor?.toDate())}
+    <div class="flex flex-row gap-2">
+      <a class="flex flex-row gap-1" href="/posts/{post.id}" use:link>
+        <span class="size-6">
+          {#if post.deletedAt}
+            <SvgScanDelete />
+          {:else if post.status === "completed"}
+            <SvgTask />
+          {:else}
+            <SvgScheduledTask />
+          {/if}
+        </span>
+        {formatDateTime(post.scheduledFor?.toDate())}
+      </a>
       {post.text?.substr(0, 20)}
-    </a>
+    </div>
   {/each}
 </Content>

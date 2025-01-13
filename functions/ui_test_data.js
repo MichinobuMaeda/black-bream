@@ -33,7 +33,7 @@ const createUiTestData = async (auth, db) => {
       auth,
       db,
       dataVersion,
-      () => deployment.updateDataV2(db, data, null),
+      () => deployment.updateDataV2(db, dataVersion, null),
     );
 
     info(`dataVersion: ${data}`);

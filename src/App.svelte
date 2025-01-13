@@ -23,7 +23,7 @@
   import Routes from "./routes.svelte";
 
   $effect(() => {
-    if (store.conf && store.authUser) {
+    if (store.conf?.id && store.authUser?.uid) {
       subscribeUserData(store);
     }
   });

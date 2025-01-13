@@ -19,7 +19,7 @@ service cloud.firestore {
       allow read, update: if isManager() || isAdmin();
       allow read: if true;
     }
-    match /service/app {
+    match /service/auth {
       allow read, update: if isAdmin();
     }
     match /users/{user} {

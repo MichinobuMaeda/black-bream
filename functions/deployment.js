@@ -115,11 +115,10 @@ const updateDataV2 = async (db, deleted, next = null) => {
     var err = undefined;
 
     try {
-      await db.collection("service").doc("app").set({
+      await db.collection("service").doc("auth").set({
         createdAt: new Date(),
-        updatedAt: new Date(),
       });
-      info("Created 'service/app'");
+      info("Created 'service/auth'");
 
       await deleted.ref.set({
         ver: 2,

@@ -8,14 +8,13 @@ import {
   connectAuthEmulator,
   sendPasswordResetEmail,
   isSignInWithEmailLink,
-  getRedirectResult,
   signInWithEmailLink,
   sendSignInLinkToEmail,
   signInWithEmailAndPassword,
   signOut,
   updatePassword,
-  signInWithRedirect,
-  linkWithRedirect,
+  signInWithPopup,
+  linkWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
 import {
@@ -102,14 +101,6 @@ export const handleDeepLinks = (url, location) => {
           console.error(`signInWithEmailLink: ${e}`);
         });
     }
-  } else {
-    getRedirectResult(auth)
-      .then((result) => {
-        console.log(`getRedirectResult: ${result}`);
-      })
-      .catch((e) => {
-        console.error(`getRedirectResult: ${e}`);
-      });
   }
 };
 
@@ -122,7 +113,7 @@ export const handleDeepLinks = (url, location) => {
 export const subscribeConf = (store) => {
   console.log("init conf");
   onSnapshot(doc(db, "service", "conf"), (doc) => {
-    store.conf = doc.data();
+    store.conf = { id: doc.id, ...doc.data() };
     console.log(`conf: ${store.conf === undefined ? "undefined" : "loaded"}`);
   });
 };
@@ -150,6 +141,9 @@ let groupsUnsub = null;
 /** @type {import("firebase/auth").Unsubscribe|null} */
 let postsUnsub = null;
 
+/** @type {import("firebase/auth").Unsubscribe|null} */
+let authUnsub = null;
+
 /**
  * Unsubscribe user data
  *
@@ -175,6 +169,18 @@ export const unsubscribeUserData = async (store) => {
       postsUnsub();
       postsUnsub = null;
       store.posts = [];
+    }
+
+    if (postsUnsub) {
+      postsUnsub();
+      postsUnsub = null;
+      store.posts = [];
+    }
+
+    if (authUnsub) {
+      authUnsub();
+      authUnsub = null;
+      store.auth = undefined;
     }
 
     if (store.authUser) {
@@ -238,6 +244,22 @@ export const subscribeUserData = (store) => {
       },
       (error) => {
         console.error(`onSnapshot posts: ${error}`);
+        unsubscribeUserData(store);
+      },
+    );
+  }
+
+  if (!authUnsub) {
+    authUnsub = onSnapshot(
+      doc(db, "service", "auth"),
+      (doc) => {
+        store.auth = { id: doc.id, ...doc.data() };
+        console.log(
+          `auth: ${store.auth === undefined ? "undefined" : "loaded"}`,
+        );
+      },
+      (error) => {
+        console.error(`onSnapshot auth: ${error}`);
         unsubscribeUserData(store);
       },
     );
@@ -471,7 +493,7 @@ export const socialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -495,7 +517,7 @@ export const registerSocialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await linkWithRedirect(auth.currentUser, provider);
+    await linkWithPopup(auth.currentUser, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);

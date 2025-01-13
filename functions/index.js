@@ -31,7 +31,7 @@ exports.post = onTaskDispatched({ region }, async ({ data }) => {
   await post.post(getFirestore(app), data);
 });
 
-exports.onDataPostCreated = onDocumentUpdated(
+exports.onPostUpdated = onDocumentUpdated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
@@ -62,7 +62,7 @@ exports.onDataPostCreated = onDocumentUpdated(
   },
 );
 
-exports.onDataPostCreated = onDocumentCreated(
+exports.onPostCreated = onDocumentCreated(
   { document: "posts/{postsId}", region },
   ({ data, location, project }) =>
     process.env.FUNCTIONS_EMULATOR
@@ -73,6 +73,25 @@ exports.onDataPostCreated = onDocumentCreated(
           ),
           data,
         ),
+);
+
+exports.onServiceAuthUpdated = onDocumentUpdated(
+  { document: "service/auth", region },
+  async ({ data }) => {
+    const db = getFirestore(app);
+    const { after } = data;
+    await db
+      .collection("service")
+      .doc("conf")
+      .update({
+        postTargets: Object.entries(after.data())
+          .filter(
+            ([key]) => !["createdAt", "updatedAt", "deletedAt"].includes(key),
+          )
+          .filter(([, value]) => !value.deletedAt)
+          .map(([key]) => key),
+      });
+  },
 );
 
 exports.addAuthUser = onCall(optOnCall, ({ data, auth }) =>

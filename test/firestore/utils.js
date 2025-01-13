@@ -10,7 +10,7 @@ export const db = getFirestore(app);
 export const data1 = { name: "test" };
 
 export const refService = collection(db, "service");
-export const refApp = doc(db, "service", "app");
+export const refAuth = doc(db, "service", "auth");
 export const refConf = doc(db, "service", "conf");
 export const refGroups = collection(db, "groups");
 export const refAdmins = doc(db, "groups", "admins");

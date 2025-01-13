@@ -59,6 +59,7 @@ export class I18n {
   manager = () => (this.locale === "ja" ? "管理者" : "Manager");
   siteDesc = () => (this.locale === "ja" ? "サイトの説明" : "Site description");
   deleted = () => (this.locale === "ja" ? "削除" : "Deleted");
+  enabled = () => (this.locale === "ja" ? "有効" : "Enabled");
   restricted = () => (this.locale === "ja" ? "ログイン不可" : "Disabled");
   email = () => (this.locale === "ja" ? "メールアドレス" : "Email");
   changeEmail = () =>

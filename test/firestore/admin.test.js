@@ -17,7 +17,7 @@ import {
   auth,
   db,
   data1,
-  refApp,
+  refAuth,
   refConf,
   refService,
   refGroups,
@@ -58,14 +58,14 @@ describe("Admin", () => {
   it("can not read service/*", async () => {
     await expect(getDocs(refService)).rejects.toThrow();
   });
-  it("can read service/app", async () => {
-    await expect(getDoc(refApp)).resolves.toHaveProperty("id");
+  it("can read service/auth", async () => {
+    await expect(getDoc(refAuth)).resolves.toHaveProperty("id");
   });
-  it("can update service/app", async () => {
-    await expect(updateDoc(refApp, data1)).resolves.toBeUndefined();
+  it("can update service/auth", async () => {
+    await expect(updateDoc(refAuth, data1)).resolves.toBeUndefined();
   });
-  it("can not delete service/app", async () => {
-    await expect(deleteDoc(refApp)).rejects.toThrow();
+  it("can not delete service/auth", async () => {
+    await expect(deleteDoc(refAuth)).rejects.toThrow();
   });
   it("can read groups/*", async () => {
     await expect(getDocs(refGroups)).resolves.toHaveProperty("docs");

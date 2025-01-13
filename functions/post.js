@@ -17,14 +17,14 @@ const getQueueName = (project, location, functionName) =>
  * @param {FirebaseFirestore.Firestore} db
  * @param {object} data
  */
-const post = async (db, { id, service, text }) => {
+const post = async (db, { id, target, text }) => {
   try {
-    info(`Task dispatched: ${id} ${service} ${text.substring(0, 20)}`);
+    info(`Task dispatched: ${id} ${target} ${text.substring(0, 20)}`);
     const ts = new Date();
     await db
       .collection("posts")
       .doc(id)
-      .update({ status: "posting", [`posted.${service}`]: ts, updatedAt: ts });
+      .update({ status: "posting", [`posted.${target}`]: ts, updatedAt: ts });
     return { err: undefined, data: "posting" };
   } catch (e) {
     error(e);
@@ -42,22 +42,19 @@ const post = async (db, { id, service, text }) => {
 const createPosts = async (queue, data) => {
   try {
     const { id } = data;
-    const { services, scheduledFor, ...content } = data.data();
+    const { targets, scheduledFor, ...content } = data.data();
     info(`Enqueue posts: ${id}`);
     const requests = [];
     const taskIds = [];
     let scheduleTime = new Date(
       Math.max(scheduledFor.toDate().getTime(), new Date().getTime()),
     );
-    services.forEach((service) => {
+    targets.forEach((target) => {
       scheduleTime = new Date(scheduleTime.getTime() + 60 * 1000);
-      const taskId = `${id}-${service}`;
+      const taskId = `${id}-${target}`;
       taskIds.push(taskId);
       requests.push(
-        queue.enqueue(
-          { id, service, ...content },
-          { scheduleTime, id: taskId },
-        ),
+        queue.enqueue({ id, target, ...content }, { scheduleTime, id: taskId }),
       );
     });
     await Promise.all(requests);
