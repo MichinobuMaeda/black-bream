@@ -8,6 +8,7 @@ import {
   connectAuthEmulator,
   sendPasswordResetEmail,
   isSignInWithEmailLink,
+  getRedirectResult,
   signInWithEmailLink,
   sendSignInLinkToEmail,
   signInWithEmailAndPassword,
@@ -101,6 +102,14 @@ export const handleDeepLinks = (url, location) => {
           console.error(`signInWithEmailLink: ${e}`);
         });
     }
+  } else {
+    getRedirectResult(auth)
+      .then((result) => {
+        console.log(`getRedirectResult: ${result}`);
+      })
+      .catch((e) => {
+        console.error(`getRedirectResult: ${e}`);
+      });
   }
 };
 
