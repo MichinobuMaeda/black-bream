@@ -42,7 +42,7 @@ exports.onPostUpdated = onDocumentUpdated(
       );
       const { before, after } = data;
       if (after.data().status === "posting") {
-        await post.checkCompleted(before);
+        await post.checkCompleted(after);
       } else if (before.data().deletedAt && !after.data().deletedAt) {
         await post.createPosts(queue, after);
       } else if (!before.data().deletedAt && after.data().deletedAt) {
