@@ -1,6 +1,6 @@
 export const config = {
   apiKey: "FIREBASE_API_KEY",
-  authDomain: "black-bream.web.app",
+  authDomain: "black-bream.firebaseapp.com",
   projectId: "black-bream",
   storageBucket: "black-bream.appspot.com",
   messagingSenderId: "676914207416",
