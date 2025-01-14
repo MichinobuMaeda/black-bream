@@ -21,8 +21,8 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
-        "source": "/index.html",
-        "destination": "/index.html"
+        "source": "/__/auth/handler",
+        "destination": "/__/auth/handler"
       }
     ]
   },
