@@ -41,7 +41,7 @@ exports.onPostUpdated = onDocumentUpdated(
         post.getQueueName(project, location, "post"),
       );
       const { before, after } = data;
-      if (before.data().status === "posting") {
+      if (after.data().status === "posting") {
         await post.checkCompleted(before);
       } else if (before.data().deletedAt && !after.data().deletedAt) {
         await post.createPosts(queue, after);
@@ -50,9 +50,9 @@ exports.onPostUpdated = onDocumentUpdated(
       } else if (
         before.data().scheduledFor?.toDate().getTime() !==
           after.data().scheduledFor?.toDate().getTime() ||
-        before.data().services?.length !== after.data?.length ||
-        !(before.data().services ?? []).every((item) =>
-          (after.data().services ?? []).includes(item),
+        before.data().targets?.length !== after.data().targets?.length ||
+        !(before.data().targets ?? []).every((item) =>
+          (after.data().targets ?? []).includes(item),
         )
       ) {
         await post.deletePosts(queue, before);

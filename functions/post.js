@@ -110,7 +110,7 @@ const checkCompleted = async (data) => {
         updatedAt: new Date(),
       });
     }
-    return { err: undefined, data: "deleted" };
+    return { err: undefined, data: "completed" };
   } catch (e) {
     error(e);
     return { err: e.code ?? e.toString(), data: undefined };
