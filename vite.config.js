@@ -1,6 +1,7 @@
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { appName, themeColor } from "./theme.js";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -19,11 +20,11 @@ export default defineConfig({
       },
 
       manifest: {
-        name: "Black bream",
-        short_name: "Black bream",
-        description: "Black bream",
-        theme_color: "#FFDE3F",
-        background_color: "#FFDE3F",
+        name: appName,
+        short_name: appName,
+        description: appName,
+        theme_color: themeColor,
+        background_color: themeColor,
         lang: "ja",
       },
 

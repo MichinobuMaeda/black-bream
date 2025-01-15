@@ -47,7 +47,7 @@
 {/snippet}
 
 <header
-  class="flex flex-row sm:flex-col gap-4 xl:gap-4 p-2
+  class="flex flex-row sm:flex-col gap-4 xl:gap-4 p-2 z-50
     sm:h-screen sticky bottom-0 sm:top-0 items-center xl:items-start
     bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow
     text-lightOnSurface dark:text-darkOnSurface"

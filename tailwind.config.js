@@ -1,10 +1,11 @@
 import colors, { blue } from "tailwindcss/colors";
 import { generateScheme, contrast } from "./material-theme.js";
+import { themeColor } from "./theme.js";
 
 const lightLink = blue[700];
 const darkLink = blue[300];
 
-const materialTheme = generateScheme("#FFDE3F", contrast.standard);
+const materialTheme = generateScheme(themeColor, contrast.standard);
 
 /** @type {import('tailwindcss').Config} */
 export default {

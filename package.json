@@ -1,7 +1,7 @@
 {
   "name": "black-bream",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -16,7 +16,7 @@
     "dev": "vite",
     "lint": "eslint",
     "build": "vite build",
-    "start": "npx firebase emulators:exec --only functions,storage,auth,firestore --ui 'npm run test:data && npm run dev'",
+    "start": "npx firebase emulators:exec --only functions,storage,auth,firestore,tasks --ui 'npm run test:data && npm run dev'",
     "test:data": "curl -X POST -H 'Content-Type: application/json' -d '{\"data\":{}}' http://127.0.0.1:5001/black-bream/asia-northeast2/uiTestData",
     "test:functions": "npm test --prefix functions",
     "test:ui": "vitest --run --exclude test/firestore",
