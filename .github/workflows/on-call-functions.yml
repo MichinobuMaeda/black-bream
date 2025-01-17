@@ -30,10 +30,10 @@ jobs:
           mkdir $WORK_DIR
           echo '${{ secrets.firebase_service_account }}' \
           > $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase deploy --only functions --force
+          npx firebase deploy --only functions --force --project ${{ inputs.site-id }}
       - name: Set dataVersion
         env:
           WORK_DIR: ${{ runner.temp }}/${{ inputs.site-id }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/${{ inputs.site-id }}/service-account.json
         run: |
-          npx firebase firestore:delete service/dataVersion --force
+          npx firebase firestore:delete service/dataVersion --force --project ${{ inputs.site-id }}

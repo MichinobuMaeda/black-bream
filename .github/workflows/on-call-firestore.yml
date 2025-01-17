@@ -30,4 +30,4 @@ jobs:
           mkdir $WORK_DIR
           echo '${{ secrets.firebase_service_account }}' \
           > $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase deploy --only firestore --force
+          npx firebase deploy --only firestore --project ${{ inputs.site-id }}
