@@ -1,11 +1,13 @@
 name: Deploy to Firebase Hosting on merge
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/firebase-storage-merge.yml
-      - "storage.*"
+  workflow_call:
+    inputs:
+      site-id:
+        required: true
+        type: string
+    secrets:
+      firebase_service_account:
+        required: true
 jobs:
   deploy_storage:
     runs-on: ubuntu-latest
@@ -17,12 +19,15 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci && npm ci --prefix functions
+      - run: cp -r .github/sites/${{ inputs.site-id }}/* ./
+      - run: npx firebase use ${{ inputs.site-id }}
+
       - name: Deploy Storage
         env:
           WORK_DIR: ${{ runner.temp }}/work
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/work/service-account.json
         run: |
           mkdir $WORK_DIR
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}' \
+          echo '${{ secrets.firebase_service_account }}' \
           > $GOOGLE_APPLICATION_CREDENTIALS
           npx firebase deploy --only storage

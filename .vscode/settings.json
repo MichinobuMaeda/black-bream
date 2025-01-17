@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "ABCDEFGHJKLMNPRSTUVWXY",
+    "adminsdk",
     "apdisk",
     "appspot",
     "argb",
@@ -15,6 +16,8 @@
     "esktop",
     "favicons",
     "firebaseapp",
+    "firebaserc",
+    "firebasestorage",
     "firestore",
     "fseventsd",
     "icns",

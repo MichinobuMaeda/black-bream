@@ -1,0 +1,23 @@
+name: Firestore on merge deployment
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/on-call-firestore.yml
+      - .github/workflows/on-merge-firestore.yml
+      - "firestore.*"
+      - test/firestore/**
+jobs:
+  black-bream:
+    uses: ./.github/workflows/on-call-firestore.yml
+    with:
+      site-id: black-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}
+  grey-bream:
+    uses: ./.github/workflows/on-call-firestore.yml
+    with:
+      site-id: grey-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GREY_BREAM }}

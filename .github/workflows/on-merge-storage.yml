@@ -1,0 +1,22 @@
+name: Deploy to Firebase Hosting on merge
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/on-call-storage.yml
+      - .github/workflows/on-merge-storage.yml
+      - "storage.*"
+jobs:
+  black-bream:
+    uses: ./.github/workflows/on-call-storage.yml
+    with:
+      site-id: black-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}
+  grey-bream:
+    uses: ./.github/workflows/on-call-storage.yml
+    with:
+      site-id: grey-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GREY_BREAM }}

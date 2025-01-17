@@ -1,0 +1,46 @@
+name: Hosting on merge deployment
+on:
+  workflow_call:
+    inputs:
+      site-id:
+        required: true
+        type: string
+    secrets:
+      firebase_service_account:
+        required: true
+      firebase_api_key:
+        required: true
+      firebase_recaptcha_key:
+        required: true
+      github_token:
+        required: true
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci && npm ci --prefix functions
+      - run: npm test
+      - run: cp -r .github/sites/${{ inputs.site-id }}/* ./
+      - run: npx firebase use ${{ inputs.site-id }}
+
+      - name: Set firebase api key
+        run: |
+          sed 's/FIREBASE_API_KEY/${{ secrets.firebase_api_key }}/' \
+            -i src/firebaseConfig.js
+      - name: Set firebase reCAPTCHA key
+        run: |
+          sed 's/FIREBASE_RECAPTCHA_KEY/${{ secrets.firebase_recaptcha_key }}/' \
+            -i src/firebaseConfig.js
+      - run: npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.github_token }}
+          firebaseServiceAccount: ${{ secrets.firebase_service_account }}
+          channelId: live
+          projectId: ${{ inputs.site-id }}
