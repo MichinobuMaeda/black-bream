@@ -10,8 +10,8 @@ on:
       - public/**
       - src/**
       - test/unit/**
-      - *.config.js
-      - *theme.js
+      - "*.config.js"
+      - "*theme.js"
       - package*.json
       - index.html
       - .nvmrc

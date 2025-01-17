@@ -21,7 +21,6 @@ jobs:
       - run: npm ci && npm ci --prefix functions
       - run: npm test
       - run: cp -r .github/sites/${{ inputs.site-id }}/* ./
-      - run: npx firebase use ${{ inputs.site-id }}
 
       - name: Deploy Functions
         env:

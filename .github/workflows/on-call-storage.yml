@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting on merge
+name: Storage on merge deployment
 on:
   workflow_call:
     inputs:
@@ -20,7 +20,6 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci && npm ci --prefix functions
       - run: cp -r .github/sites/${{ inputs.site-id }}/* ./
-      - run: npx firebase use ${{ inputs.site-id }}
 
       - name: Deploy Storage
         env:
