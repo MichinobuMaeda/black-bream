@@ -6,8 +6,9 @@ on:
     paths:
       - .github/workflows/on-call-firestore.yml
       - .github/workflows/on-merge-firestore.yml
+      - .github/sites/**/*
       - "firestore.*"
-      - test/firestore/**
+      - test/firestore/**/*
 jobs:
   black-bream:
     uses: ./.github/workflows/on-call-firestore.yml

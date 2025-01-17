@@ -6,7 +6,8 @@ on:
     paths:
       - .github/workflows/on-call-functions.yml
       - .github/workflows/on-merge-functions.yml
-      - "functions/**"
+      - .github/sites/**/*
+      - "functions/**/*"
 jobs:
   black-bream:
     uses: ./.github/workflows/on-call-functions.yml

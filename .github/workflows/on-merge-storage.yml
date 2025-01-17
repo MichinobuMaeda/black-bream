@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/on-call-storage.yml
       - .github/workflows/on-merge-storage.yml
+      - .github/sites/**/*
       - "storage.*"
 jobs:
   black-bream:

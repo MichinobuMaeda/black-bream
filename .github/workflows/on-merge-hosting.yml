@@ -7,9 +7,10 @@ on:
       - "**/*.md"
       - .github/workflows/on-call-hosting.yml
       - .github/workflows/on-merge-hosting.yml
-      - public/**
-      - src/**
-      - test/unit/**
+      - .github/sites/**/*
+      - public/**/*
+      - src/**/*
+      - test/unit/**/*
       - "*.config.js"
       - "*theme.js"
       - package*.json
@@ -24,7 +25,7 @@ jobs:
       firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BLACK_BREAM }}
       firebase_api_key: ${{ secrets.FIREBASE_API_KEY_BLACK_BREAM }}
       firebase_recaptcha_key: ${{ secrets.FIREBASE_RECAPTCHA_KEY_BLACK_BREAM }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
   grey-bream:
     uses: ./.github/workflows/on-call-hosting.yml
     with:
@@ -33,4 +34,4 @@ jobs:
       firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GREY_BREAM }}
       firebase_api_key: ${{ secrets.FIREBASE_API_KEY_GREY_BREAM }}
       firebase_recaptcha_key: ${{ secrets.FIREBASE_RECAPTCHA_KEY_GREY_BREAM }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
