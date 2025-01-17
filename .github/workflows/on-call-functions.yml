@@ -24,8 +24,8 @@ jobs:
 
       - name: Deploy Functions
         env:
-          WORK_DIR: ${{ runner.temp }}/work
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/work/service-account.json
+          WORK_DIR: ${{ runner.temp }}/${{ inputs.site-id }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/${{ inputs.site-id }}/service-account.json
         run: |
           mkdir $WORK_DIR
           echo '${{ secrets.firebase_service_account }}' \
@@ -33,7 +33,7 @@ jobs:
           npx firebase deploy --only functions --force
       - name: Set dataVersion
         env:
-          WORK_DIR: ${{ runner.temp }}/work
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/work/service-account.json
+          WORK_DIR: ${{ runner.temp }}/${{ inputs.site-id }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/${{ inputs.site-id }}/service-account.json
         run: |
           npx firebase firestore:delete service/dataVersion --force
