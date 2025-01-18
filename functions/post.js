@@ -1,3 +1,4 @@
+const axios = require("axios");
 const { info, error } = require("firebase-functions/logger");
 
 /**
@@ -18,17 +19,87 @@ const getQueueName = (project, location, functionName) =>
  * @param {object} data
  */
 const post = async (db, { id, target, text }) => {
+  const postRef = db.collection("posts").doc(id);
+
+  const statusError = async (err) => {
+    error(err);
+
+    await postRef.update({
+      status: "posting",
+      [`posted.${target}`]: { err, completedAt: undefined },
+      updatedAt: new Date(),
+    });
+
+    return { err, data: undefined };
+  };
+
   try {
+    const post = await postRef.get();
+
+    if (!post.exists) {
+      return statusError(`Not found: posts/${id}`);
+    }
+    if (post.get("deletedAt")) {
+      return statusError(`Deleted: posts/${id}`);
+    }
+
+    const auth = await db.collection("service").doc("auth").get();
+
+    if (!auth.exists) {
+      return statusError("Not found: service/auth");
+    }
+    if (!auth.get("deletedAt")) {
+      return statusError(`Deleted: service/auth`);
+    }
+
+    const params = auth.get(target);
+
+    if (!params) {
+      return statusError(`Not found: ${target}`);
+    }
+    if (!params.deletedAt) {
+      return statusError(`Deleted: ${target}`);
+    }
+
+    let ret;
+
+    switch (target) {
+      case "mastodon":
+        ret = await axios.post(
+          params.url,
+          {
+            status: post.text,
+          },
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${params.token}`,
+            },
+          },
+        );
+        break;
+      default:
+        return statusError(`Not supported: ${target}`);
+    }
+
+    if (ret.status !== 200) {
+      return statusError(
+        postRef,
+        `Failed: ${target} ${ret.status} ${ret.statusText}`,
+      );
+    }
+
     info(`Task dispatched: ${id} ${target} ${text.substring(0, 20)}`);
-    const ts = new Date();
-    await db
-      .collection("posts")
-      .doc(id)
-      .update({ status: "posting", [`posted.${target}`]: ts, updatedAt: ts });
+
+    await postRef.update({
+      status: "posting",
+      [`posted.${target}`]: { err: undefined, completedAt: new Date() },
+      updatedAt: new Date(),
+    });
+
     return { err: undefined, data: "posting" };
   } catch (e) {
-    error(e);
-    return { err: e.code ?? e.toString(), data: undefined };
+    return statusError(e.code ?? e.toString());
   }
 };
 
@@ -106,7 +177,9 @@ const checkCompleted = async (data) => {
     const { posted, taskIds } = data.data();
     if (taskIds.length === Object.keys(posted).length) {
       await data.ref.update({
-        status: "completed",
+        status: Object.values(posted).some((target) => target.err)
+          ? "failed"
+          : "completed",
         updatedAt: new Date(),
       });
     }
