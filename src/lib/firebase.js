@@ -466,9 +466,7 @@ export const isUniqueGroupName = (store, name, id = null) =>
  */
 export const callFunction = async (name, param) => {
   try {
-    const f = httpsCallable(functions, name, {
-      limitedUseAppCheckTokens: reCaptchaKey !== "FIREBASE_RECAPTCHA_KEY",
-    });
+    const f = httpsCallable(functions, name);
     const { data } = await f(param);
     return data;
   } catch (e) {

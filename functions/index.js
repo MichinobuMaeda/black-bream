@@ -19,11 +19,7 @@ const { info } = require("firebase-functions/logger");
 const region = "asia-northeast2";
 const optOnCall = process.env.FUNCTIONS_EMULATOR
   ? { region }
-  : {
-      region,
-      enforceAppCheck: true,
-      consumeAppCheckToken: true,
-    };
+  : { region, enforceAppCheck: true };
 
 const app = initializeApp();
 
