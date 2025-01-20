@@ -12,7 +12,7 @@ import {
   sendSignInLinkToEmail,
   signInWithEmailAndPassword,
   signOut,
-  updateEmail,
+  verifyBeforeUpdateEmail,
   updatePassword,
   signInWithPopup,
   linkWithPopup,
@@ -425,7 +425,7 @@ export const changeEmail = async (store, currentPassword, email) => {
       store.authUser.email,
       currentPassword,
     );
-    await updateEmail(store.authUser, email);
+    await verifyBeforeUpdateEmail(store.authUser, email);
 
     return { err: undefined };
   } catch (e) {
