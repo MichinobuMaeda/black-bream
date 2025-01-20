@@ -42,9 +42,9 @@
           </span>
           {formatDateTime(post.scheduledFor?.toDate())}
         </a>
-        <span class="text-lightPrimary dark:text-darkPrimary"
-          >{Object.keys(post.targets ?? {}).join(", ")}</span
-        >
+        <span class="text-lightPrimary dark:text-darkPrimary">
+          {Object.keys(post.targets ?? {}).join(", ")}
+        </span>
       </div>
       <div>{post.text?.substr(0, 40)}</div>
     </div>

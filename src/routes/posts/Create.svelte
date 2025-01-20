@@ -43,15 +43,16 @@
   const onSave = async () => {
     active = true;
     text = text.trim();
+    const status = "requested";
 
     result = await createDocument("posts", {
       text,
       targets: targets.reduce(
-        (acc, cur) => ({ ...acc, [cur]: { createdAt: new Date() } }),
+        (acc, cur) => ({ ...acc, [cur]: { status, createdAt: new Date() } }),
         {},
       ),
       scheduledFor: new Date(schedule),
-      status: "scheduled",
+      status,
     });
 
     active = false;

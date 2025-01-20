@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    sodipodi:docname="favicon.svg"
-   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -45,30 +45,30 @@
     <g
        id="layer1">
       <path
-         style="fill:#000000;stroke-width:1.01902"
+         style="fill:#16502d;stroke-width:1.01902"
          d="M 55.010508,697.33912 165.89557,462.73547 368.3448,291.23212 l 383.89753,37.21299 107.5249,210.3343 157.92717,-84.13371 -1.6801,287.9962 -159.60722,-80.89781 -194.88889,194.15473 -416.65902,-14.5616 z"
          id="path1" />
       <ellipse
-         style="fill:#FFDE3F;fill-opacity:1;stroke-width:1.30831"
+         style="fill:#afe9af;fill-opacity:1;stroke-width:1.30831"
          id="path2"
          cx="244.31142"
          cy="576.80145"
          rx="63.100292"
          ry="63.909271" />
       <path
-         style="fill:#000000;fill-opacity:1"
+         style="fill:#16502d;fill-opacity:1"
          d="M 307.41167,862.37065 415.81474,1006.3688 493.47663,868.84248 Z"
          id="path3" />
       <path
-         style="fill:#000000;fill-opacity:1"
+         style="fill:#16502d;fill-opacity:1"
          d="m 678.7708,863.01051 117.30182,46.92073 52.58359,-119.72876 -42.06687,-56.62846 z"
          id="path3-3" />
       <path
-         style="fill:#000000;fill-opacity:1"
+         style="fill:#16502d;fill-opacity:1"
          d="m 370.51196,270.19869 55.01051,-150.46993 255.63708,32.35912 152.08788,114.87488 -82.51576,40.44892 z"
          id="path4" />
       <path
-         style="fill:#000000;fill-opacity:1"
+         style="fill:#16502d;fill-opacity:1"
          d="M 765.29328,323.59124 839.71926,465.97139 914.14525,381.83766 849.427,278.28847 Z"
          id="path5" />
     </g>

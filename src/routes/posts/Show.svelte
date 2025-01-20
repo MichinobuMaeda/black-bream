@@ -25,7 +25,7 @@
       {formatDateTime(post.scheduledFor?.toDate())}
       {post?.status}
     </span>
-    {#if store.operator}
+    {#if store.operator && post.status !== "completed"}
       <IconButtonOutlined
         id="edit"
         icon={SvgEdit}
@@ -36,16 +36,21 @@
   </h3>
   <Content>
     <Wrap>
+      <div class="flex flex-col gap-0.5 max-w-[440px] break-words">
+        {#each post.text.split("\n") as line}
+          <div>{line}</div>
+        {/each}
+      </div>
       <Fields>
-        <div>{Object.keys(post.targets ?? {}).join(", ")}</div>
-      </Fields>
-      <Fields>
-        <pre>{post.text}</pre>
+        {#each Object.keys(post.targets ?? {}) as target}
+          <div class="flex flex-row gap-4">
+            <span class="text-lightPrimary dark:text-darkPrimary">
+              {target}
+            </span>
+            {post.targets[target].status}
+          </div>
+        {/each}
       </Fields>
     </Wrap>
-  </Content>
-  <h4>Status</h4>
-  <Content>
-    <pre>{JSON.stringify(post.targets, null, 2)}</pre>
   </Content>
 {/if}

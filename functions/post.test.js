@@ -725,11 +725,15 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
         },
         {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${authData.mastodon.token}`,
+            "Idempotency-Key": expect.any(String),
           },
         },
       ],
@@ -771,11 +775,15 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
         },
         {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${authData.mastodon.token}`,
+            "Idempotency-Key": expect.any(String),
           },
         },
       ],
@@ -822,11 +830,15 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
         },
         {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${authData.mastodon.token}`,
+            "Idempotency-Key": expect.any(String),
           },
         },
       ],

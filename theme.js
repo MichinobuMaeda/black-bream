@@ -1,2 +1,2 @@
-export const appName = "Black bream";
-export const themeColor = "#FFDE3F";
+export const appName = "Test bream";
+export const themeColor = "#88DDAA";

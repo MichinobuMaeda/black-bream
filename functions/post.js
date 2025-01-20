@@ -1,3 +1,4 @@
+const { createHash } = require("node:crypto");
 const axios = require("axios");
 const { info, error } = require("firebase-functions/logger");
 
@@ -37,26 +38,26 @@ const createPosts = async (queue, data) => {
     });
 
     await Promise.all(
-      Object.keys(targets).map(async (target) => {
+      Object.entries(targets).map(async ([target, params]) => {
         try {
           await queue.enqueue(
             { id, target },
             {
-              scheduleTime: targets[target].scheduleTime,
+              scheduleTime: params.scheduleTime,
               id: `${id}-${target}`,
             },
           );
-          targets[target].status = "enqueued";
-          targets[target].enqueuedAt = new Date();
-          targets[target].updatedAt = new Date();
-          targets[target].deletedAt = null;
+          params.status = "enqueued";
+          params.enqueuedAt = new Date();
+          params.updatedAt = new Date();
+          params.deletedAt = null;
         } catch (e) {
           error(e);
-          targets[target].status = "failed";
-          targets[target].err = e.toString();
-          targets[target].enqueuedAt = null;
-          targets[target].updatedAt = new Date();
-          targets[target].deletedAt = null;
+          params.status = "failed";
+          params.err = e.toString();
+          params.enqueuedAt = null;
+          params.updatedAt = new Date();
+          params.deletedAt = null;
         }
       }),
     );
@@ -89,16 +90,16 @@ const deletePosts = async (queue, data) => {
     info(`Delete posts: ${id}`);
 
     await Promise.all(
-      Object.keys(targets).map(async (target) => {
+      Object.entries(targets).map(async ([target, params]) => {
         try {
           await queue.delete(`${id}-${target}`);
-          targets[target].status = "deleted";
-          targets[target].deletedAt = new Date();
-          targets[target].updatedAt = new Date();
+          params.status = "deleted";
+          params.deletedAt = new Date();
+          params.updatedAt = new Date();
         } catch (e) {
           error(e);
-          targets[target].err = e.toString();
-          targets[target].updatedAt = new Date();
+          params.err = e.toString();
+          params.updatedAt = new Date();
         }
       }),
     );
@@ -181,17 +182,25 @@ const post = async (db, { id, target }) => {
     const { text } = postSnap.data();
     let ret;
 
+    // Mastodon: Idempotency keys are stored for up to 1 hour.
+    const hash = createHash("sha256");
+    hash.update(text);
+
     switch (target) {
       case "mastodon":
         ret = await axios.post(
           params.url,
           {
             status: text,
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
           },
           {
             headers: {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${params.token}`,
+              "Idempotency-Key": hash.digest("hex"),
             },
           },
         );

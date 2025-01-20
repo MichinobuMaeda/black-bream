@@ -48,6 +48,16 @@ const createUiTestData = async (auth, db) => {
     const primary = await auth.getUserByEmail(emailPrimaryUser);
     await auth.updateUser(primary.uid, { password: passwordPrimaryUser });
 
+    await db
+      .collection("service")
+      .doc("auth")
+      .update({
+        mastodon: {
+          url: "urn:ietf:wg:oauth:2.0:oob",
+          token: "mastodon-access-token",
+        },
+      });
+
     info("END  : createUiTestData");
     return { result: "ok" };
   } catch (e) {
