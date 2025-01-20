@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
+    paths:
       - "**/*.md"
       - .github/workflows/on-call-hosting.yml
       - .github/workflows/on-merge-hosting.yml
