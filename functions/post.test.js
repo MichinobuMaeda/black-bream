@@ -725,7 +725,7 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
-          sensitive: false,
+          sensitive: "false",
           visibility: "public",
           language: "ja",
         },
@@ -775,7 +775,7 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
-          sensitive: false,
+          sensitive: "false",
           visibility: "public",
           language: "ja",
         },
@@ -830,7 +830,7 @@ describe("post", () => {
         authData.mastodon.url,
         {
           status: "Text",
-          sensitive: false,
+          sensitive: "false",
           visibility: "public",
           language: "ja",
         },

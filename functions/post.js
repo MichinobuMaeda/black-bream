@@ -192,7 +192,7 @@ const post = async (db, { id, target }) => {
           params.url,
           {
             status: text,
-            sensitive: false,
+            sensitive: "false",
             visibility: "public",
             language: "ja",
           },
