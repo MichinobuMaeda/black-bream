@@ -425,6 +425,7 @@ export const changeEmail = async (store, currentPassword, email) => {
       store.authUser.email,
       currentPassword,
     );
+    await store.authUser.reload();
     await verifyBeforeUpdateEmail(store.authUser, email);
 
     return { err: undefined };
@@ -450,6 +451,7 @@ export const changePassword = async (store, currentPassword, newPassword) => {
       store.authUser.email,
       currentPassword,
     );
+    await store.authUser.reload();
     await updatePassword(store.authUser, newPassword);
 
     return { err: undefined };
