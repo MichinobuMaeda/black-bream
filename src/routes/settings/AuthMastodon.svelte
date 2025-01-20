@@ -11,9 +11,16 @@
   let active = $state(false);
 
   // Fields
-  let mastodonToken = $state(store.auth.mastodon?.token);
-  let mastodonUrl = $state(store.auth.mastodon?.url);
-  let mastodonEnabled = $state(!store.auth.mastodon?.deletedAt);
+  let mastodonToken = $state("");
+  let mastodonUrl = $state("");
+  let mastodonEnabled = $state(false);
+
+  $effect(() => {
+    mastodonToken = store.auth?.mastodon?.token;
+    mastodonUrl = store.auth?.mastodon?.url;
+    mastodonEnabled = !store.auth?.mastodon?.deletedAt;
+  });
+
   let errorMastodonToken = $derived(
     mastodonEnabled && !mastodonToken ? t().required() : "",
   );
@@ -25,16 +32,16 @@
   let result = $state(null);
   let changed = $derived(
     !active &&
-      (mastodonToken !== store.auth.mastodon?.token ||
-        mastodonUrl !== store.auth.mastodon?.url ||
-        mastodonEnabled !== !store.auth.mastodon?.deletedAt),
+      (mastodonToken !== store.auth?.mastodon?.token ||
+        mastodonUrl !== store.auth?.mastodon?.url ||
+        mastodonEnabled !== !store.auth?.mastodon?.deletedAt),
   );
   let valid = $derived(!errorMastodonToken && !errorMastodonUrl);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
-    mastodonToken = store.auth.mastodon?.token;
-    mastodonEnabled = !store.auth.mastodon?.deletedAt;
+    mastodonToken = store.auth?.mastodon?.token;
+    mastodonEnabled = !store.auth?.mastodon?.deletedAt;
   };
 
   const onSave = async () => {
@@ -53,7 +60,7 @@
   };
 </script>
 
-<h4>Mastodon</h4>
+<h3>Mastodon</h3>
 <Content>
   <Wrap>
     <Fields>
@@ -62,7 +69,7 @@
         label="Access token"
         type="text"
         bind:value={mastodonToken}
-        message={t().current(store.auth.mastodon?.token ?? "--")}
+        message={t().current(store.auth?.mastodon?.token ?? "--")}
         error={errorMastodonToken}
       />
     </Fields>
@@ -72,7 +79,7 @@
         label="URL"
         type="text"
         bind:value={mastodonUrl}
-        message={t().current(store.auth.mastodon?.url ?? "--")}
+        message={t().current(store.auth?.mastodon?.url ?? "--")}
         error={errorMastodonUrl}
       />
     </Fields>

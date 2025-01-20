@@ -27,16 +27,29 @@ exports.post = onTaskDispatched({ region }, async ({ data }) => {
   await post.post(getFirestore(app), data);
 });
 
+const getQueue = (project, location) =>
+  getFunctions(app).taskQueue(post.getQueueName(project, location, "post"));
+
+exports.onPostCreated = onDocumentCreated(
+  { document: "posts/{postsId}", region },
+  async ({ data, location, project }) => {
+    if (process.env.FUNCTIONS_EMULATOR) {
+      info("On emulator");
+    } else {
+      await post.createPosts(getQueue(project, location), data);
+    }
+  },
+);
+
 exports.onPostUpdated = onDocumentUpdated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
       info("On emulator");
     } else {
-      const queue = getFunctions(app).taskQueue(
-        post.getQueueName(project, location, "post"),
-      );
       const { before, after } = data;
+      const queue = getQueue(project, location);
+
       if (after.data().status === "posting") {
         await post.checkCompleted(after);
       } else if (before.data().deletedAt && !after.data().deletedAt) {
@@ -45,10 +58,15 @@ exports.onPostUpdated = onDocumentUpdated(
         await post.deletePosts(queue, before);
       } else if (
         before.data().scheduledFor?.toDate().getTime() !==
-          after.data().scheduledFor?.toDate().getTime() ||
-        before.data().targets?.length !== after.data().targets?.length ||
-        !(before.data().targets ?? []).every((item) =>
-          (after.data().targets ?? []).includes(item),
+        after.data().scheduledFor?.toDate().getTime()
+      ) {
+        await post.deletePosts(queue, before);
+        await post.createPosts(queue, after);
+      } else if (
+        Object.keys(before.data().targets ?? {}).length !==
+          Object.keys(after.data().targets ?? {}).length ||
+        !Object.keys(before.data().targets ?? {}).every((item) =>
+          Object.keys(after.data().targets ?? {}).includes(item),
         )
       ) {
         await post.deletePosts(queue, before);
@@ -56,19 +74,6 @@ exports.onPostUpdated = onDocumentUpdated(
       }
     }
   },
-);
-
-exports.onPostCreated = onDocumentCreated(
-  { document: "posts/{postsId}", region },
-  ({ data, location, project }) =>
-    process.env.FUNCTIONS_EMULATOR
-      ? info("On emulator")
-      : post.createPosts(
-          getFunctions(app).taskQueue(
-            post.getQueueName(project, location, "post"),
-          ),
-          data,
-        ),
 );
 
 exports.onServiceAuthUpdated = onDocumentUpdated(
@@ -121,12 +126,11 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
 
 exports.onDataVersionDeleted = onDocumentDeleted(
   { document: "service/dataVersion", region },
-  ({ data }) => {
+  async ({ data }) => {
     const auth = getAuth(app);
     const db = getFirestore(app);
-    deployment.updateDataV1(auth, db, data, () =>
-      deployment.updateDataV2(db, data, null),
-    );
+    await deployment.updateDataV1(auth, db, data);
+    await deployment.updateDataV2(db, data);
   },
 );
 

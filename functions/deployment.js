@@ -8,10 +8,9 @@ const { addAuthUser } = require("./account");
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @param {function|null} next
  * @returns {Promise<object>}
  */
-const updateDataV1 = async (auth, db, deleted, next = null) => {
+const updateDataV1 = async (auth, db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 1) {
@@ -97,7 +96,7 @@ site.manager@example.com
     }
   }
 
-  return next ? next() : { err: undefined, data: 1 };
+  return { err: undefined, data: 1 };
 };
 
 /**
@@ -105,10 +104,9 @@ site.manager@example.com
  *
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @param {function|null} next
  * @returns {Promise<object>}
  */
-const updateDataV2 = async (db, deleted, next = null) => {
+const updateDataV2 = async (db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 2) {
@@ -132,7 +130,7 @@ const updateDataV2 = async (db, deleted, next = null) => {
     }
   }
 
-  return next ? next() : { err: undefined, data: 2 };
+  return { err: undefined, data: 2 };
 };
 
 module.exports = {

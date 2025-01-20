@@ -12,6 +12,7 @@ import {
   sendSignInLinkToEmail,
   signInWithEmailAndPassword,
   signOut,
+  updateEmail,
   updatePassword,
   signInWithPopup,
   linkWithPopup,
@@ -409,6 +410,31 @@ export const sendPasswordResetLink = async (email) => {
 };
 
 /**
+ * Change email address
+ *
+ * @param {object} store
+ * @param {string} currentPassword
+ * @param {string} email
+ * @return {Promise<object>}
+ */
+export const changeEmail = async (store, currentPassword, email) => {
+  try {
+    await store.authUser.reload();
+    await signInWithEmailAndPassword(
+      auth,
+      store.authUser.email,
+      currentPassword,
+    );
+    await updateEmail(store.authUser, email);
+
+    return { err: undefined };
+  } catch (e) {
+    console.error(`changeEmail: ${e}`);
+    return { err: e.toString() };
+  }
+};
+
+/**
  * Change password
  *
  * @param {object} store
@@ -418,6 +444,7 @@ export const sendPasswordResetLink = async (email) => {
  */
 export const changePassword = async (store, currentPassword, newPassword) => {
   try {
+    await store.authUser.reload();
     await signInWithEmailAndPassword(
       auth,
       store.authUser.email,

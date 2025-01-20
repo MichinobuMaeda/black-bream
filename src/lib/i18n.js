@@ -153,8 +153,10 @@ export class I18n {
         " and contain lowercase and uppercase letters; numbers; and symbols.";
   guideChangingEmail = () =>
     this.locale === "ja"
-      ? "ログイン用のメールアドレスの変更は管理者に依頼してください。"
-      : "Please ask your administrator to change the email address for login.";
+      ? "メールアドレスの変更にはパスワードの入力が必要です。" +
+        "設定するメールアドレスに間違いがないか確認してください。"
+      : "You need to enter your password to change your email address." +
+        " Please make sure the email address you are setting is correct.";
   descPasswordLink = () =>
     this.locale === "ja"
       ? "はじめてパスワードを設定する場合、または、パスワードを忘れた場合、" +
@@ -241,9 +243,13 @@ export class I18n {
  * @returns {string}
  */
 export const formatISO = (date) =>
-  new Date(date.setHours(date.getHours() - new Date().getTimezoneOffset() / 60))
-    .toISOString()
-    .substring(0, 16);
+  date instanceof Date
+    ? new Date(
+        date.setHours(date.getHours() - new Date().getTimezoneOffset() / 60),
+      )
+        .toISOString()
+        .substring(0, 16)
+    : null;
 
 /**
  * Format a date object with the browser timezone.
@@ -251,4 +257,5 @@ export const formatISO = (date) =>
  * @param {Date} date
  * @returns {string}
  */
-export const formatDateTime = (date) => formatISO(date).replace("T", " ");
+export const formatDateTime = (date) =>
+  date instanceof Date ? formatISO(date).replace("T", " ") : null;

@@ -1,6 +1,6 @@
 const { addAuthUser } = require("./account.js");
 
-const { updateDataV1 } = require("./deployment.js");
+const { updateDataV1, updateDataV2 } = require("./deployment.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("./account.js");
@@ -34,7 +34,7 @@ describe("updateDataV1", () => {
   const createdAt = expect.any(Date);
   const updatedAt = expect.any(Date);
 
-  it("should update data ver.0 to ver.1", async () => {
+  it("should update data ver.0 to ver.1.", async () => {
     // Prepare
     deleted.get
       .mockImplementationOnce(() => 0)
@@ -117,7 +117,7 @@ describe("updateDataV1", () => {
     ]);
   });
 
-  it("should return error if email is missing", async () => {
+  it("should return error if email is missing.", async () => {
     // Prepare
     deleted.get
       .mockImplementationOnce(() => 0)
@@ -137,7 +137,7 @@ describe("updateDataV1", () => {
     expect(deleted.ref.set.mock.calls).toEqual([]);
   });
 
-  it("should return error if set returns error", async () => {
+  it("should return error if set returns error.", async () => {
     // Prepare
     deleted.get
       .mockImplementationOnce(() => 0)
@@ -168,7 +168,7 @@ describe("updateDataV1", () => {
     expect(deleted.ref.set.mock.calls).toEqual([]);
   });
 
-  it("should return error if addAuthUser returns error", async () => {
+  it("should return error if addAuthUser returns error.", async () => {
     // Prepare
     deleted.get
       .mockImplementationOnce(() => 0)
@@ -177,7 +177,7 @@ describe("updateDataV1", () => {
     addAuthUser.mockImplementationOnce(() => ({ err: "error" }));
 
     // Call
-    let { err, data } = await updateDataV1(auth, db, deleted, null);
+    let { err, data } = await updateDataV1(auth, db, deleted);
 
     // Evaluate
     expect(err).toEqual("error");
@@ -208,7 +208,7 @@ describe("updateDataV1", () => {
     expect(deleted.ref.set.mock.calls).toEqual([]);
   });
 
-  it("should not update data of ver.1", async () => {
+  it("should not update data of ver.1.", async () => {
     // Prepare
     deleted.get.mockImplementationOnce(() => 1);
 
@@ -225,14 +225,94 @@ describe("updateDataV1", () => {
     expect(addAuthUser.mock.calls).toEqual([]);
     expect(deleted.ref.set.mock.calls).toEqual([]);
   });
+});
 
-  it("should call next", async () => {
+describe("updateDataV2", () => {
+  const get = jest.fn();
+  const add = jest.fn();
+  const set = jest.fn();
+  const doc = jest.fn(() => ({ get, set }));
+  const db = { collection: jest.fn(() => ({ doc, add })) };
+  const deleted = {
+    id: "dataVersion",
+    exists: true,
+    get: jest.fn(),
+    ref: { set: jest.fn() },
+  };
+  const createdAt = expect.any(Date);
+  const updatedAt = expect.any(Date);
+
+  it("should update data ver.0 to ver.2.", async () => {
     // Prepare
-    deleted.get.mockImplementationOnce(() => 1);
-    const next = jest.fn(() => Promise.resolve({ err: undefined, data: 2 }));
+    deleted.get.mockImplementationOnce(() => undefined);
 
     // Call
-    let { err, data } = await updateDataV1(auth, db, deleted, next);
+    let { err, data } = await updateDataV2(db, deleted);
+
+    // Evaluate
+    expect(err).toBeUndefined();
+    expect(data).toEqual(2);
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(doc.mock.calls).toEqual([["auth"]]);
+    expect(set.mock.calls).toEqual([[{ createdAt }]]);
+    expect(deleted.ref.set.mock.calls).toEqual([
+      [
+        {
+          ver: 2,
+          err: null,
+          updatedAt,
+        },
+      ],
+    ]);
+  });
+
+  it("should update data ver.1 to ver.2.", async () => {
+    // Prepare
+    deleted.get.mockImplementationOnce(() => 1);
+
+    // Call
+    let { err, data } = await updateDataV2(db, deleted);
+
+    // Evaluate
+    expect(err).toBeUndefined();
+    expect(data).toEqual(2);
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(doc.mock.calls).toEqual([["auth"]]);
+    expect(set.mock.calls).toEqual([[{ createdAt }]]);
+    expect(deleted.ref.set.mock.calls).toEqual([
+      [
+        {
+          ver: 2,
+          err: null,
+          updatedAt,
+        },
+      ],
+    ]);
+  });
+
+  it("should return error if doc().set() raises exception.", async () => {
+    // Prepare
+    deleted.get.mockImplementationOnce(() => 1);
+    set.mockImplementationOnce(() => Promise.reject("error"));
+
+    // Call
+    let { err, data } = await updateDataV2(db, deleted);
+
+    // Evaluate
+    expect(err).toEqual("error");
+    expect(data).toEqual(1);
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(doc.mock.calls).toEqual([["auth"]]);
+    expect(set.mock.calls).toEqual([[{ createdAt }]]);
+    expect(deleted.ref.set.mock.calls).toEqual([]);
+  });
+
+  it("should not update data of ver.2.", async () => {
+    // Prepare
+    deleted.get.mockImplementationOnce(() => 2);
+
+    // Call
+    let { err, data } = await updateDataV2(db, deleted);
 
     // Evaluate
     expect(err).toBeUndefined();
@@ -240,9 +320,6 @@ describe("updateDataV1", () => {
     expect(db.collection.mock.calls).toEqual([]);
     expect(doc.mock.calls).toEqual([]);
     expect(set.mock.calls).toEqual([]);
-    expect(add.mock.calls).toEqual([]);
-    expect(addAuthUser.mock.calls).toEqual([]);
     expect(deleted.ref.set.mock.calls).toEqual([]);
-    expect(next.mock.calls).toEqual([[]]);
   });
 });

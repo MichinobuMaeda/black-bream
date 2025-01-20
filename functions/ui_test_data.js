@@ -29,18 +29,22 @@ const createUiTestData = async (auth, db) => {
     await dataVersionRef.set({ email: emailPrimaryUser });
     const dataVersion = await dataVersionRef.get();
 
-    const { err, data } = await deployment.updateDataV1(
-      auth,
-      db,
-      dataVersion,
-      () => deployment.updateDataV2(db, dataVersion, null),
-    );
-
-    info(`dataVersion: ${data}`);
-
-    if (err) {
-      return { error: err };
+    const retV1 = await deployment.updateDataV1(auth, db, dataVersion);
+    if (retV1.err) {
+      return { error: retV1.err };
     }
+
+    const retV2 = await deployment.updateDataV2(db, dataVersion);
+
+    if (retV2.err) {
+      return { error: retV2.err };
+    }
+
+    info(`dataVersion: ${retV2.data}`);
+
+    const user = await auth.getUserByEmail("primary@example.com");
+    await auth.updateUser(user.uid, { password: "password" });
+
     const primary = await auth.getUserByEmail(emailPrimaryUser);
     await auth.updateUser(primary.uid, { password: passwordPrimaryUser });
 

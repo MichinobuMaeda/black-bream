@@ -46,8 +46,12 @@
 
     result = await createDocument("posts", {
       text,
-      targets,
+      targets: targets.reduce(
+        (acc, cur) => ({ ...acc, [cur]: { createdAt: new Date() } }),
+        {},
+      ),
       scheduledFor: new Date(schedule),
+      status: "scheduled",
     });
 
     active = false;

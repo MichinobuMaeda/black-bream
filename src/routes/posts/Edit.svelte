@@ -20,42 +20,52 @@
   /** @type {Props} */
   let { item } = $props();
 
-  let post = store.posts.find((post) => post.id === item);
+  let post = $derived(store.posts.find((post) => post?.id === item));
   let active = $state(false);
 
   // Fields
-  let text = $state(post.text);
+  let text = $state("");
   let errorText = $derived(active ? "" : !text ? t().required() : "");
   let targetItems = (store.conf.postTargets ?? []).map((target) => ({
     value: target,
     label: target,
   }));
-  let targets = $state(post.targets ?? []);
+  let orgTargets = $derived(Object.keys(post?.targets ?? {}));
+  let targets = $state([]);
   let errorTargets = $derived(
     active ? "" : !targets.length ? t().required() : "",
   );
-  let schedule = $state(formatISO(post.scheduledFor?.toDate()));
+  let schedule = $state(null);
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
-  let deleted = $state(!!post.deletedAt);
+  let deleted = $state(false);
+
+  $effect(() => {
+    if (post) {
+      text = post.text;
+      targets = Object.keys(post.targets ?? {});
+      schedule = formatISO(post.scheduledFor?.toDate());
+      deleted = !!post.deletedAt;
+    }
+  });
 
   // Actions
   let result = $state(null);
   let changed = $derived(
     !active &&
-      (text !== post.text ||
-        targets.length !== post.targets?.length ||
-        !targets.every((target) => post.targets?.includes(target)) ||
+      (text !== post?.text ||
+        targets.length !== orgTargets.length ||
+        !targets.every((target) => orgTargets.includes(target)) ||
         new Date(schedule).getTime() !==
-          post.scheduledFor?.toDate().getTime() ||
-        deleted !== !!post.deletedAt),
+          post?.scheduledFor?.toDate().getTime() ||
+        deleted !== !!post?.deletedAt),
   );
   let valid = $derived(!errorText && !errorTargets && !errorSchedule);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
-    text = post.text;
-    targets = post.targets ?? [];
-    schedule = formatISO(post.scheduledFor?.toDate());
+    text = post?.text;
+    targets = Object.keys(post?.targets ?? {});
+    schedule = formatISO(post?.scheduledFor?.toDate());
     pop();
   };
 
@@ -63,7 +73,7 @@
     active = true;
     text = text.trim();
 
-    result = await updateDocument("posts", post.id, {
+    result = await updateDocument("posts", post?.id, {
       text,
       scheduledFor: new Date(schedule),
       deletedAt: deleted ? new Date() : null,
