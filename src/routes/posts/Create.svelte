@@ -80,18 +80,20 @@
             error={errorSchedule}
           />
         </Fields>
-        <GroupedCheckBox
-          id="targets"
-          items={targetItems}
-          bind:value={targets}
-        />
+        <Wrap>
+          <GroupedCheckBox
+            id="targets"
+            items={targetItems}
+            bind:value={targets}
+          />
+        </Wrap>
       </div>
       <Fields>
         <TextFieldOutlined
           id="text"
           label={t().text()}
           type="text"
-          lines={4}
+          lines={6}
           bind:value={text}
           message={t().required()}
           error={errorText}

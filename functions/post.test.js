@@ -1,5 +1,6 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const axios = require("axios");
+const { BskyAgent } = require("@atproto/api");
 
 const {
   getQueueName,
@@ -11,6 +12,9 @@ const {
 
 jest.mock("firebase-functions/logger");
 jest.mock("axios");
+jest.mock("@atproto/api");
+BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
+BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -352,6 +356,13 @@ describe("post", () => {
         updatedAt: expect.any(Date),
         deletedAt: null,
       },
+      bluesky: {
+        status: "enqueued",
+        scheduleTime: expect.any(Date),
+        enqueuedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+      },
       dummy: {
         status: "enqueued",
         scheduleTime: expect.any(Date),
@@ -376,6 +387,11 @@ describe("post", () => {
     mastodon: {
       url: "https://mastodon.example.com",
       token: "mastodon-token",
+    },
+    bluesky: {
+      service: "https://bluesky.example.com",
+      identifier: "bluesky-identifier",
+      password: "bluesky-password",
     },
     dummy: {},
     createdAt: new Date(),
@@ -691,7 +707,7 @@ describe("post", () => {
     expect(axios.post.mock.calls).toEqual([]);
   });
 
-  it("should post.", async () => {
+  it("should post to Mastodon.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
@@ -740,7 +756,7 @@ describe("post", () => {
     ]);
   });
 
-  it("should return error, if axis.post raises exception.", async () => {
+  it("should return error, if axis.post raises an exception.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
@@ -751,7 +767,7 @@ describe("post", () => {
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
     // Evaluate
-    expect(result).toEqual({ err: "error", data: undefined });
+    expect(result).toEqual({ err: "Failed: mastodon error", data: undefined });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
@@ -761,7 +777,7 @@ describe("post", () => {
           status: "posting",
           "targets.mastodon": {
             status: "failed",
-            err: "error",
+            err: "Failed: mastodon error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -845,6 +861,82 @@ describe("post", () => {
     ]);
   });
 
+  it("should post to Bluesky.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "bluesky" });
+
+    // Evaluate
+    expect(result).toEqual({ err: undefined, data: "posting" });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "completed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [{ text: "Text", langs: ["ja"] }],
+    ]);
+  });
+
+  it("should return error, if Bluesky.post raises an exception.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    BskyAgent.prototype.post.mockImplementationOnce(() =>
+      Promise.reject("error"),
+    );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "bluesky" });
+
+    // Evaluate
+    expect(result).toEqual({ err: "Failed: bluesky error", data: undefined });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "failed",
+            err: "Failed: bluesky error",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [{ text: "Text", langs: ["ja"] }],
+    ]);
+  });
+
   it("should return error, if target is not supported.", async () => {
     // Prepare
     collection.doc
@@ -878,6 +970,69 @@ describe("post", () => {
     expect(authRef.get.mock.calls).toEqual([[]]);
     expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["dummy"]]);
     expect(axios.post.mock.calls).toEqual([]);
+  });
+
+  it("should return error, if target is postRef.update() raises an exception.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    axios.post.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
+    postRef.update
+      .mockImplementationOnce(() => Promise.reject("error"))
+      .mockImplementationOnce(() => Promise.reject("error"));
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "mastodon" });
+
+    // Evaluate
+    expect(result).toEqual({ err: "error", data: undefined });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
+            status: "completed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
+            err: "error",
+            status: "failed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
+    expect(axios.post.mock.calls).toEqual([
+      [
+        authData.mastodon.url,
+        {
+          status: "Text",
+          sensitive: "false",
+          visibility: "public",
+          language: "ja",
+        },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${authData.mastodon.token}`,
+            "Idempotency-Key": expect.any(String),
+          },
+        },
+      ],
+    ]);
   });
 });
 

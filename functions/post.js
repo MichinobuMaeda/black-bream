@@ -1,5 +1,6 @@
 const { createHash } = require("node:crypto");
 const axios = require("axios");
+const { BskyAgent } = require("@atproto/api");
 const { info, error } = require("firebase-functions/logger");
 
 /**
@@ -130,12 +131,15 @@ const post = async (db, { id, target }) => {
   const statusError = async (err) => {
     error(err);
 
-    await postRef.update({
-      status: "posting",
-      [`targets.${target}`]: { status: "failed", err, updatedAt: new Date() },
-      updatedAt: new Date(),
-    });
-
+    try {
+      await postRef.update({
+        status: "posting",
+        [`targets.${target}`]: { status: "failed", err, updatedAt: new Date() },
+        updatedAt: new Date(),
+      });
+    } catch (e) {
+      error(e);
+    }
     return { err, data: undefined };
   };
 
@@ -180,37 +184,51 @@ const post = async (db, { id, target }) => {
     }
 
     const { text } = postSnap.data();
-    let ret;
-
-    // Mastodon: Idempotency keys are stored for up to 1 hour.
-    const hash = createHash("sha256");
-    hash.update(text);
 
     switch (target) {
       case "mastodon":
-        ret = await axios.post(
-          params.url,
-          {
-            status: text,
-            sensitive: "false",
-            visibility: "public",
-            language: "ja",
-          },
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${params.token}`,
-              "Idempotency-Key": hash.digest("hex"),
+        try {
+          // Mastodon: Idempotency keys are stored for up to 1 hour.
+          const hash = createHash("sha256");
+          hash.update(text);
+          const ret = await axios.post(
+            params.url,
+            {
+              status: text,
+              sensitive: "false",
+              visibility: "public",
+              language: "ja",
             },
-          },
-        );
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${params.token}`,
+                "Idempotency-Key": hash.digest("hex"),
+              },
+            },
+          );
+
+          if (ret.status !== 200) {
+            return statusError(
+              `Failed: ${target} ${ret.status} ${ret.statusText}`,
+            );
+          }
+        } catch (e) {
+          return statusError(`Failed: ${target} ${e}`);
+        }
+        break;
+      case "bluesky":
+        try {
+          const { service, identifier, password } = params;
+          const agent = new BskyAgent({ service });
+          await agent.login({ identifier, password });
+          await agent.post({ text, langs: ["ja"] });
+        } catch (e) {
+          return statusError(`Failed: ${target} ${e}`);
+        }
         break;
       default:
         return statusError(`Not supported target: ${target}`);
-    }
-
-    if (ret.status !== 200) {
-      return statusError(`Failed: ${target} ${ret.status} ${ret.statusText}`);
     }
 
     info(`Task dispatched: ${id} ${target} ${text.substring(0, 20)}`);

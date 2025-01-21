@@ -2,6 +2,7 @@
   import SvgSettings from "../../lib/icons/SvgSettings.svelte";
   import SiteDescription from "./SiteDescription.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
+  import AuthBluesky from "./AuthBluesky.svelte";
   import { t, store } from "../../lib/store.svelte.js";
 </script>
 
@@ -11,4 +12,5 @@
 {/if}
 {#if store.admin}
   <AuthMastodon />
+  <AuthBluesky />
 {/if}

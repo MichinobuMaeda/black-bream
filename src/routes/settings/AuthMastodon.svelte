@@ -84,7 +84,7 @@
       />
     </Fields>
     <div class="flex grow gap-4 items-center">
-      <Switch id="deleted" bind:checked={mastodonEnabled} />
+      <Switch id="mastodonDisabled" bind:checked={mastodonEnabled} />
       {t().enabled()}
     </div>
     <Fields>
