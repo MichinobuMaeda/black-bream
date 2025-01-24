@@ -568,17 +568,11 @@ export const groupsOfUser = (store, uid) =>
 
 /**
  *
- * @param {string} search
+ * @param {string} code
  * @returns {Promise<object>}
  */
-export const setThreadsLongAccessToken = async (search) => {
+export const setThreadsLongAccessToken = async (code) => {
   try {
-    const params = new URLSearchParams(search);
-    const code = (params.get("code") || "").replace(/#_$/g, "");
-    if (!code) {
-      return { err: `threads callback: ${params.get("error") || "error"}` };
-    }
-
     const authRef = doc(db, "service", "auth");
     const auth = await getDoc(authRef);
     const { clientId, clientSecret, callBackUrl } = auth.get("threads");
@@ -587,7 +581,8 @@ export const setThreadsLongAccessToken = async (search) => {
     formData.append("client_id", clientId);
     formData.append("client_secret", clientSecret);
     formData.append("grant_type", "authorization_code");
-    formData.append("redirect_uri", encodeURI(callBackUrl));
+    formData.append("redirect_uri", encodeURIComponent(callBackUrl));
+    formData.append("code", code);
 
     let response = await fetch("https://graph.threads.net/oauth/access_token", {
       method: "POST",
@@ -599,6 +594,11 @@ export const setThreadsLongAccessToken = async (search) => {
       };
     }
     const accessToken = (await response.json()).access_token;
+    if (!accessToken) {
+      return {
+        err: `/oauth/access_token: failed to get access token`,
+      };
+    }
 
     response = await fetch(
       "https://graph.threads.net/access_token" +
@@ -612,6 +612,12 @@ export const setThreadsLongAccessToken = async (search) => {
       };
     }
     const data = await response.json();
+    if (!data.access_token) {
+      return {
+        err: `/access_token: failed to get access token`,
+      };
+    }
+
     await authRef.update({
       "threads.accessToken": data.access_token,
       "threads.expiredAt": new Date(

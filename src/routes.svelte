@@ -25,7 +25,7 @@
         "/posts/:item?/:action?": Posts,
         "/info": Info,
         "/settings": Settings,
-        "/auth/:item?/:action?": Auth,
+        "/auth/:item/:action/:status?/:data?": Auth,
         "*": NotFound,
       }}
     />
@@ -38,7 +38,7 @@
         "/users/:item?/:action?": Users,
         "/posts/:item?/:action?": Posts,
         "/info": Info,
-        "/auth/:item?/:action?": Auth,
+        "/auth/:item/:action/:status?/:data?": Auth,
         "*": NotFound,
       }}
     />
@@ -47,7 +47,7 @@
   <Router
     routes={{
       "/info": Info,
-      "/auth/:item?/:action?": Auth,
+      "/auth/:item/:action/:status?/:data?": Auth,
       "*": Login,
     }}
   />

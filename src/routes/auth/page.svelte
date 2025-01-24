@@ -1,4 +1,5 @@
 <script>
+  import { push } from "svelte-spa-router";
   import Content from "../../lib/Content.svelte";
   import { setThreadsLongAccessToken } from "../../lib/firebase";
 
@@ -15,7 +16,12 @@
     case "threads":
       switch (params.action) {
         case "callback":
-          result = setThreadsLongAccessToken(window.location.search);
+          if (params.status === "ok") {
+            result = setThreadsLongAccessToken(params.data);
+            push("/settings");
+          } else {
+            result = { err: "Invalid code" };
+          }
           break;
         default:
           result = { err: "Invalid action" };
