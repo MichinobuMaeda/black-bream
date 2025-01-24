@@ -620,7 +620,7 @@ export const setThreadsLongAccessToken = async (code) => {
       return { err };
     }
 
-    await authRef.update({
+    await updateDoc(authRef, {
       "threads.accessToken": data.access_token,
       "threads.expiredAt": new Date(
         new Date().getTime() + data.expires_in * 1000,
