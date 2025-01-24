@@ -21,18 +21,6 @@
   let threadsExpiredAt = $state(null);
   let threadsEnabled = $state(false);
 
-  let threadsAccessTokenIsValid = $derived(
-    threadsAccessToken &&
-      threadsExpiredAt &&
-      threadsExpiredAt.toDate() > new Date(),
-  );
-
-  let threadsAccessTokenReady = $derived(
-    store.auth?.threads?.callBackUrl &&
-      store.auth?.threads?.clientId &&
-      store.auth?.threads?.clientSecret,
-  );
-
   $effect(() => {
     threadsCallBackUrl = store.auth?.threads?.callBackUrl;
     threadsClientId = store.auth?.threads?.clientId;
@@ -52,7 +40,26 @@
     threadsEnabled && !threadsClientSecret ? t().required() : "",
   );
 
+  let threadsAccessTokenIsValid = $derived(
+    threadsAccessToken &&
+      threadsExpiredAt &&
+      threadsExpiredAt.toDate() > new Date(),
+  );
+
+  let threadsAccessTokenReady = $derived(
+    store.auth?.threads?.callBackUrl &&
+      store.auth?.threads?.clientId &&
+      store.auth?.threads?.clientSecret,
+  );
+
   // Actions
+  let url = $derived(
+    "https://threads.net/oauth/authorize" +
+      `?client_id=${store.auth?.threads?.clientId}` +
+      `&redirect_uri=${store.auth?.threads?.callBackUrl}` +
+      "&response_type=code" +
+      "&scope=threads_basic,threads_content_publish",
+  );
   let result = $state(null);
   let changed = $derived(
     !active &&
@@ -136,8 +143,7 @@
         <ButtonOutlined
           id="getThreadsAccessToken"
           label={t().getAccessToken()}
-          onClick={() =>
-            window.open("https://threads.net/oauth/authorize", "_system")}
+          onClick={() => window.open(url, "_system")}
         />
       {/if}
     </Fields>
