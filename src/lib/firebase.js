@@ -573,6 +573,7 @@ export const groupsOfUser = (store, uid) =>
  */
 export const setThreadsLongAccessToken = async (code) => {
   try {
+    console.log(`setThreadsLongAccessToken() code: ${code}`);
     const authRef = doc(db, "service", "auth");
     const auth = await getDoc(authRef);
     const { clientId, clientSecret, callBackUrl } = auth.get("threads");
@@ -589,16 +590,17 @@ export const setThreadsLongAccessToken = async (code) => {
       body: formData,
     });
     if (response.status !== 200) {
-      return {
-        err: `/oauth/access_token: ${response.status} ${response.statusText}`,
-      };
+      const err = `/oauth/access_token: ${response.status} ${response.statusText}`;
+      console.error(err);
+      return { err };
     }
     const accessToken = (await response.json()).access_token;
     if (!accessToken) {
-      return {
-        err: `/oauth/access_token: failed to get access token`,
-      };
+      const err = "/oauth/access_token: failed to get access token";
+      console.error(err);
+      return { err };
     }
+    console.log(`setThreadsLongAccessToken() accessToken: ${accessToken}`);
 
     response = await fetch(
       "https://graph.threads.net/access_token" +
@@ -607,15 +609,15 @@ export const setThreadsLongAccessToken = async (code) => {
         `&access_token=${accessToken}`,
     );
     if (response.status !== 200) {
-      return {
-        err: `/access_token: ${response.status} ${response.statusText}`,
-      };
+      const err = `/access_token: ${response.status} ${response.statusText}`;
+      console.error(err);
+      return { err };
     }
     const data = await response.json();
     if (!data.access_token) {
-      return {
-        err: `/access_token: failed to get access token`,
-      };
+      const err = `/access_token: failed to get access token`;
+      console.error(err);
+      return { err };
     }
 
     await authRef.update({

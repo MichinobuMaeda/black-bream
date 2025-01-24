@@ -12,15 +12,20 @@
   let { params } = $props();
 
   let result = $state(null);
+
   switch (params.item) {
     case "threads":
       switch (params.action) {
         case "callback":
           if (params.status === "ok") {
-            result = setThreadsLongAccessToken(params.data);
-            push("/settings");
+            (async () => {
+              result = await setThreadsLongAccessToken(params.data);
+              if (!result.err) {
+                push("/settings");
+              }
+            })();
           } else {
-            result = { err: "Invalid code" };
+            result = { err: params.data };
           }
           break;
         default:

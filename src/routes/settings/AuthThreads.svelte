@@ -145,7 +145,6 @@
           label={t().getAccessToken()}
           onClick={() => window.open(url, "_system")}
         />
-        <a href={url} target="_blank">{url}</a>
       {/if}
     </Fields>
   </Wrap>
