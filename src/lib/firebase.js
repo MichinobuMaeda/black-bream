@@ -23,6 +23,7 @@ import {
   connectFirestoreEmulator,
   collection,
   doc,
+  getDoc,
   updateDoc,
   addDoc,
   onSnapshot,
@@ -508,7 +509,7 @@ export const callFunction = async (name, param) => {
  * Social login
  *
  * @param {string} id
- * @returns
+ * @returns {Promise<object>}
  */
 export const socialLogin = async (id) => {
   try {
@@ -532,7 +533,7 @@ export const socialLogin = async (id) => {
  * Register social login
  *
  * @param {string} id
- * @returns
+ * @returns {Promise<object>}
  */
 export const registerSocialLogin = async (id) => {
   try {
@@ -564,3 +565,63 @@ export const groupsOfUser = (store, uid) =>
     (group) =>
       (store.manager || !group.deletedAt) && (group.users ?? []).includes(uid),
   );
+
+/**
+ *
+ * @param {string} search
+ * @returns {Promise<object>}
+ */
+export const setThreadsLongAccessToken = async (search) => {
+  try {
+    const params = new URLSearchParams(search);
+    const code = (params.get("code") || "").replace(/#_$/g, "");
+    if (!code) {
+      return { err: `threads callback: ${params.get("error") || "error"}` };
+    }
+
+    const authRef = doc(db, "service", "auth");
+    const auth = await getDoc(authRef);
+    const { clientId, clientSecret, callBackUrl } = auth.get("threads");
+
+    const formData = new FormData();
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+    formData.append("grant_type", "authorization_code");
+    formData.append("redirect_uri", callBackUrl);
+
+    let response = await fetch("https://graph.threads.net/oauth/access_token", {
+      method: "POST",
+      body: formData,
+    });
+    if (response.status !== 200) {
+      return {
+        err: `/oauth/access_token: ${response.status} ${response.statusText}`,
+      };
+    }
+    const accessToken = (await response.json()).access_token;
+
+    response = await fetch(
+      "https://graph.threads.net/access_token" +
+        "?grant_type=th_exchange_token" +
+        `&client_secret=${clientSecret}` +
+        `&access_token=${accessToken}`,
+    );
+    if (response.status !== 200) {
+      return {
+        err: `/access_token: ${response.status} ${response.statusText}`,
+      };
+    }
+    const data = await response.json();
+    await authRef.update({
+      "threads.accessToken": data.access_token,
+      "threads.expiredAt": new Date(
+        new Date().getTime() + data.expires_in * 1000,
+      ),
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e };
+  }
+};

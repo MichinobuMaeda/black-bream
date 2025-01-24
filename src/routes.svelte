@@ -9,6 +9,7 @@
   import Users from "./routes/users/page.svelte";
   import Posts from "./routes/posts/page.svelte";
   import Settings from "./routes/settings/page.svelte";
+  import Auth from "./routes/auth/page.svelte";
   import NotFound from "./routes/NotFound.svelte";
   import { store } from "./lib/store.svelte.js";
 </script>
@@ -24,6 +25,7 @@
         "/posts/:item?/:action?": Posts,
         "/info": Info,
         "/settings": Settings,
+        "/auth/:item?/:action?": Auth,
         "*": NotFound,
       }}
     />
@@ -36,6 +38,7 @@
         "/users/:item?/:action?": Users,
         "/posts/:item?/:action?": Posts,
         "/info": Info,
+        "/auth/:item?/:action?": Auth,
         "*": NotFound,
       }}
     />
@@ -44,6 +47,7 @@
   <Router
     routes={{
       "/info": Info,
+      "/auth/:item?/:action?": Auth,
       "*": Login,
     }}
   />

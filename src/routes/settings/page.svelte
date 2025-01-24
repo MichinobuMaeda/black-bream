@@ -3,6 +3,7 @@
   import SiteDescription from "./SiteDescription.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
   import AuthBluesky from "./AuthBluesky.svelte";
+  import AuthThreads from "./AuthThreads.svelte";
   import { t, store } from "../../lib/store.svelte.js";
 </script>
 
@@ -13,4 +14,5 @@
 {#if store.admin}
   <AuthMastodon />
   <AuthBluesky />
+  <AuthThreads />
 {/if}

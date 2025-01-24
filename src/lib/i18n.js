@@ -109,6 +109,8 @@ export class I18n {
     this.locale === "ja" ? "タイムアウト時間（分）" : "Timeout minutes";
   logoutNow = () =>
     this.locale === "ja" ? "今すぐログアウトする" : "Logout now";
+  getAccessToken = () =>
+    this.locale === "ja" ? "Access Token を取得する" : "Get access token";
 
   current = (value) =>
     this.locale === "ja" ? `変更前: ${value}` : `Current: ${value}`;
