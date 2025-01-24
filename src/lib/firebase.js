@@ -585,45 +585,51 @@ export const setThreadsLongAccessToken = async (code) => {
     formData.append("redirect_uri", callBackUrl);
     formData.append("code", code);
 
-    let response = await fetch("https://graph.threads.net/oauth/access_token", {
-      method: "POST",
-      body: formData,
-    });
-    if (response.status !== 200) {
-      const err = `/oauth/access_token: ${response.status} ${response.statusText}`;
+    let oauthResp = await fetch(
+      "https://graph.threads.net/oauth/access_token",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+    if (oauthResp.status !== 200) {
+      const err = `/oauth/access_token: ${oauthResp.status} ${oauthResp.statusText}`;
       console.error(err);
       return { err };
     }
-    const accessToken = (await response.json()).access_token;
-    if (!accessToken) {
+    const oauthData = await oauthResp.json();
+    if (!oauthData.access_token) {
       const err = "/oauth/access_token: failed to get access token";
       console.error(err);
       return { err };
     }
-    console.log(`setThreadsLongAccessToken() accessToken: ${accessToken}`);
+    console.log(
+      `setThreadsLongAccessToken() accessToken: ${oauthData.access_token}`,
+    );
 
-    response = await fetch(
+    const exchangeResp = await fetch(
       "https://graph.threads.net/access_token" +
         "?grant_type=th_exchange_token" +
         `&client_secret=${clientSecret}` +
-        `&access_token=${accessToken}`,
+        `&access_token=${oauthData.access_token}`,
     );
-    if (response.status !== 200) {
-      const err = `/access_token: ${response.status} ${response.statusText}`;
+    if (exchangeResp.status !== 200) {
+      const err = `/access_token: ${exchangeResp.status} ${exchangeResp.statusText}`;
       console.error(err);
       return { err };
     }
-    const data = await response.json();
-    if (!data.access_token) {
+    const exchangeData = await exchangeResp.json();
+    if (!exchangeData.access_token) {
       const err = `/access_token: failed to get access token`;
       console.error(err);
       return { err };
     }
 
     await updateDoc(authRef, {
-      "threads.accessToken": data.access_token,
+      "threads.accessToken": exchangeData.access_token,
+      "threads.userId": oauthData.user_id,
       "threads.expiredAt": new Date(
-        new Date().getTime() + data.expires_in * 1000,
+        new Date().getTime() + exchangeData.expires_in * 1000,
       ),
       updatedAt: new Date(),
     });
