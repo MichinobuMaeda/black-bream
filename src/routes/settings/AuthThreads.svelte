@@ -96,16 +96,6 @@
   <Wrap>
     <Fields>
       <TextFieldOutlined
-        id="threadsCallBackUrl"
-        label="Call back URL"
-        type="text"
-        bind:value={threadsCallBackUrl}
-        message={t().current(store.auth?.threads?.callBackUrl ?? "--")}
-        error={errorThreadsService}
-      />
-    </Fields>
-    <Fields>
-      <TextFieldOutlined
         id="threadsClientId"
         label="Client ID"
         type="text"
@@ -124,6 +114,16 @@
       />
     </Fields>
     <Fields>
+      <TextFieldOutlined
+        id="threadsCallBackUrl"
+        label="Call back URL"
+        type="text"
+        bind:value={threadsCallBackUrl}
+        message={t().current(store.auth?.threads?.callBackUrl ?? "--")}
+        error={errorThreadsService}
+      />
+    </Fields>
+    <Fields>
       {#if threadsAccessTokenIsValid}
         <PasswordFieldOutlined
           id="threadsAccessToken"
@@ -132,12 +132,12 @@
           message={`expired: ${formatDateTime(threadsExpiredAt?.toDate() || "--")}`}
           readonly
         />
-      {:else if threadsAccessTokenReady}
+      {:else if threadsAccessTokenReady && !changed}
         <ButtonOutlined
           id="getThreadsAccessToken"
           label={t().getAccessToken()}
           onClick={() =>
-            window.open(store.auth?.threads?.callBackUrl, "_system")}
+            window.open("https://threads.net/oauth/authorize", "_system")}
         />
       {/if}
     </Fields>
