@@ -587,7 +587,7 @@ export const setThreadsLongAccessToken = async (search) => {
     formData.append("client_id", clientId);
     formData.append("client_secret", clientSecret);
     formData.append("grant_type", "authorization_code");
-    formData.append("redirect_uri", callBackUrl);
+    formData.append("redirect_uri", encodeURI(callBackUrl));
 
     let response = await fetch("https://graph.threads.net/oauth/access_token", {
       method: "POST",
