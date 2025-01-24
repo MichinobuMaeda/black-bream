@@ -56,7 +56,7 @@
   let url = $derived(
     "https://threads.net/oauth/authorize" +
       `?client_id=${store.auth?.threads?.clientId}` +
-      `&redirect_uri=${encodeURI(store.auth?.threads?.callBackUrl)}` +
+      `&redirect_uri=${encodeURIComponent(store.auth?.threads?.callBackUrl)}` +
       "&response_type=code" +
       "&scope=threads_basic,threads_content_publish",
   );
