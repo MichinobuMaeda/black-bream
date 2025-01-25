@@ -199,6 +199,8 @@ github-action-\*@<Site ID>.iam.gserviceaccount.com
 - Add roles
     - Editor
     - Service Account User
+- Change roles
+    - Cloud Functions Developer to Cloud Function Admin
 
 ```bash
 $ npx firebase deploy --only functions

@@ -126,7 +126,7 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
 );
 
 exports.daily = onSchedule(
-  { schedule: "every day 00:11", timeZone: "Asia/Tokyo" },
+  { schedule: "every day 00:11", timeZone: "Asia/Tokyo", region },
   async () => post.refreshThreadsAccessToken(getFirestore(app)),
 );
 
