@@ -1,4 +1,5 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
+const { Timestamp } = require("firebase-admin/firestore");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
@@ -8,6 +9,7 @@ const {
   deletePosts,
   post,
   checkCompleted,
+  refreshThreadsAccessToken,
 } = require("./post.js");
 
 jest.mock("firebase-functions/logger");
@@ -363,6 +365,13 @@ describe("post", () => {
         updatedAt: expect.any(Date),
         deletedAt: null,
       },
+      threads: {
+        status: "enqueued",
+        scheduleTime: expect.any(Date),
+        enqueuedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+      },
       dummy: {
         status: "enqueued",
         scheduleTime: expect.any(Date),
@@ -392,6 +401,10 @@ describe("post", () => {
       service: "https://bluesky.example.com",
       identifier: "bluesky-identifier",
       password: "bluesky-password",
+    },
+    threads: {
+      userId: "threads-userId",
+      accessToken: "threads-accessToken",
     },
     dummy: {},
     createdAt: new Date(),
@@ -756,7 +769,7 @@ describe("post", () => {
     ]);
   });
 
-  it("should return error, if axis.post raises an exception.", async () => {
+  it("should return error, if axis.post raises an exception for Mastodon.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
@@ -806,7 +819,7 @@ describe("post", () => {
     ]);
   });
 
-  it("should return error, if axis.post returns error status.", async () => {
+  it("should return error, if axis.post returns error status for Mastodon.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
@@ -897,47 +910,51 @@ describe("post", () => {
     ]);
   });
 
-  it("should return error, if Bluesky.post raises an exception.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    BskyAgent.prototype.post.mockImplementationOnce(() =>
-      Promise.reject("error"),
-    );
+  it(
+    "should return error," +
+      " if Bluesky.post raises an exception for Bluesky.",
+    async () => {
+      // Prepare
+      collection.doc
+        .mockImplementationOnce(() => postRef)
+        .mockImplementationOnce(() => authRef);
+      BskyAgent.prototype.post.mockImplementationOnce(() =>
+        Promise.reject("error"),
+      );
 
-    // Execute
-    const result = await post(db, { id: "post-id", target: "bluesky" });
+      // Execute
+      const result = await post(db, { id: "post-id", target: "bluesky" });
 
-    // Evaluate
-    expect(result).toEqual({ err: "Failed: bluesky error", data: undefined });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.bluesky": {
-            status: "failed",
-            err: "Failed: bluesky error",
+      // Evaluate
+      expect(result).toEqual({ err: "Failed: bluesky error", data: undefined });
+      expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+      expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+      expect(postRef.get.mock.calls).toEqual([[]]);
+      expect(postRef.update.mock.calls).toEqual([
+        [
+          {
+            status: "posting",
+            "targets.bluesky": {
+              status: "failed",
+              err: "Failed: bluesky error",
+              updatedAt: expect.any(Date),
+            },
             updatedAt: expect.any(Date),
           },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
-    ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
-      [{ text: "Text", langs: ["ja"] }],
-    ]);
-  });
+        ],
+      ]);
+      expect(authRef.get.mock.calls).toEqual([[]]);
+      expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+      expect(BskyAgent.prototype.login.mock.calls).toEqual([
+        [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+      ]);
+      expect(BskyAgent.prototype.post.mock.calls).toEqual([
+        [{ text: "Text", langs: ["ja"] }],
+      ]);
+    },
+  );
 
-  it("should return error, if target is not supported.", async () => {
+  it("should return error, if target is not supported for Bluesky.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
@@ -972,21 +989,18 @@ describe("post", () => {
     expect(axios.post.mock.calls).toEqual([]);
   });
 
-  it("should return error, if target is postRef.update() raises an exception.", async () => {
+  it("should post to Threads.", async () => {
     // Prepare
     collection.doc
       .mockImplementationOnce(() => postRef)
       .mockImplementationOnce(() => authRef);
     axios.post.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
-    postRef.update
-      .mockImplementationOnce(() => Promise.reject("error"))
-      .mockImplementationOnce(() => Promise.reject("error"));
 
     // Execute
-    const result = await post(db, { id: "post-id", target: "mastodon" });
+    const result = await post(db, { id: "post-id", target: "threads" });
 
     // Evaluate
-    expect(result).toEqual({ err: "error", data: undefined });
+    expect(result).toEqual({ err: undefined, data: "posting" });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
@@ -994,19 +1008,8 @@ describe("post", () => {
       [
         {
           status: "posting",
-          "targets.mastodon": {
+          "targets.threads": {
             status: "completed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            err: "error",
-            status: "failed",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -1014,26 +1017,168 @@ describe("post", () => {
       ],
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["threads"]]);
     expect(axios.post.mock.calls).toEqual([
       [
-        authData.mastodon.url,
-        {
-          status: "Text",
-          sensitive: "false",
-          visibility: "public",
-          language: "ja",
-        },
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${authData.mastodon.token}`,
-            "Idempotency-Key": expect.any(String),
-          },
-        },
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
+          "?media_type=TEXT" +
+          `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
       ],
     ]);
   });
+
+  it("should return error, if axis.post raises an exception for Threads.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    axios.post.mockImplementationOnce(() => Promise.reject("error"));
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "threads" });
+
+    // Evaluate
+    expect(result).toEqual({ err: "Failed: threads error", data: undefined });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.threads": {
+            status: "failed",
+            err: "Failed: threads error",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["threads"]]);
+    expect(axios.post.mock.calls).toEqual([
+      [
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
+          "?media_type=TEXT" +
+          `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
+      ],
+    ]);
+  });
+
+  it("should return error, if axis.post returns error status for Threads.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    axios.post.mockImplementationOnce(() =>
+      Promise.resolve({ status: 500, statusText: "Server error" }),
+    );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "threads" });
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Failed: threads 500 Server error",
+      data: undefined,
+    });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.threads": {
+            status: "failed",
+            err: "Failed: threads 500 Server error",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["threads"]]);
+    expect(axios.post.mock.calls).toEqual([
+      [
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
+          "?media_type=TEXT" +
+          `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
+      ],
+    ]);
+  });
+
+  it(
+    "should return error," +
+      " if target is postRef.update() raises an exception.",
+    async () => {
+      // Prepare
+      collection.doc
+        .mockImplementationOnce(() => postRef)
+        .mockImplementationOnce(() => authRef);
+      axios.post.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
+      postRef.update
+        .mockImplementationOnce(() => Promise.reject("error"))
+        .mockImplementationOnce(() => Promise.reject("error"));
+
+      // Execute
+      const result = await post(db, { id: "post-id", target: "mastodon" });
+
+      // Evaluate
+      expect(result).toEqual({ err: "error", data: undefined });
+      expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+      expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+      expect(postRef.get.mock.calls).toEqual([[]]);
+      expect(postRef.update.mock.calls).toEqual([
+        [
+          {
+            status: "posting",
+            "targets.mastodon": {
+              status: "completed",
+              updatedAt: expect.any(Date),
+            },
+            updatedAt: expect.any(Date),
+          },
+        ],
+        [
+          {
+            status: "posting",
+            "targets.mastodon": {
+              err: "error",
+              status: "failed",
+              updatedAt: expect.any(Date),
+            },
+            updatedAt: expect.any(Date),
+          },
+        ],
+      ]);
+      expect(authRef.get.mock.calls).toEqual([[]]);
+      expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
+      expect(axios.post.mock.calls).toEqual([
+        [
+          authData.mastodon.url,
+          {
+            status: "Text",
+            sensitive: "false",
+            visibility: "public",
+            language: "ja",
+          },
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${authData.mastodon.token}`,
+              "Idempotency-Key": expect.any(String),
+            },
+          },
+        ],
+      ]);
+    },
+  );
 });
 
 describe("checkCompleted", () => {
@@ -1152,5 +1297,303 @@ describe("checkCompleted", () => {
         },
       ],
     ]);
+  });
+});
+
+describe("refreshThreadsAccessToken", () => {
+  const authData = {
+    threads: {
+      userId: "threads-userId",
+      accessToken: "threads-accessToken",
+    },
+    dummy: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  const authSnap = {
+    exists: true,
+    data: () => authData,
+    get: jest.fn((key) => authData[key]),
+  };
+  const authRef = {
+    get: jest.fn(() => Promise.resolve(authSnap)),
+    update: jest.fn(() => Promise.resolve()),
+  };
+  const collection = {
+    doc: jest.fn(() => authRef),
+  };
+  const db = {
+    collection: jest.fn(() => collection),
+  };
+
+  it("should return error, if failed to get service/auth.", async () => {
+    // Prepare
+    authRef.get.mockImplementationOnce(() =>
+      Promise.resolve({ exists: false }),
+    );
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Not found: service/auth",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should return error, if service/auth is already deleted.", async () => {
+    // Prepare
+    authSnap.get.mockImplementationOnce(() => new Date());
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Deleted: service/auth",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should return error, if failed to get service/auth/threads.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => undefined);
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Not found: service/auth/threads",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should return error, if service/auth/threads is already deleted.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({ deletedAt: new Date() }));
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Deleted: service/auth/threads",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should skip the refresh, if no access token is set.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({
+        accessToken: "",
+        expiredAt: Timestamp.fromMillis(
+          new Date().getTime() - 1000 * 60 * 60 * 24 - 1000,
+        ),
+      }));
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: undefined,
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should skip the refresh," + " if no expiration is set.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({
+        accessToken: "threads-access-token",
+        expiredAt: null,
+      }));
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: undefined,
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it(
+    "should skip the refresh," +
+      " if there is more than a day until expiration.",
+    async () => {
+      // Prepare
+      authSnap.get
+        .mockImplementationOnce(() => null)
+        .mockImplementationOnce(() => ({
+          accessToken: "threads-access-token",
+          expiredAt: Timestamp.fromMillis(
+            new Date().getTime() - 1000 * 60 * 60 * 24 - 1000,
+          ),
+        }));
+
+      // Execute
+      const result = await refreshThreadsAccessToken(db);
+
+      // Evaluate
+      expect(result).toEqual({
+        err: undefined,
+      });
+      expect(db.collection.mock.calls).toEqual([["service"]]);
+      expect(collection.doc.mock.calls).toEqual([["auth"]]);
+      expect(authRef.get.mock.calls).toEqual([[]]);
+      expect(axios.get.mock.calls).toEqual([]);
+      expect(authRef.update.mock.calls).toEqual([]);
+    },
+  );
+
+  it("should post.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({
+        accessToken: "threads-access-token",
+        expiredAt: Timestamp.fromMillis(
+          new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
+        ),
+      }));
+    axios.get.mockImplementationOnce(() =>
+      Promise.resolve({
+        status: 200,
+        data: {
+          access_token: "new-access-token",
+          expiredIn: 3600,
+        },
+      }),
+    );
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: undefined,
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([
+      [
+        "https://https://graph.threads.net/refresh_access_token" +
+          "?grant_type=th_refresh_token" +
+          "&access_token=threads-access-token",
+      ],
+    ]);
+    expect(authRef.update.mock.calls).toEqual([
+      [
+        {
+          "threads.accessToken": "new-access-token",
+          "threads.expiredAt": expect.any(Date),
+        },
+      ],
+    ]);
+  });
+
+  it("should return error, if axios.get not returns status 200.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({
+        accessToken: "threads-access-token",
+        expiredAt: Timestamp.fromMillis(
+          new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
+        ),
+      }));
+    axios.get.mockImplementationOnce(() =>
+      Promise.resolve({
+        status: 500,
+        statusText: "Server error",
+      }),
+    );
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Failed to refresh Threads access token: 500 Server error",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([
+      [
+        "https://https://graph.threads.net/refresh_access_token" +
+          "?grant_type=th_refresh_token" +
+          "&access_token=threads-access-token",
+      ],
+    ]);
+    expect(authRef.update.mock.calls).toEqual([]);
+  });
+
+  it("should return error, if axios.get raises an exception.", async () => {
+    // Prepare
+    authSnap.get
+      .mockImplementationOnce(() => null)
+      .mockImplementationOnce(() => ({
+        accessToken: "threads-access-token",
+        expiredAt: Timestamp.fromMillis(
+          new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
+        ),
+      }));
+    axios.get.mockImplementationOnce(() => Promise.reject("error"));
+
+    // Execute
+    const result = await refreshThreadsAccessToken(db);
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "error",
+    });
+    expect(db.collection.mock.calls).toEqual([["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["auth"]]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(axios.get.mock.calls).toEqual([
+      [
+        "https://https://graph.threads.net/refresh_access_token" +
+          "?grant_type=th_refresh_token" +
+          "&access_token=threads-access-token",
+      ],
+    ]);
+    expect(authRef.update.mock.calls).toEqual([]);
   });
 });

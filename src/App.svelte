@@ -9,14 +9,6 @@
     subscribeAuthState,
   } from "./lib/firebase.js";
 
-  // Workaround for firebase hosting behavior
-  if (
-    window.location.pathname.startsWith("/__") ||
-    window.location.pathname.startsWith("/auth/")
-  ) {
-    window.location.reload();
-  }
-
   store.locale = loadLocale();
   initFirebaseConnections(window.location.href);
   setAuthLocale(store.locale);

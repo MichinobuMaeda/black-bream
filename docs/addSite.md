@@ -64,6 +64,8 @@ https://console.cloud.google.com/
     - Enable
 - Cloud Billing API
     - Enable
+- Cloud Scheduler API
+    - Enable
 - reCAPTCHA
     - reCAPTCHA Enterprise API
         - Enable

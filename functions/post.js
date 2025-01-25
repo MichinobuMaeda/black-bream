@@ -227,6 +227,25 @@ const post = async (db, { id, target }) => {
           return statusError(`Failed: ${target} ${e}`);
         }
         break;
+      case "threads":
+        try {
+          const { userId, accessToken } = params;
+          const ret = await axios.post(
+            `https://graph.threads.net/v1.0/${userId}/threads` +
+              "?media_type=TEXT" +
+              `&text=${encodeURIComponent(text)}` +
+              `&access_token=${accessToken}`,
+          );
+
+          if (ret.status !== 200) {
+            return statusError(
+              `Failed: ${target} ${ret.status} ${ret.statusText}`,
+            );
+          }
+        } catch (e) {
+          return statusError(`Failed: ${target} ${e}`);
+        }
+        break;
       default:
         return statusError(`Not supported target: ${target}`);
     }
@@ -278,10 +297,77 @@ const checkCompleted = async (data) => {
   }
 };
 
+/**
+ * Refresh Threads access token
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @returns
+ */
+const refreshThreadsAccessToken = async (db) => {
+  try {
+    const authRef = db.collection("service").doc("auth");
+    const doc = await authRef.get();
+
+    if (!doc.exists) {
+      return { err: "Not found: service/auth" };
+    }
+
+    if (doc.get("deletedAt")) {
+      return { err: "Deleted: service/auth" };
+    }
+
+    const threads = doc.get("threads");
+
+    if (!threads) {
+      return { err: "Not found: service/auth/threads" };
+    }
+
+    const { accessToken, expiredAt, deletedAt } = threads;
+
+    if (deletedAt) {
+      return { err: "Deleted: service/auth/threads" };
+    }
+
+    if (
+      accessToken &&
+      expiredAt &&
+      expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
+    ) {
+      const result = await axios.get(
+        "https://https://graph.threads.net/refresh_access_token" +
+          "?grant_type=th_refresh_token" +
+          `&access_token=${accessToken}`,
+      );
+
+      if (result.status === 200) {
+        info("Threads access token refreshed");
+        await authRef.update({
+          "threads.accessToken": result.data.access_token,
+          "threads.expiredAt": new Date(
+            new Date().getTime() + result.data.expires_in * 1000,
+          ),
+        });
+      } else {
+        const err =
+          "Failed to refresh Threads access token:" +
+          ` ${result.status} ${result.statusText}`;
+        error(err);
+        return { err };
+      }
+    }
+
+    return { err: undefined };
+  } catch (e) {
+    error(e);
+    return { err: e.code ?? e.toString() };
+  }
+};
+
 module.exports = {
   getQueueName,
   createPosts,
   deletePosts,
   post,
   checkCompleted,
+  refreshThreadsAccessToken,
 };

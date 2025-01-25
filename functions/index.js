@@ -5,6 +5,7 @@ const {
 } = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
 const { onTaskDispatched } = require("firebase-functions/v2/tasks");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
@@ -122,6 +123,11 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "managers", () =>
     account.getAuthUser(getAuth(app), data?.uid),
   ),
+);
+
+exports.daily = onSchedule(
+  { schedule: "every day 00:11", timeZone: "Asia/Tokyo" },
+  async () => post.refreshThreadsAccessToken(getFirestore(app)),
 );
 
 exports.onDataVersionDeleted = onDocumentDeleted(

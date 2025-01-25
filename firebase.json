@@ -24,6 +24,26 @@
         "source": "/auth/**",
         "destination": "/auth-redirect.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "/__/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/auth/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
   },
   "storage": {
