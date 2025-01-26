@@ -230,16 +230,30 @@ const post = async (db, { id, target }) => {
       case "threads":
         try {
           const { userId, accessToken } = params;
-          const ret = await axios.post(
+          const retContainer = await axios.post(
             `https://graph.threads.net/v1.0/${userId}/threads` +
               "?media_type=TEXT" +
               `&text=${encodeURIComponent(text)}` +
               `&access_token=${accessToken}`,
           );
 
-          if (ret.status !== 200) {
+          if (retContainer.status !== 200) {
             return statusError(
-              `Failed: ${target} ${ret.status} ${ret.statusText}`,
+              "Failed to create container:" +
+                ` ${target} ${retContainer.status} ${retContainer.statusText}`,
+            );
+          }
+
+          const retPublish = await axios.post(
+            `https://graph.threads.net/v1.0/${userId}/threads_publish` +
+              `?creation_id=${retContainer.data.id}` +
+              `&access_token=${accessToken}`,
+          );
+
+          if (retPublish.status !== 200) {
+            return statusError(
+              "Failed to publish:" +
+                ` ${target} ${retPublish.status} ${retPublish.statusText}`,
             );
           }
         } catch (e) {

@@ -994,7 +994,11 @@ describe("post", () => {
     collection.doc
       .mockImplementationOnce(() => postRef)
       .mockImplementationOnce(() => authRef);
-    axios.post.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
+    axios.post
+      .mockImplementationOnce(() =>
+        Promise.resolve({ status: 200, data: { id: "01234566789" } }),
+      )
+      .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
     // Execute
     const result = await post(db, { id: "post-id", target: "threads" });
@@ -1023,6 +1027,11 @@ describe("post", () => {
         `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
+      ],
+      [
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads_publish` +
+          "?creation_id=01234566789" +
           `&access_token=${authData.threads.accessToken}`,
       ],
     ]);
@@ -1082,7 +1091,7 @@ describe("post", () => {
 
     // Evaluate
     expect(result).toEqual({
-      err: "Failed: threads 500 Server error",
+      err: "Failed to create container: threads 500 Server error",
       data: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
@@ -1094,7 +1103,7 @@ describe("post", () => {
           status: "posting",
           "targets.threads": {
             status: "failed",
-            err: "Failed: threads 500 Server error",
+            err: "Failed to create container: threads 500 Server error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -1108,6 +1117,60 @@ describe("post", () => {
         `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
+      ],
+    ]);
+  });
+
+  it("should return error, if axis.post returns error status for Threads #2.", async () => {
+    // Prepare
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    axios.post
+      .mockImplementationOnce(() =>
+        Promise.resolve({ status: 200, data: { id: "01234566789" } }),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve({ status: 500, statusText: "Server error" }),
+      );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "threads" });
+
+    // Evaluate
+    expect(result).toEqual({
+      err: "Failed to publish: threads 500 Server error",
+      data: undefined,
+    });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.threads": {
+            status: "failed",
+            err: "Failed to publish: threads 500 Server error",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["threads"]]);
+    expect(axios.post.mock.calls).toEqual([
+      [
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads` +
+          "?media_type=TEXT" +
+          `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${authData.threads.accessToken}`,
+      ],
+      [
+        `https://graph.threads.net/v1.0/${authData.threads.userId}/threads_publish` +
+          "?creation_id=01234566789" +
           `&access_token=${authData.threads.accessToken}`,
       ],
     ]);
@@ -1481,7 +1544,7 @@ describe("refreshThreadsAccessToken", () => {
     },
   );
 
-  it("should post.", async () => {
+  it("should refresh the access token.", async () => {
     // Prepare
     authSnap.get
       .mockImplementationOnce(() => null)
