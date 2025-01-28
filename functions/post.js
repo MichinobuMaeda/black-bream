@@ -170,6 +170,7 @@ const postBluesky = async (params, text) => {
   try {
     const { service, identifier, password } = params;
     const agent = new BskyAgent({ service });
+    await agent.login({ identifier, password });
 
     let external = undefined;
     const result = await generateLinkCard(text);
@@ -177,11 +178,13 @@ const postBluesky = async (params, text) => {
     if (result.data) {
       const { thumbUrl, ...card } = result.data;
       let thumb = undefined;
+
       if (thumbUrl) {
         const response = await axios.get(thumbUrl, {
           responseType: "arraybuffer",
         });
         const encoding = getMimeTypes(thumbUrl, response.headers);
+
         if (response.status === 200) {
           const { data } = await agent.uploadBlob(
             new Uint8Array(await response.data),
@@ -190,13 +193,9 @@ const postBluesky = async (params, text) => {
           thumb = data;
         }
       }
-      external = {
-        thumb,
-        ...card,
-      };
+      external = { thumb, ...card };
     }
 
-    await agent.login({ identifier, password });
     await agent.post(
       external
         ? {
