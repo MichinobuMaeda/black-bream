@@ -45,7 +45,7 @@ describe("updateDataV1", () => {
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBeUndefined();
     expect(data).toEqual(1);
     expect(db.collection.mock.calls).toEqual([
@@ -126,15 +126,15 @@ describe("updateDataV1", () => {
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBe("missing-email");
     expect(data).toEqual(0);
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(set.mock.calls).toEqual([]);
-    expect(add.mock.calls).toEqual([]);
-    expect(addAuthUser.mock.calls).toEqual([]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+    expect(addAuthUser).not.toHaveBeenCalled();
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 
   it("should return error if set returns error.", async () => {
@@ -147,7 +147,7 @@ describe("updateDataV1", () => {
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toEqual("error");
     expect(data).toEqual(0);
     expect(db.collection.mock.calls).toEqual([["service"]]);
@@ -163,9 +163,9 @@ describe("updateDataV1", () => {
         },
       ],
     ]);
-    expect(add.mock.calls).toEqual([]);
-    expect(addAuthUser.mock.calls).toEqual([]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(add).not.toHaveBeenCalled();
+    expect(addAuthUser).not.toHaveBeenCalled();
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 
   it("should return error if addAuthUser returns error.", async () => {
@@ -179,7 +179,7 @@ describe("updateDataV1", () => {
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toEqual("error");
     expect(data).toEqual(0);
     expect(db.collection.mock.calls).toEqual([["service"], ["users"]]);
@@ -205,7 +205,7 @@ describe("updateDataV1", () => {
       ],
     ]);
     expect(addAuthUser.mock.calls).toEqual([[auth, db, uid, email]]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 
   it("should not update data of ver.1.", async () => {
@@ -215,15 +215,15 @@ describe("updateDataV1", () => {
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBeUndefined();
     expect(data).toEqual(1);
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(set.mock.calls).toEqual([]);
-    expect(add.mock.calls).toEqual([]);
-    expect(addAuthUser.mock.calls).toEqual([]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+    expect(addAuthUser).not.toHaveBeenCalled();
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 });
 
@@ -249,7 +249,7 @@ describe("updateDataV2", () => {
     // Call
     let { err, data } = await updateDataV2(db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBeUndefined();
     expect(data).toEqual(2);
     expect(db.collection.mock.calls).toEqual([["service"]]);
@@ -273,7 +273,7 @@ describe("updateDataV2", () => {
     // Call
     let { err, data } = await updateDataV2(db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBeUndefined();
     expect(data).toEqual(2);
     expect(db.collection.mock.calls).toEqual([["service"]]);
@@ -298,13 +298,13 @@ describe("updateDataV2", () => {
     // Call
     let { err, data } = await updateDataV2(db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toEqual("error");
     expect(data).toEqual(1);
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(doc.mock.calls).toEqual([["auth"]]);
     expect(set.mock.calls).toEqual([[{ createdAt }]]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 
   it("should not update data of ver.2.", async () => {
@@ -314,12 +314,12 @@ describe("updateDataV2", () => {
     // Call
     let { err, data } = await updateDataV2(db, deleted);
 
-    // Evaluate
+    // Verify
     expect(err).toBeUndefined();
     expect(data).toEqual(2);
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(set.mock.calls).toEqual([]);
-    expect(deleted.ref.set.mock.calls).toEqual([]);
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(deleted.ref.set).not.toHaveBeenCalled();
   });
 });

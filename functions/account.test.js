@@ -27,11 +27,11 @@ describe("gateForGroupMembers", () => {
     // Call
     const ret = await gateForGroupMembers(db, {}, "group-id", action);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-uid", data: undefined });
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(get.mock.calls).toEqual([]);
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
   });
 
   it("returns 'missing-user-doc' if user document is missing.", async () => {
@@ -42,7 +42,7 @@ describe("gateForGroupMembers", () => {
     // Call
     const ret = await gateForGroupMembers(db, { uid }, "group-id", action);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-user-doc", data: undefined });
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
@@ -61,7 +61,7 @@ describe("gateForGroupMembers", () => {
     // Call
     const ret = await gateForGroupMembers(db, { uid }, group.id, action);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "permission-denied", data: undefined });
     expect(db.collection.mock.calls).toEqual([["users"], ["groups"]]);
     expect(doc.mock.calls).toEqual([[uid], [group.id]]);
@@ -84,7 +84,7 @@ describe("gateForGroupMembers", () => {
     // Call
     const ret = await gateForGroupMembers(db, { uid }, group.id, action);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined, data: "test-result" });
     expect(action.mock.calls).toEqual([[]]);
     expect(db.collection.mock.calls).toEqual([["users"], ["groups"]]);
@@ -108,12 +108,12 @@ describe("addAuthUser", () => {
     // Call
     const ret = await addAuthUser(auth, db, "", email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-uid" });
-    expect(auth.createUser.mock.calls).toEqual([]);
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(get.mock.calls).toEqual([]);
+    expect(auth.createUser).not.toHaveBeenCalled();
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
   });
 
   it("returns 'missing-email' if email is missing.", async () => {
@@ -122,12 +122,12 @@ describe("addAuthUser", () => {
     // Call
     const ret = await addAuthUser(auth, db, uid, "");
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-email" });
-    expect(auth.createUser.mock.calls).toEqual([]);
-    expect(db.collection.mock.calls).toEqual([]);
-    expect(doc.mock.calls).toEqual([]);
-    expect(get.mock.calls).toEqual([]);
+    expect(auth.createUser).not.toHaveBeenCalled();
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
   });
 
   it("returns 'missing-user-doc' if user document is missing.", async () => {
@@ -138,9 +138,9 @@ describe("addAuthUser", () => {
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: `missing-user-doc ${uid}` });
-    expect(auth.createUser.mock.calls).toEqual([]);
+    expect(auth.createUser).not.toHaveBeenCalled();
     expect(db.collection.mock.calls).toEqual([["users"]]);
     expect(doc.mock.calls).toEqual([[uid]]);
     expect(get.mock.calls).toEqual([[]]);
@@ -154,7 +154,7 @@ describe("addAuthUser", () => {
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined });
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
     expect(db.collection.mock.calls).toEqual([["users"]]);
@@ -171,7 +171,7 @@ describe("addAuthUser", () => {
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "test/error" });
     expect(auth.createUser.mock.calls).toEqual([[{ uid, email }]]);
     expect(db.collection.mock.calls).toEqual([["users"]]);
@@ -191,9 +191,9 @@ describe("updateAuthEmail", () => {
     // Call
     const ret = await updateAuthEmail(auth, "", email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-uid" });
-    expect(auth.updateUser.mock.calls).toEqual([]);
+    expect(auth.updateUser).not.toHaveBeenCalled();
   });
 
   it("returns 'missing-email' if email is missing.", async () => {
@@ -202,9 +202,9 @@ describe("updateAuthEmail", () => {
     // Call
     const ret = await updateAuthEmail(auth, uid, "");
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-email" });
-    expect(auth.updateUser.mock.calls).toEqual([]);
+    expect(auth.updateUser).not.toHaveBeenCalled();
   });
 
   it("returns null if all processes are successful.", async () => {
@@ -213,7 +213,7 @@ describe("updateAuthEmail", () => {
     // Call
     const ret = await updateAuthEmail(auth, uid, email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined });
     expect(auth.updateUser.mock.calls).toEqual([[uid, { email }]]);
   });
@@ -225,7 +225,7 @@ describe("updateAuthEmail", () => {
     // Call
     const ret = await updateAuthEmail(auth, uid, email);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "test/error" });
     expect(auth.updateUser.mock.calls).toEqual([[uid, { email }]]);
   });
@@ -241,9 +241,9 @@ describe("removeAuthUser", () => {
     // Call
     const ret = await removeAuthUser(auth, "");
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-uid" });
-    expect(auth.deleteUser.mock.calls).toEqual([]);
+    expect(auth.deleteUser).not.toHaveBeenCalled();
   });
 
   it("returns null if all processes are successful.", async () => {
@@ -252,7 +252,7 @@ describe("removeAuthUser", () => {
     // Call
     const ret = await removeAuthUser(auth, uid);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined });
     expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
   });
@@ -264,7 +264,7 @@ describe("removeAuthUser", () => {
     // Call
     const ret = await removeAuthUser(auth, uid);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "test/error" });
     expect(auth.deleteUser.mock.calls).toEqual([[uid]]);
   });
@@ -280,9 +280,9 @@ describe("getAuthUser", () => {
     // Call
     const ret = await getAuthUser(auth, "");
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "missing-uid", data: undefined });
-    expect(auth.getUser.mock.calls).toEqual([]);
+    expect(auth.getUser).not.toHaveBeenCalled();
   });
 
   it("returns user if all processes are successful.", async () => {
@@ -293,7 +293,7 @@ describe("getAuthUser", () => {
     // Call
     const ret = await getAuthUser(auth, uid);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined, data: user });
     expect(auth.getUser.mock.calls).toEqual([[uid]]);
   });
@@ -307,7 +307,7 @@ describe("getAuthUser", () => {
     // Call
     const ret = await getAuthUser(auth, uid);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: undefined, data: null });
     expect(auth.getUser.mock.calls).toEqual([[uid]]);
   });
@@ -319,7 +319,7 @@ describe("getAuthUser", () => {
     // Call
     const ret = await getAuthUser(auth, uid);
 
-    // Evaluate
+    // Verify
     expect(ret).toEqual({ err: "test/error", data: undefined });
     expect(auth.getUser.mock.calls).toEqual([[uid]]);
   });

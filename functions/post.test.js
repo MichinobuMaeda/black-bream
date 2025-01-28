@@ -2,6 +2,7 @@ const { describe, it, expect, afterEach } = require("@jest/globals");
 const { Timestamp } = require("firebase-admin/firestore");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
+let { generateLinkCard } = require("./utils.js");
 
 const {
   getQueueName,
@@ -17,6 +18,10 @@ jest.mock("axios");
 jest.mock("@atproto/api");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
+BskyAgent.prototype.uploadBlob = jest.fn(() =>
+  Promise.resolve({ data: new Uint8Array(10) }),
+);
+jest.mock("./utils.js");
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -32,7 +37,7 @@ describe("getQueueName", () => {
     // Execute
     const result = getQueueName(project, location, functionName);
 
-    // Evaluate
+    // Verify
     expect(result).toBe(
       "projects/projectName/locations/locationName/functions/functionName",
     );
@@ -65,7 +70,7 @@ describe("createPosts", () => {
     // Execute
     const result = await createPosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "enqueued" });
     expect(queue.enqueue.mock.calls).toEqual([
       [
@@ -113,7 +118,7 @@ describe("createPosts", () => {
     // Execute
     const result = await createPosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "enqueued" });
     expect(queue.enqueue.mock.calls).toEqual([
       [
@@ -161,7 +166,7 @@ describe("createPosts", () => {
     // Execute
     const result = await createPosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: "error", data: undefined });
     expect(queue.enqueue.mock.calls).toEqual([
       [
@@ -239,7 +244,7 @@ describe("deletePosts", () => {
     // Execute
     const result = await deletePosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "deleted" });
     expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
     expect(data.ref.update.mock.calls).toEqual([
@@ -278,7 +283,7 @@ describe("deletePosts", () => {
     // Execute
     const result = await deletePosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "deleted" });
     expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
     expect(data.ref.update.mock.calls).toEqual([
@@ -317,7 +322,7 @@ describe("deletePosts", () => {
     // Execute
     const result = await deletePosts(queue, data);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: "error", data: undefined });
     expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
     expect(data.ref.update.mock.calls).toEqual([
@@ -385,7 +390,7 @@ describe("post", () => {
   const postSnap = {
     exists: true,
     id: "post-id",
-    data: () => postData,
+    data: jest.fn(() => postData),
     get: jest.fn((key) => postData[key]),
   };
   const postRef = {
@@ -439,7 +444,7 @@ describe("post", () => {
       text: "Text",
     });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Not found: posts/post-id",
       data: undefined,
@@ -447,10 +452,10 @@ describe("post", () => {
     expect(db.collection.mock.calls).toEqual([["posts"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([]);
-    expect(authRef.get.mock.calls).toEqual([]);
-    expect(authSnap.get.mock.calls).toEqual([]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(postRef.update).not.toHaveBeenCalled();
+    expect(authRef.get).not.toHaveBeenCalled();
+    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if post is already deleted.", async () => {
@@ -461,7 +466,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "target1" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Deleted: posts/post-id",
       data: undefined,
@@ -482,9 +487,9 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(authRef.get.mock.calls).toEqual([]);
-    expect(authSnap.get.mock.calls).toEqual([]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(authRef.get).not.toHaveBeenCalled();
+    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if failed to get auth doc.", async () => {
@@ -499,7 +504,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Not found: service/auth",
       data: undefined,
@@ -521,8 +526,8 @@ describe("post", () => {
       ],
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if auth doc is already deleted.", async () => {
@@ -535,7 +540,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Deleted: service/auth",
       data: undefined,
@@ -558,7 +563,7 @@ describe("post", () => {
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
     expect(authSnap.get.mock.calls).toEqual([["deletedAt"]]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if the target status is not enqueued.", async () => {
@@ -573,7 +578,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "target1" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Invalid status: target1.status: failed",
       data: undefined,
@@ -594,9 +599,9 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(authRef.get.mock.calls).toEqual([]);
-    expect(authSnap.get.mock.calls).toEqual([]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(authRef.get).not.toHaveBeenCalled();
+    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if the target is already deleted.", async () => {
@@ -611,7 +616,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "target1" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Invalid status: target1 is deleted",
       data: undefined,
@@ -632,9 +637,9 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(authRef.get.mock.calls).toEqual([]);
-    expect(authSnap.get.mock.calls).toEqual([]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(authRef.get).not.toHaveBeenCalled();
+    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if failed to get the target params.", async () => {
@@ -651,7 +656,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "target1" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Not found: target1 in service/auth",
       data: undefined,
@@ -674,7 +679,7 @@ describe("post", () => {
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
     expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["target1"]]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should return error, if the target params is already deleted.", async () => {
@@ -694,7 +699,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "target1" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Deleted: target1 in service/auth",
       data: undefined,
@@ -717,7 +722,7 @@ describe("post", () => {
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
     expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["target1"]]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should post to Mastodon.", async () => {
@@ -730,7 +735,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "posting" });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
@@ -779,8 +784,8 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
-    // Evaluate
-    expect(result).toEqual({ err: "Failed: mastodon error", data: undefined });
+    // Verify
+    expect(result).toEqual({ err: "mastodon: error", data: undefined });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
@@ -790,7 +795,7 @@ describe("post", () => {
           status: "posting",
           "targets.mastodon": {
             status: "failed",
-            err: "Failed: mastodon error",
+            err: "mastodon: error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -831,9 +836,9 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "mastodon" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
-      err: "Failed: mastodon 500 Server error",
+      err: "mastodon: 500 Server error",
       data: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
@@ -845,7 +850,7 @@ describe("post", () => {
           status: "posting",
           "targets.mastodon": {
             status: "failed",
-            err: "Failed: mastodon 500 Server error",
+            err: "mastodon: 500 Server error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -879,11 +884,15 @@ describe("post", () => {
     collection.doc
       .mockImplementationOnce(() => postRef)
       .mockImplementationOnce(() => authRef);
+    generateLinkCard.mockImplementationOnce(() => ({
+      err: undefined,
+      data: null,
+    }));
 
     // Execute
     const result = await post(db, { id: "post-id", target: "bluesky" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "posting" });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
@@ -910,6 +919,227 @@ describe("post", () => {
     ]);
   });
 
+  it("should post to Bluesky with an link card, if text includes url. #1", async () => {
+    // Prepare
+    postSnap.data.mockImplementationOnce(() => ({
+      text: "Text https://example.com",
+    }));
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    generateLinkCard.mockImplementationOnce(() =>
+      Promise.resolve({
+        err: undefined,
+        data: {
+          uri: "https://example.com",
+          title: "Title",
+          description: "Description",
+          thumbUrl: "https://example.com/thumb.jpg",
+        },
+      }),
+    );
+    axios.get.mockImplementationOnce(() =>
+      Promise.resolve({
+        status: 200,
+        data: new ArrayBuffer(10),
+      }),
+    );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "bluesky" });
+
+    // Verify
+    expect(result).toEqual({ err: undefined, data: "posting" });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "completed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [
+        {
+          text: "Text https://example.com",
+          langs: ["ja"],
+          embed: {
+            $type: "app.bsky.embed.external",
+            external: {
+              uri: "https://example.com",
+              title: "Title",
+              description: "Description",
+              thumb: expect.any(Uint8Array),
+            },
+          },
+        },
+      ],
+    ]);
+    expect(axios.get.mock.calls).toEqual([
+      [
+        "https://example.com/thumb.jpg",
+        {
+          responseType: "arraybuffer",
+        },
+      ],
+    ]);
+  });
+
+  it("should post to Bluesky with an link card, if text includes url. #2", async () => {
+    // Prepare
+    postSnap.data.mockImplementationOnce(() => ({
+      text: "Text https://example.com",
+    }));
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    generateLinkCard.mockImplementationOnce(() =>
+      Promise.resolve({
+        err: undefined,
+        data: {
+          uri: "https://example.com",
+          title: "Title",
+          description: "Description",
+          thumbUrl: null,
+        },
+      }),
+    );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "bluesky" });
+
+    // Verify
+    expect(result).toEqual({ err: undefined, data: "posting" });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "completed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [
+        {
+          text: "Text https://example.com",
+          langs: ["ja"],
+          embed: {
+            $type: "app.bsky.embed.external",
+            external: {
+              uri: "https://example.com",
+              title: "Title",
+              description: "Description",
+              thumb: undefined,
+            },
+          },
+        },
+      ],
+    ]);
+    expect(axios.get).not.toHaveBeenCalled();
+  });
+
+  it("should post to Bluesky with an link card, if text includes url. #3", async () => {
+    // Prepare
+    postSnap.data.mockImplementationOnce(() => ({
+      text: "Text https://example.com",
+    }));
+    collection.doc
+      .mockImplementationOnce(() => postRef)
+      .mockImplementationOnce(() => authRef);
+    generateLinkCard.mockImplementationOnce(() =>
+      Promise.resolve({
+        err: undefined,
+        data: {
+          uri: "https://example.com",
+          title: "Title",
+          description: "Description",
+          thumbUrl: "https://example.com/thumb.jpg",
+        },
+      }),
+    );
+    axios.get.mockImplementationOnce(() =>
+      Promise.resolve({
+        status: 404,
+        data: undefined,
+      }),
+    );
+
+    // Execute
+    const result = await post(db, { id: "post-id", target: "bluesky" });
+
+    // Verify
+    expect(result).toEqual({ err: undefined, data: "posting" });
+    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(postRef.get.mock.calls).toEqual([[]]);
+    expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "completed",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(authRef.get.mock.calls).toEqual([[]]);
+    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [
+        {
+          text: "Text https://example.com",
+          langs: ["ja"],
+          embed: {
+            $type: "app.bsky.embed.external",
+            external: {
+              uri: "https://example.com",
+              title: "Title",
+              description: "Description",
+              thumb: undefined,
+            },
+          },
+        },
+      ],
+    ]);
+    expect(axios.get.mock.calls).toEqual([
+      [
+        "https://example.com/thumb.jpg",
+        {
+          responseType: "arraybuffer",
+        },
+      ],
+    ]);
+  });
+
   it(
     "should return error," +
       " if Bluesky.post raises an exception for Bluesky.",
@@ -918,6 +1148,9 @@ describe("post", () => {
       collection.doc
         .mockImplementationOnce(() => postRef)
         .mockImplementationOnce(() => authRef);
+      generateLinkCard.mockImplementationOnce(() =>
+        Promise.resolve({ err: undefined, data: null }),
+      );
       BskyAgent.prototype.post.mockImplementationOnce(() =>
         Promise.reject("error"),
       );
@@ -925,8 +1158,8 @@ describe("post", () => {
       // Execute
       const result = await post(db, { id: "post-id", target: "bluesky" });
 
-      // Evaluate
-      expect(result).toEqual({ err: "Failed: bluesky error", data: undefined });
+      // Verify
+      expect(result).toEqual({ err: "bluesky: error", data: undefined });
       expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
       expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
       expect(postRef.get.mock.calls).toEqual([[]]);
@@ -936,7 +1169,7 @@ describe("post", () => {
             status: "posting",
             "targets.bluesky": {
               status: "failed",
-              err: "Failed: bluesky error",
+              err: "bluesky: error",
               updatedAt: expect.any(Date),
             },
             updatedAt: expect.any(Date),
@@ -959,13 +1192,16 @@ describe("post", () => {
     collection.doc
       .mockImplementationOnce(() => postRef)
       .mockImplementationOnce(() => authRef);
+    generateLinkCard.mockImplementationOnce(() =>
+      Promise.resolve({ err: undefined, data: null }),
+    );
 
     // Execute
     const result = await post(db, { id: "post-id", target: "dummy" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
-      err: "Not supported target: dummy",
+      err: "Unsupported target: dummy",
       data: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
@@ -977,7 +1213,7 @@ describe("post", () => {
           status: "posting",
           "targets.dummy": {
             status: "failed",
-            err: "Not supported target: dummy",
+            err: "Unsupported target: dummy",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -986,7 +1222,7 @@ describe("post", () => {
     ]);
     expect(authRef.get.mock.calls).toEqual([[]]);
     expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["dummy"]]);
-    expect(axios.post.mock.calls).toEqual([]);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it("should post to Threads.", async () => {
@@ -1003,7 +1239,7 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "threads" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "posting" });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
@@ -1047,8 +1283,8 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "threads" });
 
-    // Evaluate
-    expect(result).toEqual({ err: "Failed: threads error", data: undefined });
+    // Verify
+    expect(result).toEqual({ err: "threads: error", data: undefined });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
@@ -1058,7 +1294,7 @@ describe("post", () => {
           status: "posting",
           "targets.threads": {
             status: "failed",
-            err: "Failed: threads error",
+            err: "threads: error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -1089,9 +1325,9 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "threads" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
-      err: "Failed to create container: threads 500 Server error",
+      err: "threads: Failed to create container: 500 Server error",
       data: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
@@ -1103,7 +1339,7 @@ describe("post", () => {
           status: "posting",
           "targets.threads": {
             status: "failed",
-            err: "Failed to create container: threads 500 Server error",
+            err: "threads: Failed to create container: 500 Server error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -1138,9 +1374,9 @@ describe("post", () => {
     // Execute
     const result = await post(db, { id: "post-id", target: "threads" });
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
-      err: "Failed to publish: threads 500 Server error",
+      err: "threads: Failed to publish: 500 Server error",
       data: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
@@ -1152,7 +1388,7 @@ describe("post", () => {
           status: "posting",
           "targets.threads": {
             status: "failed",
-            err: "Failed to publish: threads 500 Server error",
+            err: "threads: Failed to publish: 500 Server error",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -1192,7 +1428,7 @@ describe("post", () => {
       // Execute
       const result = await post(db, { id: "post-id", target: "mastodon" });
 
-      // Evaluate
+      // Verify
       expect(result).toEqual({ err: "error", data: undefined });
       expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
       expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
@@ -1264,7 +1500,7 @@ describe("checkCompleted", () => {
     // Execute
     const result = await checkCompleted(doc);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "completed" });
     expect(doc.ref.update.mock.calls).toEqual([
       [
@@ -1295,7 +1531,7 @@ describe("checkCompleted", () => {
     // Execute
     const result = await checkCompleted(doc);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "failed" });
     expect(doc.ref.update.mock.calls).toEqual([
       [
@@ -1326,9 +1562,9 @@ describe("checkCompleted", () => {
     // Execute
     const result = await checkCompleted(doc);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: undefined, data: "posting" });
-    expect(doc.ref.update.mock.calls).toEqual([]);
+    expect(doc.ref.update).not.toHaveBeenCalled();
   });
 
   it("should return error, if it is rejected.", async () => {
@@ -1350,7 +1586,7 @@ describe("checkCompleted", () => {
     // Execute
     const result = await checkCompleted(doc);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({ err: "error", data: undefined });
     expect(doc.ref.update.mock.calls).toEqual([
       [
@@ -1398,15 +1634,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Not found: service/auth",
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should return error, if service/auth is already deleted.", async () => {
@@ -1416,15 +1652,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Deleted: service/auth",
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should return error, if failed to get service/auth/threads.", async () => {
@@ -1436,15 +1672,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Not found: service/auth/threads",
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should return error, if service/auth/threads is already deleted.", async () => {
@@ -1456,15 +1692,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Deleted: service/auth/threads",
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should skip the refresh, if no access token is set.", async () => {
@@ -1481,15 +1717,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should skip the refresh," + " if no expiration is set.", async () => {
@@ -1504,15 +1740,15 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: undefined,
     });
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it(
@@ -1532,15 +1768,15 @@ describe("refreshThreadsAccessToken", () => {
       // Execute
       const result = await refreshThreadsAccessToken(db);
 
-      // Evaluate
+      // Verify
       expect(result).toEqual({
         err: undefined,
       });
       expect(db.collection.mock.calls).toEqual([["service"]]);
       expect(collection.doc.mock.calls).toEqual([["auth"]]);
       expect(authRef.get.mock.calls).toEqual([[]]);
-      expect(axios.get.mock.calls).toEqual([]);
-      expect(authRef.update.mock.calls).toEqual([]);
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(authRef.update).not.toHaveBeenCalled();
     },
   );
 
@@ -1567,7 +1803,7 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: undefined,
     });
@@ -1611,7 +1847,7 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "Failed to refresh Threads access token: 500 Server error",
     });
@@ -1625,7 +1861,7 @@ describe("refreshThreadsAccessToken", () => {
           "&access_token=threads-access-token",
       ],
     ]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 
   it("should return error, if axios.get raises an exception.", async () => {
@@ -1643,7 +1879,7 @@ describe("refreshThreadsAccessToken", () => {
     // Execute
     const result = await refreshThreadsAccessToken(db);
 
-    // Evaluate
+    // Verify
     expect(result).toEqual({
       err: "error",
     });
@@ -1657,6 +1893,6 @@ describe("refreshThreadsAccessToken", () => {
           "&access_token=threads-access-token",
       ],
     ]);
-    expect(authRef.update.mock.calls).toEqual([]);
+    expect(authRef.update).not.toHaveBeenCalled();
   });
 });

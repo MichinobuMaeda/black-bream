@@ -2,6 +2,7 @@ const { createHash } = require("node:crypto");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 const { info, error } = require("firebase-functions/logger");
+const { generateLinkCard, getMimeTypes } = require("./utils");
 
 /**
  * Get queue name from location, project, and function name
@@ -9,7 +10,7 @@ const { info, error } = require("firebase-functions/logger");
  * @param {string} location
  * @param {string} project
  * @param {string} functionName
- * @returns
+ * @returns {string}
  */
 const getQueueName = (project, location, functionName) =>
   `projects/${project}/locations/${location}/functions/${functionName}`;
@@ -120,12 +121,153 @@ const deletePosts = async (queue, data) => {
 };
 
 /**
+ * Post to Mastodon
+ *
+ * @param {object} params
+ * @param {string} text
+ * @returns {Promise<object>}
+ */
+const postMastodon = async (params, text) => {
+  try {
+    // Mastodon: Idempotency keys are stored for up to 1 hour.
+    const hash = createHash("sha256");
+    hash.update(text);
+    const ret = await axios.post(
+      params.url,
+      {
+        status: text,
+        sensitive: "false",
+        visibility: "public",
+        language: "ja",
+      },
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${params.token}`,
+          "Idempotency-Key": hash.digest("hex"),
+        },
+      },
+    );
+
+    if (ret.status !== 200) {
+      return { err: `${ret.status} ${ret.statusText}` };
+    }
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+/**
+ * Post to Bluesky
+ * @param {object} params
+ * @param {string} text
+ * @returns {Promise<object>}
+ */
+const postBluesky = async (params, text) => {
+  try {
+    const { service, identifier, password } = params;
+    const agent = new BskyAgent({ service });
+
+    let external = undefined;
+    const result = await generateLinkCard(text);
+
+    if (result.data) {
+      const { thumbUrl, ...card } = result.data;
+      let thumb = undefined;
+      if (thumbUrl) {
+        const response = await axios.get(thumbUrl, {
+          responseType: "arraybuffer",
+        });
+        const encoding = getMimeTypes(thumbUrl, response.headers);
+        if (response.status === 200) {
+          const { data } = await agent.uploadBlob(
+            new Uint8Array(await response.data),
+            { encoding },
+          );
+          thumb = data;
+        }
+      }
+      external = {
+        thumb,
+        ...card,
+      };
+    }
+
+    await agent.login({ identifier, password });
+    await agent.post(
+      external
+        ? {
+            text,
+            langs: ["ja"],
+            embed: {
+              $type: "app.bsky.embed.external",
+              external,
+            },
+          }
+        : { text, langs: ["ja"] },
+    );
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+/**
+ * Post to Threads
+ *
+ * @param {object} params
+ * @param {string} text
+ * @returns {Promise<object>}
+ */
+const postThreads = async (params, text) => {
+  try {
+    const { userId, accessToken } = params;
+    const retContainer = await axios.post(
+      `https://graph.threads.net/v1.0/${userId}/threads` +
+        "?media_type=TEXT" +
+        `&text=${encodeURIComponent(text)}` +
+        `&access_token=${accessToken}`,
+    );
+
+    if (retContainer.status !== 200) {
+      return {
+        err:
+          "Failed to create container:" +
+          ` ${retContainer.status} ${retContainer.statusText}`,
+      };
+    }
+
+    const retPublish = await axios.post(
+      `https://graph.threads.net/v1.0/${userId}/threads_publish` +
+        `?creation_id=${retContainer.data.id}` +
+        `&access_token=${accessToken}`,
+    );
+
+    if (retPublish.status !== 200) {
+      return {
+        err:
+          "Failed to publish:" +
+          ` ${retPublish.status} ${retPublish.statusText}`,
+      };
+    }
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+/**
  * Post
  *
  * @param {FirebaseFirestore.Firestore} db
  * @param {object} data
  */
 const post = async (db, { id, target }) => {
+  info(`Task: ${id} ${target}`);
   const postRef = db.collection("posts").doc(id);
 
   const statusError = async (err) => {
@@ -184,87 +326,25 @@ const post = async (db, { id, target }) => {
     }
 
     const { text } = postSnap.data();
+    let ret = null;
 
     switch (target) {
       case "mastodon":
-        try {
-          // Mastodon: Idempotency keys are stored for up to 1 hour.
-          const hash = createHash("sha256");
-          hash.update(text);
-          const ret = await axios.post(
-            params.url,
-            {
-              status: text,
-              sensitive: "false",
-              visibility: "public",
-              language: "ja",
-            },
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-                Authorization: `Bearer ${params.token}`,
-                "Idempotency-Key": hash.digest("hex"),
-              },
-            },
-          );
-
-          if (ret.status !== 200) {
-            return statusError(
-              `Failed: ${target} ${ret.status} ${ret.statusText}`,
-            );
-          }
-        } catch (e) {
-          return statusError(`Failed: ${target} ${e}`);
-        }
+        ret = await postMastodon(params, text);
         break;
       case "bluesky":
-        try {
-          const { service, identifier, password } = params;
-          const agent = new BskyAgent({ service });
-          await agent.login({ identifier, password });
-          await agent.post({ text, langs: ["ja"] });
-        } catch (e) {
-          return statusError(`Failed: ${target} ${e}`);
-        }
+        ret = await postBluesky(params, text);
         break;
       case "threads":
-        try {
-          const { userId, accessToken } = params;
-          const retContainer = await axios.post(
-            `https://graph.threads.net/v1.0/${userId}/threads` +
-              "?media_type=TEXT" +
-              `&text=${encodeURIComponent(text)}` +
-              `&access_token=${accessToken}`,
-          );
-
-          if (retContainer.status !== 200) {
-            return statusError(
-              "Failed to create container:" +
-                ` ${target} ${retContainer.status} ${retContainer.statusText}`,
-            );
-          }
-
-          const retPublish = await axios.post(
-            `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-              `?creation_id=${retContainer.data.id}` +
-              `&access_token=${accessToken}`,
-          );
-
-          if (retPublish.status !== 200) {
-            return statusError(
-              "Failed to publish:" +
-                ` ${target} ${retPublish.status} ${retPublish.statusText}`,
-            );
-          }
-        } catch (e) {
-          return statusError(`Failed: ${target} ${e}`);
-        }
+        ret = await postThreads(params, text);
         break;
       default:
-        return statusError(`Not supported target: ${target}`);
+        return statusError(`Unsupported target: ${target}`);
     }
 
-    info(`Task dispatched: ${id} ${target} ${text.substring(0, 20)}`);
+    if (ret?.err) {
+      return statusError(`${target}: ${ret?.err}`);
+    }
 
     await postRef.update({
       status: "posting",
