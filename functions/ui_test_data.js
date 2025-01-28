@@ -1,4 +1,5 @@
-const { info, error } = require("firebase-functions/logger");
+const { logger } = require("firebase-functions/v2");
+
 const deployment = require("./deployment");
 
 /**
@@ -9,17 +10,17 @@ const deployment = require("./deployment");
  * @returns {Promise<[string|null, number]>}
  */
 const createUiTestData = async (auth, db) => {
-  info("START: createUiTestData");
+  logger.info("START: createUiTestData");
   try {
     if (!process.env.FUNCTIONS_EMULATOR) {
-      error("This function can only be run in the emulator");
+      logger.error("This function can only be run in the emulator");
       return { error: "This function can only be run in the emulator" };
     }
     if (
       !process.env.WEB_APP_URL.includes("localhost") &&
       !process.env.WEB_APP_URL.includes("127.0.0.1")
     ) {
-      error("This function can only be run at localhost");
+      logger.error("This function can only be run at localhost");
       return { error: "This function can only be run at localhost" };
     }
 
@@ -40,7 +41,7 @@ const createUiTestData = async (auth, db) => {
       return { error: retV2.err };
     }
 
-    info(`dataVersion: ${retV2.data}`);
+    logger.info(`dataVersion: ${retV2.data}`);
 
     const user = await auth.getUserByEmail("primary@example.com");
     await auth.updateUser(user.uid, { password: "password" });
@@ -58,10 +59,10 @@ const createUiTestData = async (auth, db) => {
         },
       });
 
-    info("END  : createUiTestData");
+    logger.info("END  : createUiTestData");
     return { result: "ok" };
   } catch (e) {
-    error(e.toString());
+    logger.error(e.toString());
     return { error: e.toString() };
   }
 };

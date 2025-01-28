@@ -1,7 +1,8 @@
+const { logger } = require("firebase-functions/v2");
 const { createHash } = require("node:crypto");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
-const { info, error } = require("firebase-functions/logger");
+
 const { generateLinkCard, getMimeTypes } = require("./utils");
 
 /**
@@ -27,7 +28,7 @@ const createPosts = async (queue, data) => {
     const delay = 17 * 1000;
     const { id } = data;
     const { targets, scheduledFor } = data.data();
-    info(`Enqueue posts: ${id}`);
+    logger.info(`Enqueue posts: ${id}`);
 
     let scheduleTime = new Date(
       Math.max(scheduledFor.toDate().getTime(), new Date().getTime()),
@@ -54,7 +55,7 @@ const createPosts = async (queue, data) => {
           params.updatedAt = new Date();
           params.deletedAt = null;
         } catch (e) {
-          error(e);
+          logger.error(e);
           params.status = "failed";
           params.err = e.toString();
           params.enqueuedAt = null;
@@ -73,7 +74,7 @@ const createPosts = async (queue, data) => {
 
     return { err: undefined, data: "enqueued" };
   } catch (e) {
-    error(e);
+    logger.error(e);
     return { err: e.code ?? e.toString(), data: undefined };
   }
 };
@@ -89,7 +90,7 @@ const deletePosts = async (queue, data) => {
   try {
     const { id } = data;
     const { targets } = data.data();
-    info(`Delete posts: ${id}`);
+    logger.info(`Delete posts: ${id}`);
 
     await Promise.all(
       Object.entries(targets).map(async ([target, params]) => {
@@ -99,7 +100,7 @@ const deletePosts = async (queue, data) => {
           params.deletedAt = new Date();
           params.updatedAt = new Date();
         } catch (e) {
-          error(e);
+          logger.error(e);
           params.err = e.toString();
           params.updatedAt = new Date();
         }
@@ -115,7 +116,7 @@ const deletePosts = async (queue, data) => {
 
     return { err: undefined, data: "deleted" };
   } catch (e) {
-    error(e);
+    logger.error(e);
     return { err: e.code ?? e.toString(), data: undefined };
   }
 };
@@ -267,11 +268,11 @@ const postThreads = async (params, text) => {
  * @param {object} data
  */
 const post = async (db, { id, target }) => {
-  info(`Task: ${id} ${target}`);
+  logger.info(`Task: ${id} ${target}`);
   const postRef = db.collection("posts").doc(id);
 
   const statusError = async (err) => {
-    error(err);
+    logger.error(err);
 
     try {
       await postRef.update({
@@ -280,7 +281,7 @@ const post = async (db, { id, target }) => {
         updatedAt: new Date(),
       });
     } catch (e) {
-      error(e);
+      logger.error(e);
     }
     return { err, data: undefined };
   };
@@ -290,7 +291,7 @@ const post = async (db, { id, target }) => {
 
     if (!postSnap.exists) {
       const err = `Not found: posts/${id}`;
-      error(err);
+      logger.error(err);
       return { err, data: undefined };
     }
     if (postSnap.get("deletedAt")) {
@@ -386,7 +387,7 @@ const checkCompleted = async (data) => {
 
     return { err: undefined, data: status };
   } catch (e) {
-    error(e);
+    logger.error(e);
     return { err: e.code ?? e.toString(), data: undefined };
   }
 };
@@ -434,7 +435,7 @@ const refreshThreadsAccessToken = async (db) => {
       );
 
       if (result.status === 200) {
-        info("Threads access token refreshed");
+        logger.info("Threads access token refreshed");
         await authRef.update({
           "threads.accessToken": result.data.access_token,
           "threads.expiredAt": new Date(
@@ -445,14 +446,14 @@ const refreshThreadsAccessToken = async (db) => {
         const err =
           "Failed to refresh Threads access token:" +
           ` ${result.status} ${result.statusText}`;
-        error(err);
+        logger.error(err);
         return { err };
       }
     }
 
     return { err: undefined };
   } catch (e) {
-    error(e);
+    logger.error(e);
     return { err: e.code ?? e.toString() };
   }
 };

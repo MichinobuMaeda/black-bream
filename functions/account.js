@@ -1,4 +1,4 @@
-const { info, error } = require("firebase-functions/logger");
+const { logger } = require("firebase-functions/v2");
 
 /**
  * Gate for group members
@@ -35,11 +35,11 @@ const gateForGroupMembers = async (db, { uid }, group, action) => {
  */
 const addAuthUser = async (auth, db, uid, email) => {
   if (!uid) {
-    error("missing-uid");
+    logger.error("missing-uid");
     return { err: "missing-uid" };
   }
   if (!email) {
-    error("missing-email");
+    logger.error("missing-email");
     return { err: "missing-email" };
   }
 
@@ -48,7 +48,7 @@ const addAuthUser = async (auth, db, uid, email) => {
   try {
     const user = await userRef.get();
     if (!user.exists) {
-      error(`missing-user-doc ${uid}`);
+      logger.error(`missing-user-doc ${uid}`);
       return { err: `missing-user-doc ${uid}` };
     }
 
@@ -57,10 +57,10 @@ const addAuthUser = async (auth, db, uid, email) => {
       email,
     });
 
-    info(`Create auth user ${uid}, ${email}`);
+    logger.info(`Create auth user ${uid}, ${email}`);
     return { err: undefined };
   } catch (e) {
-    error(e.code ?? e.toString());
+    logger.error(e.code ?? e.toString());
     return { err: e.code ?? e.toString() };
   }
 };
@@ -75,21 +75,21 @@ const addAuthUser = async (auth, db, uid, email) => {
  */
 const updateAuthEmail = async (auth, uid, email) => {
   if (!uid) {
-    error("missing-uid");
+    logger.error("missing-uid");
     return { err: "missing-uid" };
   }
   if (!email) {
-    error("missing-email");
+    logger.error("missing-email");
     return { err: "missing-email" };
   }
 
   try {
     await auth.updateUser(uid, { email });
 
-    info(`Update ${uid} email: ${email}`);
+    logger.info(`Update ${uid} email: ${email}`);
     return { err: undefined };
   } catch (e) {
-    error(e.code ?? e.toString());
+    logger.error(e.code ?? e.toString());
     return { err: e.code ?? e.toString() };
   }
 };
@@ -103,17 +103,17 @@ const updateAuthEmail = async (auth, uid, email) => {
  */
 const removeAuthUser = async (auth, uid) => {
   if (!uid) {
-    error("missing-uid");
+    logger.error("missing-uid");
     return { err: "missing-uid" };
   }
 
   try {
     await auth.deleteUser(uid);
 
-    info(`Remove auth user ${uid}`);
+    logger.info(`Remove auth user ${uid}`);
     return { err: undefined };
   } catch (e) {
-    error(e.code ?? e.toString());
+    logger.error(e.code ?? e.toString());
     return { err: e.code ?? e.toString() };
   }
 };
@@ -127,20 +127,20 @@ const removeAuthUser = async (auth, uid) => {
  */
 const getAuthUser = async (auth, uid) => {
   if (!uid) {
-    error("missing-uid");
+    logger.error("missing-uid");
     return { err: "missing-uid", data: undefined };
   }
 
   try {
     const user = await auth.getUser(uid);
 
-    info(`Remove auth user ${uid}`);
+    logger.info(`Remove auth user ${uid}`);
     return { err: undefined, data: user };
   } catch (e) {
     if (e.code === "auth/user-not-found") {
       return { err: undefined, data: null };
     } else {
-      error(e.code ?? e.toString());
+      logger.error(e.code ?? e.toString());
       return { err: e.code ?? e.toString(), data: undefined };
     }
   }

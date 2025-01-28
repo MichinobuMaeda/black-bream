@@ -6,6 +6,7 @@ const {
 const { onCall } = require("firebase-functions/v2/https");
 const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { logger } = require("firebase-functions/v2");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
@@ -15,7 +16,6 @@ const post = require("./post");
 const account = require("./account");
 const deployment = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
-const { info } = require("firebase-functions/logger");
 
 const region = "asia-northeast2";
 const optOnCall = process.env.FUNCTIONS_EMULATOR
@@ -35,7 +35,7 @@ exports.onPostCreated = onDocumentCreated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
-      info("On emulator");
+      logger.info("On emulator");
     } else {
       await post.createPosts(getQueue(project, location), data);
     }
@@ -46,7 +46,7 @@ exports.onPostUpdated = onDocumentUpdated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
-      info("On emulator");
+      logger.info("On emulator");
     } else {
       const { before, after } = data;
       const queue = getQueue(project, location);

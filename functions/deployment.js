@@ -1,4 +1,4 @@
-const { info, error } = require("firebase-functions/logger");
+const { logger } = require("firebase-functions/v2");
 
 const { addAuthUser } = require("./account");
 
@@ -19,7 +19,7 @@ const updateDataV1 = async (auth, db, deleted) => {
     try {
       const email = deleted.get("email");
       if (!email) {
-        error("missing-email");
+        logger.error("missing-email");
         return { err: "missing-email", data: ver };
       }
 
@@ -40,7 +40,7 @@ site.manager@example.com
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-      info("Created 'service/conf'");
+      logger.info("Created 'service/conf'");
 
       const user = await db.collection("users").add({
         name: "Primary User",
@@ -90,7 +90,7 @@ site.manager@example.com
         updatedAt: new Date(),
       });
     } catch (e) {
-      error(e.code ?? e.toString());
+      logger.error(e.code ?? e.toString());
       err = e.code ?? e.toString();
       return { err: err, data: ver };
     }
@@ -116,7 +116,7 @@ const updateDataV2 = async (db, deleted) => {
       await db.collection("service").doc("auth").set({
         createdAt: new Date(),
       });
-      info("Created 'service/auth'");
+      logger.info("Created 'service/auth'");
 
       await deleted.ref.set({
         ver: 2,
@@ -124,7 +124,7 @@ const updateDataV2 = async (db, deleted) => {
         updatedAt: new Date(),
       });
     } catch (e) {
-      error(e.code ?? e.toString());
+      logger.error(e.code ?? e.toString());
       err = e.code ?? e.toString();
       return { err: e.code ?? e.toString(), data: ver };
     }
