@@ -190,7 +190,7 @@ const postBluesky = async (params, text) => {
             new Uint8Array(await response.data),
             { encoding },
           );
-          thumb = data;
+          thumb = data.blob;
         }
       }
       external = { thumb, ...card };
