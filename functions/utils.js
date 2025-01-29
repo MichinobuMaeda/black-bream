@@ -50,7 +50,7 @@ const generateLinkCard = async (text) => {
             !data.thumbUrl &&
             (attrs.property === "og:image" || attrs.name === "twitter:image")
           ) {
-            data.thumbUrl = attrs.content;
+            data.thumbUrl = new URL(attrs.content, data.uri).href;
           }
         }
       },
