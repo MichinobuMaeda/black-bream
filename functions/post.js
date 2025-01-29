@@ -176,7 +176,8 @@ const postBluesky = async (params, text) => {
     const result = await generateLinkCard(text);
 
     if (result.data) {
-      const { thumbUrl, ...card } = result.data;
+      const { uri, title, description, thumbUrl } = result.data;
+      logger.info(uri, title, description, thumbUrl);
       let thumb = undefined;
 
       if (thumbUrl) {
@@ -193,7 +194,7 @@ const postBluesky = async (params, text) => {
           thumb = data.blob;
         }
       }
-      external = { thumb, ...card };
+      external = { uri, title, description, thumb };
     }
 
     await agent.post(

@@ -19,7 +19,7 @@ jest.mock("@atproto/api");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.uploadBlob = jest.fn(() =>
-  Promise.resolve({ data: new Uint8Array(10) }),
+  Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
 jest.mock("./utils.js");
 
