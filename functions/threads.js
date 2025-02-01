@@ -17,7 +17,7 @@ const post = async (bucket, params, id, { text, files }) => {
     let retContainer = null;
 
     if (files?.length) {
-      const fileRef = bucket.file(files[0]);
+      const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
       const downloadURL = await storage.getDownloadURL(fileRef);
       retContainer = await axios.post(
         `https://graph.threads.net/v1.0/${userId}/threads` +

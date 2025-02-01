@@ -68,7 +68,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(bucket.file.mock.calls).toEqual([[dataImage.files[0]]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(axios.post.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +

@@ -23,7 +23,10 @@ describe("post", () => {
   };
   const id = "post-id";
   const dataText = { text: "Text" };
-  const dataImage = { text: "Text", files: ["image.jpeg"] };
+  const dataImage = {
+    text: "Text",
+    files: ["image.jpeg"],
+  };
 
   it("should post to Mastodon.", async () => {
     // Prepare
@@ -70,7 +73,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", image],
       ["status", "Text"],
@@ -120,7 +125,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", image],
       ["status", "Text"],
@@ -179,7 +186,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", image],
       ["status", "Text"],
@@ -238,7 +247,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(FormData.prototype.append.mock.calls).toEqual([["file", image]]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -269,7 +280,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(FormData.prototype.append.mock.calls).toEqual([["file", image]]);
     expect(axios.get.mock.calls).toEqual([
       [

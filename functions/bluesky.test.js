@@ -33,7 +33,10 @@ describe("post", () => {
   const id = "post-id";
   const dataText = { text: "Text" };
   const dataLink = { text: "Text https://example.com" };
-  const dataImage = { text: "Text", files: ["image.jpeg"] };
+  const dataImage = {
+    text: "Text",
+    files: ["image.jpeg"],
+  };
 
   it("should post to Bluesky.", async () => {
     // Prepare
@@ -68,7 +71,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(bucket.file.mock.calls).toEqual([["image.jpeg"]]);
+    expect(bucket.file.mock.calls).toEqual([
+      ["public/posts/post-id/image.jpeg"],
+    ]);
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);

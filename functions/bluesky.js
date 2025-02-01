@@ -17,7 +17,7 @@ const post = async (bucket, params, id, { text, files }) => {
   try {
     let image = null;
     if (files?.length) {
-      const fileRef = bucket.file(files[0]);
+      const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
       image = await fileRef.download();
     }
 
