@@ -16,9 +16,11 @@ const post = async (bucket, params, id, { text, files }) => {
     const mediaIds = [];
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      const contents = await fileRef.download();
+      const image = new Blob([await fileRef.download()], {
+        type: `image/${files[0].split(".").pop()}`,
+      });
       const form = new FormData();
-      form.append("file", contents);
+      form.append("file", image);
 
       const { status, statusText, data } = await axios.post(
         `${params.url}/v2/media`,

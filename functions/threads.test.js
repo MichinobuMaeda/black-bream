@@ -76,7 +76,7 @@ describe("post", () => {
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=IMAGE" +
           `&text=${encodeURIComponent("Text")}` +
-          `&image_urls=${encodeURIComponent("download-url")}` +
+          `&image_urls=${"download-url"}` +
           `&access_token=${params.accessToken}`,
       ],
       [

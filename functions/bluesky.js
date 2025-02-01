@@ -18,7 +18,9 @@ const post = async (bucket, params, id, { text, files }) => {
     let image = null;
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      image = await fileRef.download();
+      image = new Blob([await fileRef.download()], {
+        type: `image/${files[0].split(".").pop()}`,
+      });
     }
 
     const { service, identifier, password } = params;

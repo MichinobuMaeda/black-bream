@@ -77,7 +77,7 @@ describe("post", () => {
       ["public/posts/post-id/image.jpeg"],
     ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", image],
+      ["file", expect.any(Blob)],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -129,7 +129,7 @@ describe("post", () => {
       ["public/posts/post-id/image.jpeg"],
     ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", image],
+      ["file", expect.any(Blob)],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -190,7 +190,7 @@ describe("post", () => {
       ["public/posts/post-id/image.jpeg"],
     ]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", image],
+      ["file", expect.any(Blob)],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -250,7 +250,9 @@ describe("post", () => {
     expect(bucket.file.mock.calls).toEqual([
       ["public/posts/post-id/image.jpeg"],
     ]);
-    expect(FormData.prototype.append.mock.calls).toEqual([["file", image]]);
+    expect(FormData.prototype.append.mock.calls).toEqual([
+      ["file", expect.any(Blob)],
+    ]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
       [
@@ -283,7 +285,9 @@ describe("post", () => {
     expect(bucket.file.mock.calls).toEqual([
       ["public/posts/post-id/image.jpeg"],
     ]);
-    expect(FormData.prototype.append.mock.calls).toEqual([["file", image]]);
+    expect(FormData.prototype.append.mock.calls).toEqual([
+      ["file", expect.any(Blob)],
+    ]);
     expect(axios.get.mock.calls).toEqual([
       [
         `${params.url}/v1/media/media-id`,

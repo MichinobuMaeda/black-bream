@@ -87,7 +87,7 @@ describe("post", () => {
             images: [
               {
                 alt: dataImage.text.substring(0, 100),
-                image,
+                image: expect.any(Blob),
               },
             ],
           },

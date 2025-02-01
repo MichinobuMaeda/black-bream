@@ -23,7 +23,7 @@ const post = async (bucket, params, id, { text, files }) => {
         `https://graph.threads.net/v1.0/${userId}/threads` +
           "?media_type=IMAGE" +
           `&text=${encodeURIComponent(text)}` +
-          `&image_urls=${encodeURIComponent(downloadURL)}` +
+          `&image_urls=${downloadURL}` +
           `&access_token=${accessToken}`,
       );
     } else {
