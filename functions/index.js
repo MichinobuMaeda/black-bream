@@ -11,8 +11,10 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getFunctions } = require("firebase-admin/functions");
+const { getStorage } = require("firebase-admin/storage");
 
 const post = require("./post");
+const { refreshThreadsAccessToken } = require("./threads");
 const account = require("./account");
 const deployment = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
@@ -25,7 +27,7 @@ const optOnCall = process.env.FUNCTIONS_EMULATOR
 const app = initializeApp();
 
 exports.post = onTaskDispatched({ region }, async ({ data }) => {
-  await post.post(getFirestore(app), data);
+  await post.post(getFirestore(app), getStorage(app).bucket(), data);
 });
 
 const getQueue = (project, location) =>
@@ -127,7 +129,7 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
 
 exports.daily = onSchedule(
   { schedule: "every day 00:11", timeZone: "Asia/Tokyo", region },
-  async () => post.refreshThreadsAccessToken(getFirestore(app)),
+  async () => refreshThreadsAccessToken(getFirestore(app)),
 );
 
 exports.onDataVersionDeleted = onDocumentDeleted(

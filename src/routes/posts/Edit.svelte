@@ -5,11 +5,18 @@
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
+  import ButtonText from "../../lib/components/ButtonText.svelte";
+  import SvgAddPhotoAlternate from "../../lib/icons/SvgAddPhotoAlternate.svelte";
+  import SvgRemoveSelection from "../../lib/icons/SvgRemoveSelection.svelte";
   import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
   import Switch from "../../lib/components/Switch.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { updateDocument } from "../../lib/firebase.js";
+  import {
+    updateDocument,
+    savePostImage,
+    getSavedImageUrl,
+  } from "../../lib/firebase.js";
   import { formatISO } from "../../lib/i18n";
 
   /**
@@ -36,6 +43,10 @@
     active ? "" : !targets.length ? t().required() : "",
   );
   let schedule = $state(null);
+  let savedImages = $state([]);
+  let savedImageUrl = $state(null);
+  let deletedSavedImages = $state(false);
+  let selectedImages = $state(null);
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
   let deleted = $state(false);
 
@@ -43,8 +54,19 @@
     if (post) {
       text = post.text;
       targets = Object.keys(post.targets ?? {});
+      savedImages = post.files ?? [];
       schedule = formatISO(post.scheduledFor?.toDate());
       deleted = !!post.deletedAt;
+    }
+
+    savedImageUrl = savedImages?.length
+      ? getSavedImageUrl(post.id, savedImages[0])
+      : null;
+  });
+
+  $effect(() => {
+    if (selectedImages?.length) {
+      deletedSavedImages = true;
     }
   });
 
@@ -57,6 +79,7 @@
         !targets.every((target) => orgTargets.includes(target)) ||
         new Date(schedule).getTime() !==
           post?.scheduledFor?.toDate().getTime() ||
+        deletedSavedImages ||
         deleted !== !!post?.deletedAt),
   );
   let valid = $derived(!errorText && !errorTargets && !errorSchedule);
@@ -65,6 +88,7 @@
   const onCancel = async () => {
     text = post?.text;
     targets = Object.keys(post?.targets ?? {});
+    savedImages = post?.files ?? [];
     schedule = formatISO(post?.scheduledFor?.toDate());
     pop();
   };
@@ -73,11 +97,27 @@
     active = true;
     text = text.trim();
 
-    result = await updateDocument("posts", post?.id, {
-      text,
-      scheduledFor: new Date(schedule),
-      deletedAt: deleted ? new Date() : null,
-    });
+    if (!deletedSavedImages) {
+      result = await updateDocument("posts", post?.id, {
+        text,
+        scheduledFor: new Date(schedule),
+        deletedAt: deleted ? new Date() : null,
+      });
+    } else {
+      result = await updateDocument("posts", post?.id, {
+        text,
+        files:
+          selectedImages && selectedImages[0]
+            ? [`1.${selectedImages[0].name.split(".").pop()}`]
+            : [],
+        scheduledFor: new Date(schedule),
+        deletedAt: deleted ? new Date() : null,
+      });
+    }
+
+    if (!result.err && selectedImages && selectedImages[0]) {
+      result = await savePostImage(post.id, selectedImages[0]);
+    }
 
     active = false;
     if (!result.err) {
@@ -120,6 +160,58 @@
           message={t().required()}
           error={errorText}
         />
+        <div class="flex flex-row gap-4">
+          <ButtonText
+            id="add-image"
+            icon={SvgAddPhotoAlternate}
+            label={t().image()}
+            onClick={() => document.getElementById("add-image-field").click()}
+          />
+          {#if savedImages?.length}
+            <ButtonText
+              id="remove-image"
+              icon={SvgRemoveSelection}
+              label={t().delete()}
+              danger
+              onClick={() => {
+                deletedSavedImages = true;
+              }}
+            />
+          {:else if selectedImages}
+            <ButtonText
+              id="remove-image"
+              icon={SvgRemoveSelection}
+              label={t().delete()}
+              danger
+              onClick={() => {
+                selectedImages = null;
+              }}
+            />
+          {/if}
+        </div>
+        <input
+          id="add-image-field"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          bind:files={selectedImages}
+        />
+        {#if selectedImages?.length}
+          <img
+            id="image-selected"
+            class="w-96"
+            alt="selected"
+            src={URL.createObjectURL(selectedImages[0])}
+          />
+        {:else if !deletedSavedImages && savedImages}
+          {#await savedImageUrl}
+            <div>Loading...</div>
+          {:then url}
+            {#if url}
+              <img id="image-saved" class="w-96" alt="selected" src={url} />
+            {/if}
+          {/await}
+        {/if}
       </Fields>
     </Wrap>
   </Content>

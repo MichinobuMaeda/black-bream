@@ -48,6 +48,8 @@ export class I18n {
   services = () => (this.locale === "ja" ? "サービス" : "Services");
   service = () => (this.locale === "ja" ? "サービス" : "Service");
   schedule = () => (this.locale === "ja" ? "スケジュール" : "Schedule");
+  images = () => (this.locale === "ja" ? "画像" : "Images");
+  image = () => (this.locale === "ja" ? "画像" : "Image");
   posts = () => (this.locale === "ja" ? "投稿" : "Posts");
   post = () => (this.locale === "ja" ? "投稿" : "Post");
   recentPosts = () => (this.locale === "ja" ? "最近の投稿" : "Recent posts");
@@ -60,6 +62,7 @@ export class I18n {
     this.locale === "ja" ? "システム管理者" : "System administrator";
   manager = () => (this.locale === "ja" ? "管理者" : "Manager");
   siteDesc = () => (this.locale === "ja" ? "サイトの説明" : "Site description");
+  delete = () => (this.locale === "ja" ? "削除" : "Delete");
   deleted = () => (this.locale === "ja" ? "削除" : "Deleted");
   enabled = () => (this.locale === "ja" ? "有効" : "Enabled");
   restricted = () => (this.locale === "ja" ? "ログイン不可" : "Disabled");

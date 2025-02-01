@@ -36,9 +36,18 @@ import {
   connectFunctionsEmulator,
   httpsCallable,
 } from "firebase/functions";
+import {
+  getStorage,
+  connectStorageEmulator,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 
 import { loadEmail, removeEmail, saveEmail } from "./localstorage";
 import { config, reCaptchaKey, region } from "../firebaseConfig";
+
+const imageBasePath = "public/posts/";
 
 /**
  * Firebase objects
@@ -47,6 +56,7 @@ const app = initializeApp(config);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app, region);
+const storage = getStorage(app);
 
 if (reCaptchaKey !== "FIREBASE_RECAPTCHA_KEY") {
   // const appCheck =
@@ -68,6 +78,7 @@ export const initFirebaseConnections = (url) => {
     connectAuthEmulator(auth, "http://127.0.0.1:9099");
     connectFirestoreEmulator(db, "127.0.0.1", 8080);
     connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+    connectStorageEmulator(storage, "127.0.0.1", 9199);
   }
 };
 
@@ -305,10 +316,43 @@ export const createDocument = async (col, data) => {
       updatedAt: new Date(),
     });
 
-    return { err: undefined, data: ref.id };
+    return { err: undefined, data: ref };
   } catch (error) {
     console.error(`createDocument: ${error}`);
     return { err: "error", data: undefined };
+  }
+};
+
+/**
+ * Get URL of the saved image
+ *
+ * @param {string} id
+ * @param {string} name
+ * @returns
+ */
+export const getSavedImageUrl = async (id, name) =>
+  getDownloadURL(ref(storage, `${imageBasePath}/${id}/${name}`));
+
+/**
+ * Save image to storage
+ *
+ * @param {string} id
+ * @param {File} file
+ */
+export const savePostImage = async (id, file) => {
+  try {
+    const ext = file.name.split(".").pop();
+    const metadata = {
+      contentType: `image/${ext}`,
+    };
+    const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
+    console.log(`saveImage: ${imageRef.fullPath}`);
+    await uploadBytes(imageRef, file, metadata);
+
+    return { err: undefined };
+  } catch (e) {
+    console.error(`saveImage: ${e}`);
+    return { err: "error" };
   }
 };
 

@@ -1,9 +1,8 @@
 const { logger } = require("firebase-functions/v2");
-const { createHash } = require("node:crypto");
-const axios = require("axios");
-const { BskyAgent } = require("@atproto/api");
 
-const { generateLinkCard, getMimeTypes } = require("./utils");
+const mastodon = require("./mastodon.js");
+const bluesky = require("./bluesky.js");
+const threads = require("./threads.js");
 
 /**
  * Get queue name from location, project, and function name
@@ -122,152 +121,13 @@ const deletePosts = async (queue, data) => {
 };
 
 /**
- * Post to Mastodon
- *
- * @param {object} params
- * @param {string} text
- * @returns {Promise<object>}
- */
-const postMastodon = async (params, text) => {
-  try {
-    // Mastodon: Idempotency keys are stored for up to 1 hour.
-    const hash = createHash("sha256");
-    hash.update(text);
-    const ret = await axios.post(
-      params.url,
-      {
-        status: text,
-        sensitive: "false",
-        visibility: "public",
-        language: "ja",
-      },
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${params.token}`,
-          "Idempotency-Key": hash.digest("hex"),
-        },
-      },
-    );
-
-    if (ret.status !== 200) {
-      return { err: `${ret.status} ${ret.statusText}` };
-    }
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
-
-/**
- * Post to Bluesky
- * @param {object} params
- * @param {string} text
- * @returns {Promise<object>}
- */
-const postBluesky = async (params, text) => {
-  try {
-    const { service, identifier, password } = params;
-    const agent = new BskyAgent({ service });
-    await agent.login({ identifier, password });
-
-    let external = undefined;
-    const result = await generateLinkCard(text);
-
-    if (result.data) {
-      const { uri, title, description, thumbUrl } = result.data;
-      logger.info(uri, title, description, thumbUrl);
-      let thumb = undefined;
-
-      if (thumbUrl) {
-        const response = await axios.get(thumbUrl, {
-          responseType: "arraybuffer",
-        });
-        const encoding = getMimeTypes(thumbUrl, response.headers);
-
-        if (response.status === 200) {
-          const { data } = await agent.uploadBlob(
-            new Uint8Array(await response.data),
-            { encoding },
-          );
-          thumb = data.blob;
-        }
-      }
-      external = { uri, title, description, thumb };
-    }
-
-    await agent.post(
-      external
-        ? {
-            text,
-            langs: ["ja"],
-            embed: {
-              $type: "app.bsky.embed.external",
-              external,
-            },
-          }
-        : { text, langs: ["ja"] },
-    );
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
-
-/**
- * Post to Threads
- *
- * @param {object} params
- * @param {string} text
- * @returns {Promise<object>}
- */
-const postThreads = async (params, text) => {
-  try {
-    const { userId, accessToken } = params;
-    const retContainer = await axios.post(
-      `https://graph.threads.net/v1.0/${userId}/threads` +
-        "?media_type=TEXT" +
-        `&text=${encodeURIComponent(text)}` +
-        `&access_token=${accessToken}`,
-    );
-
-    if (retContainer.status !== 200) {
-      return {
-        err:
-          "Failed to create container:" +
-          ` ${retContainer.status} ${retContainer.statusText}`,
-      };
-    }
-
-    const retPublish = await axios.post(
-      `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-        `?creation_id=${retContainer.data.id}` +
-        `&access_token=${accessToken}`,
-    );
-
-    if (retPublish.status !== 200) {
-      return {
-        err:
-          "Failed to publish:" +
-          ` ${retPublish.status} ${retPublish.statusText}`,
-      };
-    }
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
-
-/**
  * Post
  *
  * @param {FirebaseFirestore.Firestore} db
+ * @param {Bucket} bucket
  * @param {object} data
  */
-const post = async (db, { id, target }) => {
+const post = async (db, bucket, { id, target }) => {
   logger.info(`Task: ${id} ${target}`);
   const postRef = db.collection("posts").doc(id);
 
@@ -326,18 +186,17 @@ const post = async (db, { id, target }) => {
       return statusError(`Deleted: ${target} in service/auth`);
     }
 
-    const { text } = postSnap.data();
     let ret = null;
 
     switch (target) {
       case "mastodon":
-        ret = await postMastodon(params, text);
+        ret = await mastodon.post(bucket, params, id, postSnap.data());
         break;
       case "bluesky":
-        ret = await postBluesky(params, text);
+        ret = await bluesky.post(bucket, params, id, postSnap.data());
         break;
       case "threads":
-        ret = await postThreads(params, text);
+        ret = await threads.post(bucket, params, id, postSnap.data());
         break;
       default:
         return statusError(`Unsupported target: ${target}`);
@@ -392,77 +251,10 @@ const checkCompleted = async (data) => {
   }
 };
 
-/**
- * Refresh Threads access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @returns
- */
-const refreshThreadsAccessToken = async (db) => {
-  try {
-    const authRef = db.collection("service").doc("auth");
-    const doc = await authRef.get();
-
-    if (!doc.exists) {
-      return { err: "Not found: service/auth" };
-    }
-
-    if (doc.get("deletedAt")) {
-      return { err: "Deleted: service/auth" };
-    }
-
-    const threads = doc.get("threads");
-
-    if (!threads) {
-      return { err: "Not found: service/auth/threads" };
-    }
-
-    const { accessToken, expiredAt, deletedAt } = threads;
-
-    if (deletedAt) {
-      return { err: "Deleted: service/auth/threads" };
-    }
-
-    if (
-      accessToken &&
-      expiredAt &&
-      expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
-    ) {
-      const result = await axios.get(
-        "https://https://graph.threads.net/refresh_access_token" +
-          "?grant_type=th_refresh_token" +
-          `&access_token=${accessToken}`,
-      );
-
-      if (result.status === 200) {
-        logger.info("Threads access token refreshed");
-        await authRef.update({
-          "threads.accessToken": result.data.access_token,
-          "threads.expiredAt": new Date(
-            new Date().getTime() + result.data.expires_in * 1000,
-          ),
-        });
-      } else {
-        const err =
-          "Failed to refresh Threads access token:" +
-          ` ${result.status} ${result.statusText}`;
-        logger.error(err);
-        return { err };
-      }
-    }
-
-    return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.code ?? e.toString() };
-  }
-};
-
 module.exports = {
   getQueueName,
   createPosts,
   deletePosts,
   post,
   checkCompleted,
-  refreshThreadsAccessToken,
 };
