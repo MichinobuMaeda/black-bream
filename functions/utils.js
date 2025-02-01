@@ -114,10 +114,10 @@ const mimeTypeList = {
  * Get MIME type from URL or headers
  *
  * @param {string} url
- * @param {array} headers
+ * @param {object} [headers]
  * @returns
  */
-const getMimeTypes = (url, headers) =>
+const getMimeTypes = (url, headers = {}) =>
   headers["content-type"]?.replace(/;.*/, "") ??
   Object.entries(mimeTypeList).reduce(
     (acc, [key, value]) => (url.toLowerCase().endsWith(key) ? value : acc),

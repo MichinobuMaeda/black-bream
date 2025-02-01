@@ -18,8 +18,8 @@ const post = async (bucket, params, id, { text, files }) => {
     let image = null;
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      image = new Blob([await fileRef.download()], {
-        type: `image/${files[0].split(".").pop()}`,
+      image = new Blob(await fileRef.download(), {
+        type: getMimeTypes(files[0]),
       });
     }
 

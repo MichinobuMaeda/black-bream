@@ -245,6 +245,21 @@ describe("getMimeTypes", () => {
   });
 
   it(
+    "should returns MIME-Types retrieved from the file extension," +
+      " if HTTP response headers is not set.",
+    () => {
+      // Prepare
+      const url = "https://www.iana.org/_img/2021/iana-logo-header.jpeg";
+
+      // Execute
+      const result = getMimeTypes(url);
+
+      // Verify
+      expect(result).toEqual("image/jpeg");
+    },
+  );
+
+  it(
     "should returns MIME-Types retrieved from the file extension #1," +
       " if failed to retrieve 'content-type' from HTTP response headers.",
     () => {

@@ -1,6 +1,8 @@
 const { createHash } = require("node:crypto");
 const axios = require("axios");
 
+const { getMimeTypes } = require("./utils");
+
 /**
  * Post to Mastodon
  *
@@ -16,8 +18,8 @@ const post = async (bucket, params, id, { text, files }) => {
     const mediaIds = [];
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      const image = new Blob([await fileRef.download()], {
-        type: `image/${files[0].split(".").pop()}`,
+      const image = new Blob(await fileRef.download(), {
+        type: getMimeTypes(files[0]),
       });
       const form = new FormData();
       form.append("file", image);
