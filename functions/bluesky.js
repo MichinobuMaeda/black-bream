@@ -18,9 +18,8 @@ const post = async (bucket, params, id, { text, files }) => {
     let image = null;
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      image = new Blob(await fileRef.download(), {
-        type: getMimeTypes(files[0]),
-      });
+      const file = await fileRef.download();
+      image = new Blob([file[0]], { type: getMimeTypes(files[0]) });
     }
 
     const { service, identifier, password } = params;
@@ -81,6 +80,7 @@ const post = async (bucket, params, id, { text, files }) => {
 
     return { err: undefined };
   } catch (e) {
+    logger.error(e);
     return { err: e.toString() };
   }
 };

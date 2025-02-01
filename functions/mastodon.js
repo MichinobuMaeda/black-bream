@@ -1,3 +1,4 @@
+const { logger } = require("firebase-functions/v2");
 const { createHash } = require("node:crypto");
 const axios = require("axios");
 
@@ -18,9 +19,8 @@ const post = async (bucket, params, id, { text, files }) => {
     const mediaIds = [];
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      const image = new Blob(await fileRef.download(), {
-        type: getMimeTypes(files[0]),
-      });
+      const file = await fileRef.download();
+      const image = new Blob([file[0]], { type: getMimeTypes(files[0]) });
       const form = new FormData();
       form.append("file", image);
 
@@ -81,6 +81,7 @@ const post = async (bucket, params, id, { text, files }) => {
 
     return { err: undefined };
   } catch (e) {
+    logger.error(e);
     return { err: e.toString() };
   }
 };

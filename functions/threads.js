@@ -16,24 +16,26 @@ const post = async (bucket, params, id, { text, files }) => {
     const { userId, accessToken } = params;
     let retContainer = null;
 
+    let url = null;
     if (files?.length) {
       const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
       const downloadURL = await storage.getDownloadURL(fileRef);
-      retContainer = await axios.post(
+      url =
         `https://graph.threads.net/v1.0/${userId}/threads` +
-          "?media_type=IMAGE" +
-          `&text=${encodeURIComponent(text)}` +
-          `&image_urls=${downloadURL}` +
-          `&access_token=${accessToken}`,
-      );
+        "?media_type=IMAGE" +
+        `&text=${encodeURIComponent(text)}` +
+        `&image_urls=${downloadURL}` +
+        `&access_token=${accessToken}`;
     } else {
-      retContainer = await axios.post(
+      url =
         `https://graph.threads.net/v1.0/${userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent(text)}` +
-          `&access_token=${accessToken}`,
-      );
+        "?media_type=TEXT" +
+        `&text=${encodeURIComponent(text)}` +
+        `&access_token=${accessToken}`;
     }
+
+    logger.info(url);
+    retContainer = await axios.post(url);
 
     if (retContainer.status !== 200) {
       return {
@@ -59,6 +61,7 @@ const post = async (bucket, params, id, { text, files }) => {
 
     return { err: undefined };
   } catch (e) {
+    logger.error(e);
     return { err: e.toString() };
   }
 };
