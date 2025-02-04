@@ -363,21 +363,22 @@ describe("getMediaAsBlob", () => {
     const id = "test-id";
     const filename = "test-filename.jpg";
     const url = "https://example.com/test.jpg";
-    const data = new Blob(["test data"], { type: "image/jpeg" });
 
     getDownloadURL.mockResolvedValue(url);
-    axios.get.mockResolvedValue({ status: 200, data });
+    axios.get.mockResolvedValue({ status: 200, data: new ArrayBuffer(8) });
 
     // Execute
     const ret = await getMediaAsBlob(bucket, id, filename);
 
     // Verify
-    expect(ret).toEqual({ err: undefined, data });
+    expect(ret).toEqual({ err: undefined, data: expect.any(Blob) });
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
     ]);
     expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+    expect(axios.get.mock.calls).toEqual([
+      [url, { responseType: "arraybuffer" }],
+    ]);
   });
 
   it("should returns error, if axios.get returns status != 200", async () => {
@@ -400,7 +401,9 @@ describe("getMediaAsBlob", () => {
       [`public/posts/${id}/${filename}`],
     ]);
     expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+    expect(axios.get.mock.calls).toEqual([
+      [url, { responseType: "arraybuffer" }],
+    ]);
   });
 
   it("should returns error, if axios.get throws an exception.", async () => {
@@ -423,6 +426,8 @@ describe("getMediaAsBlob", () => {
       [`public/posts/${id}/${filename}`],
     ]);
     expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+    expect(axios.get.mock.calls).toEqual([
+      [url, { responseType: "arraybuffer" }],
+    ]);
   });
 });
