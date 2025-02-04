@@ -9,7 +9,7 @@ node_modules
 /build
 
 # Env
-.env
+# .env
 .env.*
 !.env.example
 !.env.test
