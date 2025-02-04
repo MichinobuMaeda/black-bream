@@ -26,7 +26,7 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci && npm ci --prefix functions
       - run: npm test
-      - run: cp -r .github/sites/${{ inputs.site-id }}/* ./
+      - run: cp -r -f -v .github/sites/${{ inputs.site-id }}/* ./
 
       - name: Set firebase api key
         run: |
