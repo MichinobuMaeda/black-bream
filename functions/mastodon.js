@@ -24,7 +24,7 @@ const post = async (bucket, params, id, { text, files }) => {
       }
 
       const form = new FormData();
-      form.append("file", res.data);
+      form.append("file", res.data, files[0]);
 
       const { status, statusText, data } = await axios.post(
         `${params.url}/v2/media`,

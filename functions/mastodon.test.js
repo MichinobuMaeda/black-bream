@@ -80,7 +80,7 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", image],
+      ["file", image, "1.jpg"],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -149,7 +149,7 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob)],
+      ["file", expect.any(Blob), "1.jpg"],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -211,7 +211,7 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob)],
+      ["file", expect.any(Blob), "1.jpg"],
       ["status", "Text"],
       ["sensitive", "false"],
       ["visibility", "public"],
@@ -273,7 +273,7 @@ describe("post", () => {
     expect(result).toEqual({ err: "500 Server error" });
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob)],
+      ["file", expect.any(Blob), "1.jpg"],
     ]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -309,7 +309,7 @@ describe("post", () => {
     expect(result).toEqual({ err: "500 Server error" });
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob)],
+      ["file", expect.any(Blob), "1.jpg"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [

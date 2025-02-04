@@ -158,13 +158,16 @@ const getMediaDownloadUrl = (bucket, id, file) =>
  */
 const getMediaAsBlob = async (bucket, id, file) => {
   try {
-    const { status, statusText, data } = await axios.get(
+    const { status, statusText, headers, data } = await axios.get(
       await getMediaDownloadUrl(bucket, id, file),
       { responseType: "blob" },
     );
 
     if (status === 200) {
-      return { err: undefined, data };
+      return {
+        err: undefined,
+        data: new Blob([data], { type: getMimeTypes(file, headers) }),
+      };
     } else {
       logger.error(`${id}/${file} ${status} ${statusText}`);
       return { err: `${status} ${statusText}`, data: undefined };

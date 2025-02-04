@@ -361,9 +361,9 @@ describe("getMediaAsBlob", () => {
     const fileRef = { data: "fileRef" };
     const bucket = { file: jest.fn(() => fileRef) };
     const id = "test-id";
-    const filename = "test-filename";
+    const filename = "test-filename.jpg";
     const url = "https://example.com/test.jpg";
-    const data = new Blob(["test data"]);
+    const data = new Blob(["test data"], { type: "image/jpeg" });
 
     getDownloadURL.mockResolvedValue(url);
     axios.get.mockResolvedValue({ status: 200, data });
@@ -385,7 +385,7 @@ describe("getMediaAsBlob", () => {
     const fileRef = { data: "fileRef" };
     const bucket = { file: jest.fn(() => fileRef) };
     const id = "test-id";
-    const filename = "test-filename";
+    const filename = "test-filename.jpg";
     const url = "https://example.com/test.jpg";
 
     getDownloadURL.mockResolvedValue(url);
@@ -408,7 +408,7 @@ describe("getMediaAsBlob", () => {
     const fileRef = { data: "fileRef" };
     const bucket = { file: jest.fn(() => fileRef) };
     const id = "test-id";
-    const filename = "test-filename";
+    const filename = "test-filename.jpg";
     const url = "https://example.com/test.jpg";
 
     getDownloadURL.mockResolvedValue(url);

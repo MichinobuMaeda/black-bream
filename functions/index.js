@@ -29,10 +29,10 @@ const app = initializeApp();
 // https://<region>-<project-id>.cloudfunctions.net/public
 exports.public = onRequest({ region, cors: true }, async (req, res) => {
   if (req.method === "GET") {
-    if (req.path.startsWith("/public/posts/")) {
+    if (req.path.startsWith("/posts/")) {
       try {
         const downloadURL = await getDownloadURL(
-          getStorage(app).bucket().file(req.path.substring(1)),
+          getStorage(app).bucket().file(`public${req.path}`),
         );
         logger.info(`Redirect ${req.path} to ${downloadURL}`);
         res.redirect(downloadURL);
