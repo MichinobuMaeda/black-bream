@@ -1,5 +1,7 @@
+const { logger } = require("firebase-functions/v2");
 const axios = require("axios");
 const { WritableStream } = require("htmlparser2/WritableStream");
+const { getDownloadURL } = require("firebase-admin/storage");
 
 /**
  * Generate a card object from a link
@@ -115,7 +117,7 @@ const mimeTypeList = {
  *
  * @param {string} url
  * @param {object} [headers]
- * @returns
+ * @returns {string}
  */
 const getMimeTypes = (url, headers = {}) =>
   headers["content-type"]?.replace(/;.*/, "") ??
@@ -135,7 +137,47 @@ const getMimeTypes = (url, headers = {}) =>
   ) ??
   "application/octet-stream";
 
+/**
+ * Get download URL of a media file
+ *
+ * @param {Bucket} bucket
+ * @param {string} id
+ * @param {string} file
+ * @returns {Promise<string>}
+ */
+const getMediaDownloadUrl = (bucket, id, file) =>
+  getDownloadURL(bucket.file(`public/posts/${id}/${file}`));
+
+/**
+ * Get media file as a Blob
+ *
+ * @param {Bucket} bucket
+ * @param {string} id
+ * @param {string} file
+ * @returns {Promise<{err: string|undefined, data: Blob|undefined}>}
+ */
+const getMediaAsBlob = async (bucket, id, file) => {
+  try {
+    const { status, statusText, data } = await axios.get(
+      await getMediaDownloadUrl(bucket, id, file),
+      { responseType: "blob" },
+    );
+
+    if (status === 200) {
+      return { err: undefined, data };
+    } else {
+      logger.error(`${id}/${file} ${status} ${statusText}`);
+      return { err: `${status} ${statusText}`, data: undefined };
+    }
+  } catch (e) {
+    logger.error(e);
+    return { err: e.toString(), data: undefined };
+  }
+};
+
 module.exports = {
   generateLinkCard,
   getMimeTypes,
+  getMediaDownloadUrl,
+  getMediaAsBlob,
 };

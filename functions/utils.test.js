@@ -1,12 +1,19 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const Readable = require("stream").Readable;
+const { getDownloadURL } = require("firebase-admin/storage");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
-const { generateLinkCard, getMimeTypes } = require("./utils.js");
+const {
+  generateLinkCard,
+  getMimeTypes,
+  getMediaDownloadUrl,
+  getMediaAsBlob,
+} = require("./utils.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("axios");
+jest.mock("firebase-admin/storage");
 jest.mock("@atproto/api");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
@@ -324,4 +331,98 @@ describe("getMimeTypes", () => {
       expect(result).toEqual("application/octet-stream");
     },
   );
+});
+
+describe("getMediaDownloadUrl", () => {
+  it("should returns download URL based on given id and file name.", async () => {
+    // Prepare
+    const fileRef = { data: "fileRef" };
+    const bucket = { file: jest.fn(() => fileRef) };
+    const id = "test-id";
+    const filename = "test-filename";
+    const url = "https://example.com/test.jpg";
+    getDownloadURL.mockResolvedValue(url);
+
+    // Execute
+    const ret = await getMediaDownloadUrl(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual(url);
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
+  });
+});
+
+describe("getMediaAsBlob", () => {
+  it("should returns blob data of the media file.", async () => {
+    // Prepare
+    const fileRef = { data: "fileRef" };
+    const bucket = { file: jest.fn(() => fileRef) };
+    const id = "test-id";
+    const filename = "test-filename";
+    const url = "https://example.com/test.jpg";
+    const data = new Blob(["test data"]);
+
+    getDownloadURL.mockResolvedValue(url);
+    axios.get.mockResolvedValue({ status: 200, data });
+
+    // Execute
+    const ret = await getMediaAsBlob(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({ err: undefined, data });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
+    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+  });
+
+  it("should returns error, if axios.get returns status != 200", async () => {
+    // Prepare
+    const fileRef = { data: "fileRef" };
+    const bucket = { file: jest.fn(() => fileRef) };
+    const id = "test-id";
+    const filename = "test-filename";
+    const url = "https://example.com/test.jpg";
+
+    getDownloadURL.mockResolvedValue(url);
+    axios.get.mockResolvedValue({ status: 404, statusText: "Not Found" });
+
+    // Execute
+    const ret = await getMediaAsBlob(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({ err: "404 Not Found", data: undefined });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
+    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+  });
+
+  it("should returns error, if axios.get throws an exception.", async () => {
+    // Prepare
+    const fileRef = { data: "fileRef" };
+    const bucket = { file: jest.fn(() => fileRef) };
+    const id = "test-id";
+    const filename = "test-filename";
+    const url = "https://example.com/test.jpg";
+
+    getDownloadURL.mockResolvedValue(url);
+    axios.get.mockRejectedValue("test error");
+
+    // Execute
+    const ret = await getMediaAsBlob(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({ err: "test error", data: undefined });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
+    expect(axios.get.mock.calls).toEqual([[url, { responseType: "blob" }]]);
+  });
 });

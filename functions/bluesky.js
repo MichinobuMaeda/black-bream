@@ -2,7 +2,7 @@ const { logger } = require("firebase-functions/v2");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
-const { generateLinkCard, getMimeTypes } = require("./utils");
+const { generateLinkCard, getMimeTypes, getMediaAsBlob } = require("./utils");
 
 /**
  * Post to Bluesky
@@ -17,9 +17,13 @@ const post = async (bucket, params, id, { text, files }) => {
   try {
     let image = null;
     if (files?.length) {
-      const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      const file = await fileRef.download();
-      image = new Blob([file[0]], { type: getMimeTypes(files[0]) });
+      const res = await getMediaAsBlob(bucket, id, files[0]);
+
+      if (res.err) {
+        return { err: res.err, data: undefined };
+      }
+
+      image = res.data;
     }
 
     const { service, identifier, password } = params;

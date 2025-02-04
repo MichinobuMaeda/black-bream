@@ -3,7 +3,7 @@ const {
   onDocumentUpdated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
-const { onCall } = require("firebase-functions/v2/https");
+const { onRequest, onCall } = require("firebase-functions/v2/https");
 const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions/v2");
@@ -11,7 +11,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getFunctions } = require("firebase-admin/functions");
-const { getStorage } = require("firebase-admin/storage");
+const { getStorage, getDownloadURL } = require("firebase-admin/storage");
 
 const post = require("./post");
 const { refreshThreadsAccessToken } = require("./threads");
@@ -25,6 +25,28 @@ const optOnCall = process.env.FUNCTIONS_EMULATOR
   : { region, enforceAppCheck: true };
 
 const app = initializeApp();
+
+// https://<region>-<project-id>.cloudfunctions.net/public
+exports.public = onRequest({ region, cors: true }, async (req, res) => {
+  if (req.method === "GET") {
+    if (req.path.startsWith("/public/posts/")) {
+      try {
+        const downloadURL = await getDownloadURL(
+          getStorage(app).bucket().file(req.path.substring(1)),
+        );
+        logger.info(`Redirect ${req.path} to ${downloadURL}`);
+        res.redirect(downloadURL);
+      } catch (e) {
+        logger.error(`Server Error: ${req.path} ${e}`);
+        res.status(500).send("Server Error");
+      }
+    } else {
+      res.status(404).send("Not Found");
+    }
+  } else {
+    res.status(405).send("Method Not Allowed");
+  }
+});
 
 exports.post = onTaskDispatched({ region }, async ({ data }) => {
   await post.post(getFirestore(app), getStorage(app).bucket(), data);

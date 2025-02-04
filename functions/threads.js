@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const storage = require("firebase-admin/storage");
 const axios = require("axios");
 
 /**
@@ -18,13 +17,12 @@ const post = async (bucket, params, id, { text, files }) => {
 
     let url = null;
     if (files?.length) {
-      const fileRef = bucket.file(`public/posts/${id}/${files[0]}`);
-      const downloadURL = await storage.getDownloadURL(fileRef);
+      const mediaUrl = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
       url =
         `https://graph.threads.net/v1.0/${userId}/threads` +
         "?media_type=IMAGE" +
         `&text=${encodeURIComponent(text)}` +
-        `&image_urls=${downloadURL}` +
+        `&image_urls=${mediaUrl}` +
         `&access_token=${accessToken}`;
     } else {
       url =
