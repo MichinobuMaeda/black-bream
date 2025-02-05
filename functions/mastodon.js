@@ -40,6 +40,7 @@ const post = async (bucket, params, id, { text, files }) => {
           },
         },
       );
+      logger.info(`mastodon post media: ${status} ${JSON.stringify(data)}`);
 
       mediaIds.push(data.id);
 
@@ -50,6 +51,9 @@ const post = async (bucket, params, id, { text, files }) => {
             Authorization: `Bearer ${params.token}`,
           },
         });
+        logger.info(
+          `mastodon get media: ${res.status}  ${JSON.stringify(res.data)}`,
+        );
         if (res.status === 206) {
           await new Promise((r) => setTimeout(r, timeout * timeout * 1000));
         } else if (res.status !== 200) {
@@ -70,6 +74,7 @@ const post = async (bucket, params, id, { text, files }) => {
     form.append("visibility", "public");
     form.append("language", "ja");
     if (mediaIds.length) {
+      logger.info(`mastodon add media: ${mediaIds.join(",")}`);
       form.append("media_ids", mediaIds.join(","));
     }
 
@@ -81,6 +86,9 @@ const post = async (bucket, params, id, { text, files }) => {
       },
     });
 
+    logger.info(
+      `mastodon post media: ${ret.status} ${JSON.stringify(ret.data)}`,
+    );
     if (ret.status !== 200) {
       return { err: `${ret.status} ${ret.statusText}` };
     }
