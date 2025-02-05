@@ -2,7 +2,11 @@ const { logger } = require("firebase-functions/v2");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
-const { generateLinkCard, getMimeTypes, getMediaAsBlob } = require("./utils");
+const {
+  generateLinkCard,
+  getMimeTypes,
+  getMediaAsUint8Array,
+} = require("./utils");
 
 /**
  * Post to Bluesky
@@ -15,44 +19,50 @@ const { generateLinkCard, getMimeTypes, getMediaAsBlob } = require("./utils");
  */
 const post = async (bucket, params, id, { text, files }) => {
   try {
-    let image = null;
-    if (files?.length) {
-      const res = await getMediaAsBlob(bucket, id, files[0]);
-
-      if (res.err) {
-        return { err: res.err, data: undefined };
-      }
-
-      image = res.data;
-    }
-
     const { service, identifier, password } = params;
     const agent = new BskyAgent({ service });
     await agent.login({ identifier, password });
 
+    let image = null;
     let external = undefined;
-    const result = await generateLinkCard(text);
 
-    if (result.data) {
-      const { uri, title, description, thumbUrl } = result.data;
-      logger.info(uri, title, description, thumbUrl);
-      let thumb = undefined;
+    if (files?.length) {
+      const result = await getMediaAsUint8Array(bucket, id, files[0]);
 
-      if (thumbUrl) {
-        const response = await axios.get(thumbUrl, {
-          responseType: "arraybuffer",
-        });
-        const encoding = getMimeTypes(thumbUrl, response.headers);
-
-        if (response.status === 200) {
-          const { data } = await agent.uploadBlob(
-            new Uint8Array(response.data),
-            { encoding },
-          );
-          thumb = data.blob;
-        }
+      if (result.err) {
+        return { err: result.err, data: undefined };
       }
-      external = { uri, title, description, thumb };
+      const encoding = getMimeTypes(files[0]);
+
+      const { data } = await agent.uploadBlob(new Uint8Array(result.data), {
+        encoding,
+      });
+
+      image = data.blob;
+    } else {
+      const result = await generateLinkCard(text);
+
+      if (result.data) {
+        const { uri, title, description, thumbUrl } = result.data;
+        logger.info(uri, title, description, thumbUrl);
+        let thumb = undefined;
+
+        if (thumbUrl) {
+          const response = await axios.get(thumbUrl, {
+            responseType: "arraybuffer",
+          });
+          const encoding = getMimeTypes(thumbUrl, response.headers);
+
+          if (response.status === 200) {
+            const { data } = await agent.uploadBlob(
+              new Uint8Array(response.data),
+              { encoding },
+            );
+            thumb = data.blob;
+          }
+        }
+        external = { uri, title, description, thumb };
+      }
     }
 
     await agent.post(

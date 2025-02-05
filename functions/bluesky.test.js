@@ -2,7 +2,7 @@ const { describe, it, expect, afterEach } = require("@jest/globals");
 const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
-let { generateLinkCard, getMediaAsBlob } = require("./utils.js");
+let { generateLinkCard, getMediaAsUint8Array } = require("./utils.js");
 const { post } = require("./bluesky.js");
 
 jest.mock("firebase-functions/logger");
@@ -22,8 +22,8 @@ afterEach(() => {
 });
 
 describe("post", () => {
-  const image = new Blob(["image"], { type: "text/plain" });
-  const fileRef = { download: jest.fn(() => Promise.resolve(image)) };
+  const contents = [new Uint8Array(8)];
+  const fileRef = { download: jest.fn(() => Promise.resolve(contents[0])) };
   const bucket = { file: jest.fn(() => fileRef) };
   const params = {
     service: "https://bluesky.example.com",
@@ -50,7 +50,8 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsBlob).not.toHaveBeenCalled();
+    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
+    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);
@@ -61,20 +62,19 @@ describe("post", () => {
 
   it("should post with image to Bluesky.", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined, data: image }),
+    getMediaAsUint8Array.mockImplementationOnce(() =>
+      Promise.resolve({ err: undefined, data: contents }),
     );
-    generateLinkCard.mockImplementationOnce(() => ({
-      err: undefined,
-      data: null,
-    }));
 
     // Execute
     const result = await post(bucket, params, id, dataImage);
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "post-id", "1.jpg"]]);
+    expect(getMediaAsUint8Array.mock.calls).toEqual([
+      [bucket, "post-id", "1.jpg"],
+    ]);
+    expect(generateLinkCard).not.toHaveBeenCalled();
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);
@@ -88,7 +88,7 @@ describe("post", () => {
             images: [
               {
                 alt: dataImage.text.substring(0, 100),
-                image: expect.any(Blob),
+                image: new Uint8Array(10),
               },
             ],
           },
@@ -97,9 +97,9 @@ describe("post", () => {
     ]);
   });
 
-  it("should return error, if getMediaAsBlob returns err.", async () => {
+  it("should return error, if getMediaAsUint8Array returns err.", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementationOnce(() =>
+    getMediaAsUint8Array.mockImplementationOnce(() =>
       Promise.resolve({ err: "error", data: undefined }),
     );
 
@@ -108,8 +108,13 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "error", data: undefined });
-    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "post-id", "1.jpg"]]);
-    expect(BskyAgent.prototype.login).not.toHaveBeenCalled();
+    expect(getMediaAsUint8Array.mock.calls).toEqual([
+      [bucket, "post-id", "1.jpg"],
+    ]);
+    expect(generateLinkCard).not.toHaveBeenCalled();
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    ]);
     expect(BskyAgent.prototype.post).not.toHaveBeenCalled();
   });
 
@@ -138,7 +143,8 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsBlob).not.toHaveBeenCalled();
+    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
+    expect(generateLinkCard.mock.calls).toEqual([["Text https://example.com"]]);
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);
@@ -188,7 +194,7 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsBlob).not.toHaveBeenCalled();
+    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);
@@ -237,7 +243,7 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsBlob).not.toHaveBeenCalled();
+    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
     expect(BskyAgent.prototype.login.mock.calls).toEqual([
       [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
     ]);
@@ -285,7 +291,7 @@ describe("post", () => {
 
       // Verify
       expect(result).toEqual({ err: "error" });
-      expect(getMediaAsBlob).not.toHaveBeenCalled();
+      expect(getMediaAsUint8Array).not.toHaveBeenCalled();
       expect(BskyAgent.prototype.login.mock.calls).toEqual([
         [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
       ]);

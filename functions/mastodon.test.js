@@ -1,10 +1,12 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const axios = require("axios");
+const { getMediaAsBlob } = require("./utils.js");
 
 const { post } = require("./mastodon.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("axios");
+jest.mock("./utils.js");
 
 FormData.prototype.append = jest.fn();
 
@@ -15,6 +17,7 @@ afterEach(() => {
 
 describe("post", () => {
   const buffer = new ArrayBuffer(1024);
+  const blob = new Blob([new Uint8Array(buffer)], { type: "image/jpeg" });
   const fileRef = { download: jest.fn(() => Promise.resolve([buffer])) };
   const bucket = { file: jest.fn(() => fileRef) };
   const params = {
@@ -37,6 +40,7 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
+    expect(getMediaAsBlob).not.toHaveBeenCalled();
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -61,6 +65,7 @@ describe("post", () => {
 
   it("should post with image to Mastodon.", async () => {
     // Prepare
+    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "media-id" } }),
@@ -72,12 +77,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      [
-        "file",
-        new Blob([new Uint8Array(buffer)], { type: "image/jpeg" }),
-        "1.jpg",
-      ],
+      ["file", blob, "1.jpg"],
     ]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -114,6 +116,7 @@ describe("post", () => {
   it("should wait to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
+    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
@@ -126,8 +129,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob), "1.jpg"],
+      ["file", blob, "1.jpg"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [
@@ -173,6 +177,7 @@ describe("post", () => {
   it("should wait twice to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
+    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
@@ -185,8 +190,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob), "1.jpg"],
+      ["file", blob, "1.jpg"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [
@@ -231,6 +237,7 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #1", async () => {
     // Prepare
+    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post.mockImplementationOnce(() =>
       Promise.resolve({
         status: 500,
@@ -245,7 +252,7 @@ describe("post", () => {
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob), "1.jpg"],
+      ["file", blob, "1.jpg"],
     ]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -264,6 +271,7 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #2", async () => {
     // Prepare
+    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post.mockImplementationOnce(() =>
       Promise.resolve({ status: 202, data: { id: "media-id" } }),
     );
@@ -276,8 +284,9 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "1.jpg"]]);
     expect(FormData.prototype.append.mock.calls).toEqual([
-      ["file", expect.any(Blob), "1.jpg"],
+      ["file", blob, "1.jpg"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [
@@ -312,6 +321,7 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "error" });
+    expect(getMediaAsBlob).not.toHaveBeenCalled();
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
       [

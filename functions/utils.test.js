@@ -8,6 +8,7 @@ const {
   generateLinkCard,
   getMimeTypes,
   getMediaDownloadUrl,
+  getMediaAsUint8Array,
   getMediaAsBlob,
 } = require("./utils.js");
 
@@ -355,79 +356,82 @@ describe("getMediaDownloadUrl", () => {
   });
 });
 
+describe("getMediaAsUint8Array", () => {
+  const contents = [new ArrayBuffer(8)];
+  const fileRef = {
+    download: jest.fn(() => Promise.resolve(contents)),
+  };
+  const bucket = { file: jest.fn(() => fileRef) };
+  const id = "test-id";
+  const filename = "1.jpg";
+
+  it("should returns uint8array data of the media file.", async () => {
+    // Prepare
+
+    // Execute
+    const ret = await getMediaAsUint8Array(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({
+      err: undefined,
+      data: new Uint8Array(contents[0]),
+    });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+  });
+
+  it("should returns error, if download() raises an exception.", async () => {
+    // Prepare
+    fileRef.download.mockRejectedValue("Error");
+
+    // Execute
+    const ret = await getMediaAsUint8Array(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({ err: "Error", data: undefined });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+  });
+});
+
 describe("getMediaAsBlob", () => {
+  const contents = [new ArrayBuffer(8)];
+  const fileRef = {
+    download: jest.fn(() => Promise.resolve(contents)),
+  };
+  const bucket = { file: jest.fn(() => fileRef) };
+  const id = "test-id";
+  const filename = "1.jpg";
+
   it("should returns blob data of the media file.", async () => {
     // Prepare
-    const fileRef = { data: "fileRef" };
-    const bucket = { file: jest.fn(() => fileRef) };
-    const id = "test-id";
-    const filename = "test-filename.jpg";
-    const url = "https://example.com/test.jpg";
-
-    getDownloadURL.mockResolvedValue(url);
-    axios.get.mockResolvedValue({ status: 200, data: new ArrayBuffer(8) });
 
     // Execute
     const ret = await getMediaAsBlob(bucket, id, filename);
 
     // Verify
-    expect(ret).toEqual({ err: undefined, data: expect.any(Blob) });
+    expect(ret).toEqual({
+      err: undefined,
+      data: new Blob([new Uint8Array(contents[0])], { type: "image/jpeg" }),
+    });
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
-    ]);
-    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([
-      [url, { responseType: "arraybuffer" }],
     ]);
   });
 
-  it("should returns error, if axios.get returns status != 200", async () => {
+  it("should returns error, if download() raises an exception.", async () => {
     // Prepare
-    const fileRef = { data: "fileRef" };
-    const bucket = { file: jest.fn(() => fileRef) };
-    const id = "test-id";
-    const filename = "test-filename.jpg";
-    const url = "https://example.com/test.jpg";
-
-    getDownloadURL.mockResolvedValue(url);
-    axios.get.mockResolvedValue({ status: 404, statusText: "Not Found" });
+    fileRef.download.mockRejectedValue("Error");
 
     // Execute
     const ret = await getMediaAsBlob(bucket, id, filename);
 
     // Verify
-    expect(ret).toEqual({ err: "404 Not Found", data: undefined });
+    expect(ret).toEqual({ err: "Error", data: undefined });
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
-    ]);
-    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([
-      [url, { responseType: "arraybuffer" }],
-    ]);
-  });
-
-  it("should returns error, if axios.get throws an exception.", async () => {
-    // Prepare
-    const fileRef = { data: "fileRef" };
-    const bucket = { file: jest.fn(() => fileRef) };
-    const id = "test-id";
-    const filename = "test-filename.jpg";
-    const url = "https://example.com/test.jpg";
-
-    getDownloadURL.mockResolvedValue(url);
-    axios.get.mockRejectedValue("test error");
-
-    // Execute
-    const ret = await getMediaAsBlob(bucket, id, filename);
-
-    // Verify
-    expect(ret).toEqual({ err: "test error", data: undefined });
-    expect(bucket.file.mock.calls).toEqual([
-      [`public/posts/${id}/${filename}`],
-    ]);
-    expect(getDownloadURL.mock.calls).toEqual([[fileRef]]);
-    expect(axios.get.mock.calls).toEqual([
-      [url, { responseType: "arraybuffer" }],
     ]);
   });
 });

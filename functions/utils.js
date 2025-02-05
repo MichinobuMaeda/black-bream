@@ -149,6 +149,24 @@ const getMediaDownloadUrl = (bucket, id, file) =>
   getDownloadURL(bucket.file(`public/posts/${id}/${file}`));
 
 /**
+ * Get media file as a Uint8Array
+ *
+ * @param {Bucket} bucket
+ * @param {string} id
+ * @param {string} file
+ * @returns {Promise<{err: string|undefined, data: Uint8Array|undefined}>}
+ */
+const getMediaAsUint8Array = async (bucket, id, file) => {
+  try {
+    const contents = await bucket.file(`public/posts/${id}/${file}`).download();
+    return { err: undefined, data: new Uint8Array(contents[0]) };
+  } catch (e) {
+    logger.error(e);
+    return { err: e.toString(), data: undefined };
+  }
+};
+
+/**
  * Get media file as a Blob
  *
  * @param {Bucket} bucket
@@ -157,32 +175,19 @@ const getMediaDownloadUrl = (bucket, id, file) =>
  * @returns {Promise<{err: string|undefined, data: Blob|undefined}>}
  */
 const getMediaAsBlob = async (bucket, id, file) => {
-  try {
-    const { status, statusText, headers, data } = await axios.get(
-      await getMediaDownloadUrl(bucket, id, file),
-      { responseType: "arraybuffer" },
-    );
-
-    if (status === 200) {
-      return {
+  const { err, data } = await getMediaAsUint8Array(bucket, id, file);
+  return err
+    ? { err, data: undefined }
+    : {
         err: undefined,
-        data: new Blob([new Uint8Array(data)], {
-          type: getMimeTypes(file, headers),
-        }),
+        data: new Blob([data], { type: getMimeTypes(file) }),
       };
-    } else {
-      logger.error(`${id}/${file} ${status} ${statusText}`);
-      return { err: `${status} ${statusText}`, data: undefined };
-    }
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString(), data: undefined };
-  }
 };
 
 module.exports = {
   generateLinkCard,
   getMimeTypes,
   getMediaDownloadUrl,
+  getMediaAsUint8Array,
   getMediaAsBlob,
 };
