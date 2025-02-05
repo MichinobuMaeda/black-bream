@@ -18,7 +18,7 @@ const post = async (bucket, params, id, { text, files }) => {
     const mediaIds = [];
     if (files?.length) {
       const contents = await bucket
-        .file(`pubic/posts/${id}/${files[0]}`)
+        .file(`public/posts/${id}/${files[0]}`)
         .download();
 
       const form = new FormData();
