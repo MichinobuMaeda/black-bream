@@ -50,19 +50,23 @@
     text = text.trim();
     const status = "requested";
 
-    result = await createDocument("posts", {
-      text,
-      files:
-        selectedImages && selectedImages[0]
-          ? [`1.${selectedImages[0].name.split(".").pop()}`]
-          : [],
-      targets: targets.reduce(
-        (acc, cur) => ({ ...acc, [cur]: { status, createdAt: new Date() } }),
-        {},
-      ),
-      scheduledFor: new Date(schedule),
-      status,
-    });
+    result = await createDocument(
+      "posts",
+      {
+        text,
+        files:
+          selectedImages && selectedImages[0]
+            ? [`1.${selectedImages[0].name.split(".").pop()}`]
+            : [],
+        targets: targets.reduce(
+          (acc, cur) => ({ ...acc, [cur]: { status, createdAt: new Date() } }),
+          {},
+        ),
+        scheduledFor: new Date(schedule),
+        status,
+      },
+      true,
+    );
 
     if (!result.err && result.data.id && selectedImages && selectedImages[0]) {
       result = await savePostImage(result.data.id, selectedImages[0]);

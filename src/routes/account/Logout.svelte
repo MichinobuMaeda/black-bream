@@ -3,6 +3,7 @@
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import ActionFields from "../../lib/ActionFields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import Switch from "../../lib/components/Switch.svelte";
@@ -43,7 +44,7 @@
         error={timeout < 0 ? t().greaterOrEqual(0) : ""}
       />
     </Fields>
-    <Fields>
+    <ActionFields>
       <ActionSave
         id="updateProfile"
         {changed}
@@ -52,7 +53,7 @@
         {onSave}
         cancelOnlyChanged
       />
-    </Fields>
+    </ActionFields>
     <Fields>
       <div class="flex flex-wrap gap-4 items-center">
         <span class="flex grow gap-4 items-center">

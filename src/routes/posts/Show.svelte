@@ -2,11 +2,14 @@
   import { push } from "svelte-spa-router";
   import IconButtonOutlined from "../../lib/components/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
+  import StatusIcon from "../../lib/StatusIcon.svelte";
   import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
+  import TargetIcon from "../../lib/TargetIcon.svelte";
   import { store } from "../../lib/store.svelte.js";
   import { formatDateTime } from "../../lib/i18n";
+  import { getSavedImageUrl } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -17,13 +20,17 @@
   let { item } = $props();
 
   let post = $derived(store.posts.find((post) => post.id === item));
+  let savedImages = $derived(post.files ?? []);
+  let savedImageUrl = $derived(
+    savedImages?.length ? getSavedImageUrl(post.id, savedImages[0]) : null,
+  );
 </script>
 
 {#if post}
   <h3>
-    <span class="flex grow">
+    <span class="flex grow gap-2">
+      <span class="size-7"><StatusIcon status={post?.status} /></span>
       {formatDateTime(post.scheduledFor?.toDate())}
-      {post?.status}
     </span>
     {#if store.operator && post.status !== "completed"}
       <IconButtonOutlined
@@ -35,22 +42,35 @@
     {/if}
   </h3>
   <Content>
-    <Wrap>
-      <div class="flex flex-col gap-0.5 max-w-[440px] break-words">
-        {#each post.text.split("\n") as line}
-          <div>{line}</div>
+    <Fields>
+      <div class="flex flex-wrap gap-3">
+        {#each Object.keys(post.targets ?? {}) as target}
+          <span class="flex gap-1">
+            <span class="size-6 text-lightPrimary dark:text-darkPrimary">
+              <TargetIcon {target} />
+            </span>
+            <span
+              class="size-6 text-lightOnBackground dark:text-darkOnBackground"
+            >
+              <StatusIcon status={post.targets[target].status} />
+            </span>
+          </span>
         {/each}
       </div>
-      <Fields>
-        {#each Object.keys(post.targets ?? {}) as target}
-          <div class="flex flex-row gap-4">
-            <span class="text-lightPrimary dark:text-darkPrimary">
-              {target}
-            </span>
-            {post.targets[target].status}
-          </div>
-        {/each}
-      </Fields>
-    </Wrap>
+      <TextFieldOutlined
+        id="text"
+        label="Text"
+        lines={4}
+        value={post.text}
+        readonly
+      />
+      {#await savedImageUrl}
+        <div>Loading...</div>
+      {:then url}
+        {#if url}
+          <img id="image-saved" class="w-96" alt="selected" src={url} />
+        {/if}
+      {/await}
+    </Fields>
   </Content>
 {/if}

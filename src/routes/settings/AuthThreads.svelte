@@ -1,4 +1,5 @@
 <script>
+  import TargetIcon from "../../lib/TargetIcon.svelte";
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
@@ -98,7 +99,10 @@
   };
 </script>
 
-<h3>Threads</h3>
+<h3>
+  <span class="size-6"><TargetIcon target="threads" /></span>
+  Threads
+</h3>
 <Content>
   <Wrap>
     <Fields>

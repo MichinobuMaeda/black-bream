@@ -144,11 +144,15 @@
             error={errorSchedule}
           />
         </Fields>
-        <GroupedCheckBox
-          id="targets"
-          items={targetItems}
-          bind:value={targets}
-        />
+        <Fields>
+          <Wrap>
+            <GroupedCheckBox
+              id="targets"
+              items={targetItems}
+              bind:value={targets}
+            />
+          </Wrap>
+        </Fields>
       </div>
       <Fields>
         <TextFieldOutlined

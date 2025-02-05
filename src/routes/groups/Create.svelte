@@ -69,10 +69,10 @@
         error={errorDisplayName}
       />
     </Fields>
-    <h4>{t().members()}</h4>
-    <Content>
-      <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
-    </Content>
+  </Content>
+  <h4>{t().members()}</h4>
+  <Content>
+    <GroupedCheckBox id="groups" items={userItems} bind:value={users} />
     <Fields>
       <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
     </Fields>

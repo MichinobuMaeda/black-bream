@@ -26,6 +26,7 @@ import {
   getDoc,
   updateDoc,
   addDoc,
+  setDoc,
   onSnapshot,
   query,
   orderBy,
@@ -306,15 +307,27 @@ export const updateDocument = async (col, id, data) => {
  *
  * @param {string} col
  * @param {object} data
+ * @param {boolean} [setId]
  * @return {Promise<object>}
  */
-export const createDocument = async (col, data) => {
+export const createDocument = async (col, data, setId = false) => {
+  const generateId = () =>
+    new Date()
+      .toISOString()
+      .replace(/[^0-9]/g, "")
+      .slice(2) + Math.random().toString(36).slice(-6);
   try {
-    const ref = await addDoc(collection(db, col), {
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const ref = (await setId)
+      ? setDoc(doc(db, col, generateId()), {
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      : addDoc(collection(db, col), {
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
 
     return { err: undefined, data: ref };
   } catch (error) {

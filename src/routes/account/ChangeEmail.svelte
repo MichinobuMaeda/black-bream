@@ -2,6 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import ActionFields from "../../lib/ActionFields.svelte";
   import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
@@ -72,7 +73,7 @@
         error={validateNewEmail}
       />
     </Fields>
-    <Fields>
+    <ActionFields>
       <ActionSave
         id="changeEmail"
         {changed}
@@ -82,6 +83,6 @@
         {error}
         cancelOnlyChanged
       />
-    </Fields>
+    </ActionFields>
   </Wrap>
 </Content>

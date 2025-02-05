@@ -2,6 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import ActionFields from "../../lib/ActionFields.svelte";
   import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -50,7 +51,7 @@
         error={errorDisplayName}
       />
     </Fields>
-    <Fields>
+    <ActionFields>
       <ActionSave
         id="updateProfile"
         {changed}
@@ -60,6 +61,6 @@
         {error}
         cancelOnlyChanged
       />
-    </Fields>
+    </ActionFields>
   </Wrap>
 </Content>
