@@ -68,19 +68,20 @@ const post = async (bucket, params, id, { text, files }) => {
     const hash = createHash("sha256");
     hash.update(text);
 
-    const form = new FormData();
-    form.append("status", text);
-    form.append("sensitive", "false");
-    form.append("visibility", "public");
-    form.append("language", "ja");
+    const json = {
+      status: text,
+      sensitive: false,
+      visibility: "public",
+      language: "ja",
+    };
     if (mediaIds.length) {
       logger.info(`mastodon add media: ${mediaIds.join(",")}`);
-      form.append("media_ids", mediaIds.join(","));
+      json["media_ids"] = mediaIds;
     }
 
-    const ret = await axios.post(`${params.url}/v1/statuses`, form, {
+    const ret = await axios.post(`${params.url}/v1/statuses`, json, {
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "application/json",
         Authorization: `Bearer ${params.token}`,
         "Idempotency-Key": hash.digest("hex"),
       },

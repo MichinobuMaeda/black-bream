@@ -37,20 +37,20 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(FormData.prototype.append.mock.calls).toEqual([
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-    ]);
+    expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
@@ -78,11 +78,6 @@ describe("post", () => {
         new Blob([new Uint8Array(buffer)], { type: "image/jpeg" }),
         "1.jpg",
       ],
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-      ["media_ids", "media-id"],
     ]);
     expect(axios.get).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
@@ -98,10 +93,16 @@ describe("post", () => {
       ],
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+          media_ids: ["media-id"],
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
@@ -127,11 +128,6 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", expect.any(Blob), "1.jpg"],
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-      ["media_ids", "media-id"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [
@@ -156,10 +152,16 @@ describe("post", () => {
       ],
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+          media_ids: ["media-id"],
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
@@ -185,11 +187,6 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", expect.any(Blob), "1.jpg"],
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-      ["media_ids", "media-id"],
     ]);
     expect(axios.get.mock.calls).toEqual([
       [
@@ -214,10 +211,16 @@ describe("post", () => {
       ],
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+          media_ids: ["media-id"],
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
@@ -309,19 +312,19 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "error" });
-    expect(FormData.prototype.append.mock.calls).toEqual([
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-    ]);
+    expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
@@ -341,19 +344,19 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
-    expect(FormData.prototype.append.mock.calls).toEqual([
-      ["status", "Text"],
-      ["sensitive", "false"],
-      ["visibility", "public"],
-      ["language", "ja"],
-    ]);
+    expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(axios.post.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
-        expect.any(FormData),
+        {
+          status: "Text",
+          sensitive: false,
+          visibility: "public",
+          language: "ja",
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
