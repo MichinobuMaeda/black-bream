@@ -24,7 +24,7 @@ const post = async (bucket, params, id, { text, files }) => {
       const form = new FormData();
       form.append(
         "file",
-        new Blob([new Uint8Array(contents)], {
+        new Blob([new Uint8Array(contents[0])], {
           type: getMimeTypes(files[0]),
         }),
         files[0],

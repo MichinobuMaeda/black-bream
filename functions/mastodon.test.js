@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe("post", () => {
   const buffer = new ArrayBuffer(1024);
-  const fileRef = { download: jest.fn(() => Promise.resolve(buffer)) };
+  const fileRef = { download: jest.fn(() => Promise.resolve([buffer])) };
   const bucket = { file: jest.fn(() => fileRef) };
   const params = {
     url: "https://mastodon.example.com",
