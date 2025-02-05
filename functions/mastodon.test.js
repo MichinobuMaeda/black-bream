@@ -30,6 +30,12 @@ describe("post", () => {
     text: "Text",
     files: ["1.jpg"],
   };
+  getMediaAsBlob.mockImplementation(() =>
+    Promise.resolve({
+      err: undefined,
+      data: blob,
+    }),
+  );
 
   it("should post to Mastodon.", async () => {
     // Prepare
@@ -65,7 +71,6 @@ describe("post", () => {
 
   it("should post with image to Mastodon.", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "media-id" } }),
@@ -116,7 +121,6 @@ describe("post", () => {
   it("should wait to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
-    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
@@ -177,7 +181,6 @@ describe("post", () => {
   it("should wait twice to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
-    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
@@ -237,7 +240,6 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #1", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post.mockImplementationOnce(() =>
       Promise.resolve({
         status: 500,
@@ -271,7 +273,6 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #2", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementationOnce(() => Promise.resolve(blob));
     axios.post.mockImplementationOnce(() =>
       Promise.resolve({ status: 202, data: { id: "media-id" } }),
     );
