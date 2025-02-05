@@ -14,8 +14,8 @@ afterEach(() => {
 });
 
 describe("post", () => {
-  const image = [new ArrayBuffer(1024)];
-  const fileRef = { download: jest.fn(() => Promise.resolve(image)) };
+  const buffer = new ArrayBuffer(1024);
+  const fileRef = { download: jest.fn(() => Promise.resolve(buffer)) };
   const bucket = { file: jest.fn(() => fileRef) };
   const params = {
     url: "https://mastodon.example.com",
@@ -75,7 +75,7 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       [
         "file",
-        new Blob([new Uint8Array(image[0])], { type: "image/jpeg" }),
+        new Blob([new Uint8Array(buffer)], { type: "image/jpeg" }),
         "1.jpg",
       ],
       ["status", "Text"],
