@@ -3,7 +3,7 @@
   import EmailLink from "./EmailLink.svelte";
   import Password from "./Password.svelte";
   import PasswordLink from "./PasswordLink.svelte";
-  // import SocialLogin from "./SocialLogin.svelte";
+  import SocialLogin from "./SocialLogin.svelte";
   import { t } from "../../lib/store.svelte.js";
 </script>
 
@@ -11,4 +11,4 @@
 <EmailLink />
 <Password />
 <PasswordLink />
-<!-- <SocialLogin /> -->
+<SocialLogin />

@@ -17,6 +17,7 @@ import {
   signInWithPopup,
   linkWithPopup,
   GoogleAuthProvider,
+  GithubAuthProvider,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -562,6 +563,17 @@ export const callFunction = async (name, param) => {
   }
 };
 
+export const socialLoginProviders = [
+  {
+    id: "google",
+    label: "Google",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+  },
+];
+
 /**
  * Social login
  *
@@ -574,6 +586,9 @@ export const socialLogin = async (id) => {
     switch (id) {
       case "google":
         provider = new GoogleAuthProvider();
+        break;
+      case "github":
+        provider = new GithubAuthProvider();
         break;
       default:
         return { err: "error" };

@@ -2,6 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import ActionFields from "../../lib/ActionFields.svelte";
   import Actions from "../../lib/Actions.svelte";
   import SuccessMessage from "../../lib/SuccessMessage.svelte";
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
@@ -64,7 +65,7 @@
         error={errorEmail}
       />
     </Fields>
-    <Fields>
+    <ActionFields>
       <Actions>
         <ButtonFilled
           id="sendPasswordResetLink"
@@ -73,6 +74,6 @@
           disabled={valid}
         />
       </Actions>
-    </Fields>
+    </ActionFields>
   </Wrap>
 </Content>

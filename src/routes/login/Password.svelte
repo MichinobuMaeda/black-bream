@@ -2,6 +2,7 @@
   import Content from "../../lib/Content.svelte";
   import Wrap from "../../lib/Wrap.svelte";
   import Fields from "../../lib/Fields.svelte";
+  import ActionFields from "../../lib/ActionFields.svelte";
   import Actions from "../../lib/Actions.svelte";
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
   import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
@@ -51,7 +52,7 @@
         bind:value={password}
       />
     </Fields>
-    <Fields>
+    <ActionFields>
       {#if result?.err === "credentialError"}
         <ErrorMessage>{t().passwordAuthError()}</ErrorMessage>
       {:else if result?.err}
@@ -65,6 +66,6 @@
           disabled={!valid}
         />
       </Actions>
-    </Fields>
+    </ActionFields>
   </Wrap>
 </Content>

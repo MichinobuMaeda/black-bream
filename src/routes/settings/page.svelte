@@ -1,6 +1,7 @@
 <script>
   import SvgSettings from "../../lib/icons/SvgSettings.svelte";
   import SiteDescription from "./SiteDescription.svelte";
+  import SocialLogins from "./SocialLogins.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
   import AuthBluesky from "./AuthBluesky.svelte";
   import AuthThreads from "./AuthThreads.svelte";
@@ -12,6 +13,7 @@
   <SiteDescription />
 {/if}
 {#if store.admin}
+  <SocialLogins />
   <AuthMastodon />
   <AuthBluesky />
   <AuthThreads />

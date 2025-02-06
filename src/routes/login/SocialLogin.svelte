@@ -1,17 +1,15 @@
 <script>
   import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
   import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
   import ErrorMessage from "../../lib/ErrorMessage.svelte";
-  import { t } from "../../lib/store.svelte.js";
-  import { socialLogin } from "../../lib/firebase.js";
+  import { t, store } from "../../lib/store.svelte.js";
+  import { socialLoginProviders, socialLogin } from "../../lib/firebase.js";
 
-  const providers = [
-    {
-      id: "google",
-      label: "Google",
-    },
-  ];
+  const providers = $derived(
+    socialLoginProviders.filter((item) =>
+      store.conf.socialLogins?.includes(item.id),
+    ),
+  );
 
   let result = $state(null);
   let timeoutId = null;
@@ -35,21 +33,23 @@
   };
 </script>
 
-<h4>{t().socialLogin()}</h4>
-<Content>
-  {#if result?.err}
-    <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
-  {/if}
-  <Wrap>
-    {#each providers as provider}
-      <div class="flex">
-        <ButtonFilled
-          id={provider.id}
-          label={provider.label}
-          onClick={() => onClick(provider.id)}
-        />
-      </div>
-    {/each}
-  </Wrap>
-  <div>{t().aboutSocialLogin()}</div>
-</Content>
+{#if providers.length}
+  <h4>{t().socialLogin()}</h4>
+  <Content>
+    {#if result?.err}
+      <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
+    {/if}
+    <div class="flex flex-wrap gap-8">
+      {#each providers as provider}
+        <div class="flex">
+          <ButtonFilled
+            id={provider.id}
+            label={provider.label}
+            onClick={() => onClick(provider.id)}
+          />
+        </div>
+      {/each}
+    </div>
+    <div>{t().aboutSocialLogin()}</div>
+  </Content>
+{/if}
