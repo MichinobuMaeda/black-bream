@@ -1,12 +1,12 @@
 <script>
   import { pop } from "svelte-spa-router";
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import {
     createDocument,

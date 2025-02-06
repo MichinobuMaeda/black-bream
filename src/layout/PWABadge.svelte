@@ -3,7 +3,7 @@
 
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
-  import ButtonFilled from "../lib/components/ButtonFilled.svelte";
+  import ButtonFilled from "../lib/coarse-paper/ButtonFilled.svelte";
   import { t } from "../lib/store.svelte.js";
 
   // check for updates every hour

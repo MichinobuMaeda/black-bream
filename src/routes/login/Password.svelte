@@ -1,13 +1,13 @@
 <script>
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import ActionFields from "../../lib/ActionFields.svelte";
-  import Actions from "../../lib/Actions.svelte";
-  import ErrorMessage from "../../lib/ErrorMessage.svelte";
-  import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import ActionFields from "../../lib/components/ActionFields.svelte";
+  import Actions from "../../lib/components/Actions.svelte";
+  import ErrorMessage from "../../lib/components/ErrorMessage.svelte";
+  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import ButtonFilled from "../../lib/coarse-paper/ButtonFilled.svelte";
   import { loginWithPassword } from "../../lib/firebase.js";
   import { t } from "../../lib/store.svelte.js";
   import { validateEmail } from "../../lib/validator";

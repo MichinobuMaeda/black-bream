@@ -1,13 +1,13 @@
 <script>
   import { pop } from "svelte-spa-router";
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import ActionFields from "../../lib/ActionFields.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
-  import Switch from "../../lib/components/Switch.svelte";
-  import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import ActionFields from "../../lib/components/ActionFields.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
+  import Switch from "../../lib/coarse-paper/Switch.svelte";
+  import ButtonFilled from "../../lib/coarse-paper/ButtonFilled.svelte";
   import SvgLogout from "../../lib/icons/SvgLogout.svelte";
   import {
     getWatchdogTimeout,

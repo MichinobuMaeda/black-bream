@@ -1,7 +1,7 @@
 <script>
-  import SvgMastodon from "../lib/icons/SvgMastodon.svelte";
-  import SvgBluesky from "../lib/icons/SvgBluesky.svelte";
-  import SvgThreads from "../lib/icons/SvgThreads.svelte";
+  import SvgMastodon from "../icons/SvgMastodon.svelte";
+  import SvgBluesky from "../icons/SvgBluesky.svelte";
+  import SvgThreads from "../icons/SvgThreads.svelte";
 
   /**
    * @typedef {Object} Props

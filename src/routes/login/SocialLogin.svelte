@@ -1,13 +1,15 @@
 <script>
-  import Content from "../../lib/Content.svelte";
-  import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
-  import ErrorMessage from "../../lib/ErrorMessage.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import ButtonFilled from "../../lib/coarse-paper/ButtonFilled.svelte";
+  import ErrorMessage from "../../lib/components/ErrorMessage.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { socialLoginProviders, socialLogin } from "../../lib/firebase.js";
 
   const providers = $derived(
-    socialLoginProviders.filter((item) =>
-      store.conf.socialLogins?.includes(item.id),
+    socialLoginProviders.filter(
+      (item) =>
+        !item.id.endsWith("_link") &&
+        store.conf.socialLogins?.includes(item.id),
     ),
   );
 

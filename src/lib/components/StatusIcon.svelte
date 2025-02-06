@@ -1,10 +1,10 @@
 <script>
-  import SvgNoteAdd from "./icons/SvgNoteAdd.svelte";
-  import SvgHourglass from "./icons/SvgHourglass.svelte";
-  import SvgSync from "./icons/SvgSync.svelte";
-  import SvgTask from "./icons/SvgTask.svelte";
-  import SvgScanDelete from "./icons/SvgScanDelete.svelte";
-  import SvgError from "./icons/SvgError.svelte";
+  import SvgNoteAdd from "../icons/SvgNoteAdd.svelte";
+  import SvgHourglass from "../icons/SvgHourglass.svelte";
+  import SvgSync from "../icons/SvgSync.svelte";
+  import SvgTask from "../icons/SvgTask.svelte";
+  import SvgScanDelete from "../icons/SvgScanDelete.svelte";
+  import SvgError from "../icons/SvgError.svelte";
 
   /**
    * @typedef {Object} Props

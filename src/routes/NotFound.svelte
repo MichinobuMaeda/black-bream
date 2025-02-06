@@ -2,7 +2,7 @@
   import { link } from "svelte-spa-router";
 
   import SvgError from "../lib/icons/SvgError.svelte";
-  import Content from "../lib/Content.svelte";
+  import Content from "../lib/components/Content.svelte";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
   import { t } from "../lib/store.svelte.js";

@@ -1,7 +1,7 @@
 <script>
   import { location, push } from "svelte-spa-router";
-  import ButtonText from "../lib/components/ButtonText.svelte";
-  import IconButton from "../lib/components/IconButton.svelte";
+  import ButtonText from "../lib/coarse-paper/ButtonText.svelte";
+  import IconButton from "../lib/coarse-paper/IconButton.svelte";
   import SvgCheck from "../lib/icons/SvgCheck.svelte";
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";

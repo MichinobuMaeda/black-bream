@@ -1,6 +1,6 @@
 <script>
-  import SvgVisibilityOff from "../../lib/icons/SvgVisibilityOff.svelte";
-  import SvgVisibilityOn from "../../lib/icons/SvgVisibilityOn.svelte";
+  import SvgVisibilityOff from "../icons/SvgVisibilityOff.svelte";
+  import SvgVisibilityOn from "../icons/SvgVisibilityOn.svelte";
 
   /**
    * @typedef {Object} Props

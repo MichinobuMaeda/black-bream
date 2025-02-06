@@ -1,10 +1,10 @@
 <script>
   import { link, push } from "svelte-spa-router";
-  import IconButtonOutlined from "../../lib/components/IconButtonOutlined.svelte";
+  import IconButtonOutlined from "../../lib/coarse-paper/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
-  import Content from "../../lib/Content.svelte";
+  import Content from "../../lib/components/Content.svelte";
   import { t, store } from "../../lib/store.svelte.js";
 
   /**

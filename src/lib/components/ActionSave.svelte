@@ -1,11 +1,11 @@
 <script>
   import Actions from "./Actions.svelte";
-  import ButtonOutlined from "./components/ButtonOutlined.svelte";
-  import ButtonFilled from "./components/ButtonFilled.svelte";
+  import ButtonOutlined from "../coarse-paper/ButtonOutlined.svelte";
+  import ButtonFilled from "../coarse-paper/ButtonFilled.svelte";
   import ErrorMessage from "./ErrorMessage.svelte";
-  import SvgClose from "./icons/SvgClose.svelte";
-  import SvgCheck from "./icons/SvgCheck.svelte";
-  import { t } from "./store.svelte.js";
+  import SvgClose from "../icons/SvgClose.svelte";
+  import SvgCheck from "../icons/SvgCheck.svelte";
+  import { t } from "../store.svelte.js";
 
   /**
    * @typedef {Object} Props

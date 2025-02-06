@@ -1,8 +1,8 @@
 <script>
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import ButtonFilled from "../../lib/components/ButtonFilled.svelte";
-  import ErrorMessage from "../../lib/ErrorMessage.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import ButtonFilled from "../../lib/coarse-paper/ButtonFilled.svelte";
+  import ErrorMessage from "../../lib/components/ErrorMessage.svelte";
   import { t } from "../../lib/store.svelte.js";
   import { registerSocialLogin } from "../../lib/firebase.js";
 

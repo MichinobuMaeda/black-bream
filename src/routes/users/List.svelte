@@ -1,7 +1,7 @@
 <script>
   import { link, push } from "svelte-spa-router";
-  import Content from "../../lib/Content.svelte";
-  import ButtonOutlined from "../../lib/components/ButtonOutlined.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
   import SvgPersonAdd from "../../lib/icons/SvgPersonAdd.svelte";
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";

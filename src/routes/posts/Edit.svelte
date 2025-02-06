@@ -1,23 +1,24 @@
 <script>
   import { pop } from "svelte-spa-router";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import ButtonText from "../../lib/components/ButtonText.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
   import SvgAddPhotoAlternate from "../../lib/icons/SvgAddPhotoAlternate.svelte";
   import SvgRemoveSelection from "../../lib/icons/SvgRemoveSelection.svelte";
-  import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
-  import Switch from "../../lib/components/Switch.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
+  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Switch from "../../lib/coarse-paper/Switch.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import {
     updateDocument,
     savePostImage,
     getSavedImageUrl,
+    postTargets,
   } from "../../lib/firebase.js";
-  import { formatISO } from "../../lib/i18n";
+  import { formatISO } from "../../lib/i18n.js";
 
   /**
    * @typedef {Object} Props
@@ -33,10 +34,12 @@
   // Fields
   let text = $state("");
   let errorText = $derived(active ? "" : !text ? t().required() : "");
-  let targetItems = (store.conf.postTargets ?? []).map((target) => ({
-    value: target,
-    label: target,
-  }));
+  let targetItems = postTargets
+    .filter((target) => (store.conf.postTargets ?? []).includes(target))
+    .map((target) => ({
+      value: target,
+      label: target,
+    }));
   let orgTargets = $derived(Object.keys(post?.targets ?? {}));
   let targets = $state([]);
   let errorTargets = $derived(

@@ -1,12 +1,12 @@
 <script>
   import { push } from "svelte-spa-router";
-  import IconButtonOutlined from "../../lib/components/IconButtonOutlined.svelte";
+  import IconButtonOutlined from "../../lib/coarse-paper/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
-  import StatusIcon from "../../lib/StatusIcon.svelte";
-  import Content from "../../lib/Content.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import TargetIcon from "../../lib/TargetIcon.svelte";
+  import StatusIcon from "../../lib/components/StatusIcon.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import { store } from "../../lib/store.svelte.js";
   import { formatDateTime } from "../../lib/i18n";
   import { getSavedImageUrl } from "../../lib/firebase.js";

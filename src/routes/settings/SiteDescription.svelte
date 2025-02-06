@@ -1,7 +1,7 @@
 <script>
-  import Content from "../../lib/Content.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
 

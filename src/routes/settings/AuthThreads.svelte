@@ -1,13 +1,13 @@
 <script>
-  import TargetIcon from "../../lib/TargetIcon.svelte";
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
-  import ButtonOutlined from "../../lib/components/ButtonOutlined.svelte";
-  import Switch from "../../lib/components/Switch.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
+  import TargetIcon from "../../lib/components/TargetIcon.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
+  import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
+  import Switch from "../../lib/coarse-paper/Switch.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { formatDateTime } from "../../lib/i18n.js";
   import { updateDocument } from "../../lib/firebase.js";

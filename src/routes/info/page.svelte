@@ -1,7 +1,7 @@
 <script>
-  import Content from "../../lib/Content.svelte";
+  import Content from "../../lib/components/Content.svelte";
   import SvgInfo from "../../lib/icons/SvgInfo.svelte";
-  import MarkDown from "../../lib/MarkDown.svelte";
+  import MarkDown from "../../lib/components/MarkDown.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { version, repository } from "../../../package.json";
 

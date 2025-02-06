@@ -1,8 +1,8 @@
 <script>
   import { link } from "svelte-spa-router";
-  import TargetIcon from "../../lib/TargetIcon.svelte";
-  import Content from "../../lib/Content.svelte";
-  import StatusIcon from "../../lib/StatusIcon.svelte";
+  import TargetIcon from "../../lib/components/TargetIcon.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import StatusIcon from "../../lib/components/StatusIcon.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { formatDateTime } from "../../lib/i18n";
 

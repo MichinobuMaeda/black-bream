@@ -1,28 +1,34 @@
 <script>
   import { pop } from "svelte-spa-router";
   import SvgNoteAdd from "../../lib/icons/SvgNoteAdd.svelte";
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import ButtonText from "../../lib/components/ButtonText.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
   import SvgAddPhotoAlternate from "../../lib/icons/SvgAddPhotoAlternate.svelte";
   import SvgRemoveSelection from "../../lib/icons/SvgRemoveSelection.svelte";
-  import TextFieldOutlined from "../../lib/components/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/components/GroupedCheckBox.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { createDocument, savePostImage } from "../../lib/firebase.js";
-  import { formatISO } from "../../lib/i18n";
+  import {
+    createDocument,
+    savePostImage,
+    postTargets,
+  } from "../../lib/firebase.js";
+  import { formatISO } from "../../lib/i18n.js";
 
   let active = $state(false);
 
   // Fields
   let text = $state("");
   let errorText = $derived(active ? "" : !text ? t().required() : "");
-  let targetItems = (store.conf.postTargets ?? []).map((target) => ({
-    value: target,
-    label: target,
-  }));
+  let targetItems = postTargets
+    .filter((target) => (store.conf.postTargets ?? []).includes(target))
+    .map((target) => ({
+      value: target,
+      label: target,
+    }));
   let targets = $state([]);
   let errorTargets = $derived(
     active ? "" : !targets.length ? t().required() : "",

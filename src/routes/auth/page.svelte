@@ -1,6 +1,6 @@
 <script>
   import { push } from "svelte-spa-router";
-  import Content from "../../lib/Content.svelte";
+  import Content from "../../lib/components/Content.svelte";
   import { setThreadsLongAccessToken } from "../../lib/firebase";
 
   /**

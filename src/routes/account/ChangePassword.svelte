@@ -1,10 +1,10 @@
 <script>
-  import Content from "../../lib/Content.svelte";
-  import Wrap from "../../lib/Wrap.svelte";
-  import Fields from "../../lib/Fields.svelte";
-  import ActionFields from "../../lib/ActionFields.svelte";
-  import PasswordFieldOutlined from "../../lib/components/PasswordFieldOutlined.svelte";
-  import ActionSave from "../../lib/ActionSave.svelte";
+  import Content from "../../lib/components/Content.svelte";
+  import Wrap from "../../lib/components/Wrap.svelte";
+  import Fields from "../../lib/components/Fields.svelte";
+  import ActionFields from "../../lib/components/ActionFields.svelte";
+  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { changePassword } from "../../lib/firebase.js";
   import { validatePassword } from "../../lib/validator";
