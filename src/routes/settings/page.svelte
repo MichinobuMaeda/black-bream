@@ -5,6 +5,7 @@
   import AuthMastodon from "./AuthMastodon.svelte";
   import AuthBluesky from "./AuthBluesky.svelte";
   import AuthThreads from "./AuthThreads.svelte";
+  import AuthInstagram from "./AuthInstagram.svelte";
   import { t, store } from "../../lib/store.svelte.js";
 </script>
 
@@ -17,4 +18,5 @@
   <AuthMastodon />
   <AuthBluesky />
   <AuthThreads />
+  <AuthInstagram />
 {/if}

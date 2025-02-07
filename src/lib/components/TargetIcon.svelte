@@ -2,6 +2,7 @@
   import SvgMastodon from "../icons/SvgMastodon.svelte";
   import SvgBluesky from "../icons/SvgBluesky.svelte";
   import SvgThreads from "../icons/SvgThreads.svelte";
+  import SvgInstagram from "../icons/SvgInstagram.svelte";
 
   /**
    * @typedef {Object} Props
@@ -18,4 +19,6 @@
   <SvgBluesky />
 {:else if target === "threads"}
   <SvgThreads />
+{:else if target === "instagram"}
+  <SvgInstagram />
 {/if}

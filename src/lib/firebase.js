@@ -649,13 +649,14 @@ export const groupsOfUser = (store, uid) =>
   );
 
 /**
+ * Set Threads long access token
  *
  * @param {string} code
  * @returns {Promise<object>}
  */
 export const setThreadsLongAccessToken = async (code) => {
   try {
-    console.log(`setThreadsLongAccessToken() code: ${code}`);
+    console.log(`setThreadsLongAccessToken(${code})`);
     const authRef = doc(db, "service", "auth");
     const auth = await getDoc(authRef);
     const { clientId, clientSecret, callBackUrl } = auth.get("threads");

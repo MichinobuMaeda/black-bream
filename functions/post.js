@@ -3,6 +3,7 @@ const { logger } = require("firebase-functions/v2");
 const mastodon = require("./mastodon.js");
 const bluesky = require("./bluesky.js");
 const threads = require("./threads.js");
+const instagram = require("./instagram.js");
 
 /**
  * Get queue name from location, project, and function name
@@ -24,7 +25,7 @@ const getQueueName = (project, location, functionName) =>
  */
 const createPosts = async (queue, data) => {
   try {
-    const delay = 17 * 1000;
+    const delay = 11 * 1000;
     const { id } = data;
     const { targets, scheduledFor } = data.data();
     logger.info(`Enqueue posts: ${id}`);
@@ -33,9 +34,9 @@ const createPosts = async (queue, data) => {
       Math.max(scheduledFor.toDate().getTime(), new Date().getTime()),
     );
 
-    Object.keys(targets).forEach((target) => {
+    Object.keys(targets).forEach((target, index) => {
       targets[target] = {
-        scheduleTime: new Date(scheduleTime.getTime() + delay),
+        scheduleTime: new Date(scheduleTime.getTime() + delay * (index + 1)),
       };
     });
 
@@ -197,6 +198,9 @@ const post = async (db, bucket, { id, target }) => {
         break;
       case "threads":
         ret = await threads.post(bucket, params, id, postSnap.data());
+        break;
+      case "instagram":
+        ret = await instagram.post(bucket, params, id, postSnap.data());
         break;
       default:
         return statusError(`Unsupported target: ${target}`);
