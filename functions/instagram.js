@@ -36,12 +36,11 @@ const post = async (bucket, params, id, { text, files }) => {
       return { err };
     }
 
-    const id = response.data.id;
-    logger.info(`Created container: ${id}`);
+    logger.info(`Created container: ${response.data.id}`);
 
     const { status, statusText } = await axios.post(
       `https://graph.instagram.com/v22.0/${userId}/media_publish`,
-      { creation_id: id },
+      { creation_id: response.data.id },
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
