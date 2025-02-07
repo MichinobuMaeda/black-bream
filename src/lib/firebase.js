@@ -318,19 +318,22 @@ export const createDocument = async (col, data, setId = false) => {
       .replace(/[^0-9]/g, "")
       .slice(2) + Math.random().toString(36).slice(-6);
   try {
-    const ref = (await setId)
-      ? setDoc(doc(db, col, generateId()), {
-          ...data,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-      : addDoc(collection(db, col), {
-          ...data,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-
-    return { err: undefined, data: ref };
+    let ret = {};
+    if (setId) {
+      ret.id = generateId();
+      await setDoc(doc(db, col, ret.id), {
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } else {
+      ret = await addDoc(collection(db, col), {
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+    return { err: undefined, data: ret };
   } catch (error) {
     console.error(`createDocument: ${error}`);
     return { err: "error", data: undefined };
