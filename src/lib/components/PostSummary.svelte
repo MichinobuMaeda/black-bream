@@ -2,7 +2,7 @@
   import { link } from "svelte-spa-router";
   import TargetIcon from "./TargetIcon.svelte";
   import StatusIcon from "./StatusIcon.svelte";
-  import { formatDateTime } from "../i18n.js";
+  import { formatDateTime } from "../datetime.js";
   import { postTargets } from "../firebase.js";
 
   /**

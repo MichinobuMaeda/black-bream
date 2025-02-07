@@ -38,7 +38,7 @@
 
 <div
   class={"flex flex-col grow" +
-    (lines === 1 ? " h-16" : "") +
+    (lines === 1 ? " h-[68px]" : "") +
     (disabled ? " opacity-40" : "")}
 >
   <label
@@ -119,14 +119,14 @@
   </label>
   {#if !error}
     <div
-      class="text-sm pl-2
+      class="text-sm pl-2 line-clamp-1 text-ellipsis
         text-lightOnSurface dark:text-darkOnSurface"
     >
       {message}
     </div>
   {:else}
     <div
-      class="text-sm pl-2
+      class="text-sm pl-2 line-clamp-1 text-ellipsis
         text-lightError dark:text-darkError"
     >
       {error}

@@ -54,6 +54,18 @@ export class I18n {
   post = () => (this.locale === "ja" ? "投稿" : "Post");
   recentPosts = () => (this.locale === "ja" ? "最近の投稿" : "Recent posts");
   text = () => (this.locale === "ja" ? "文面" : "Text");
+  preDefinedSchedules = () =>
+    this.locale === "ja" ? "事前設定スケジュール" : "Pre-defined schedules";
+  dayOfWeek = () => (this.locale === "ja" ? "曜日" : "Day of week");
+  hour = () => (this.locale === "ja" ? "時" : "Hour");
+  minute = () => (this.locale === "ja" ? "分" : "Minute");
+  sunday = () => (this.locale === "ja" ? "日" : "Su");
+  monday = () => (this.locale === "ja" ? "月" : "Mo");
+  tuesday = () => (this.locale === "ja" ? "火" : "Tu");
+  wednesday = () => (this.locale === "ja" ? "水" : "We");
+  thursday = () => (this.locale === "ja" ? "木" : "Th");
+  friday = () => (this.locale === "ja" ? "金" : "Fr");
+  saturday = () => (this.locale === "ja" ? "土" : "");
   authentication = () => (this.locale === "ja" ? "認証" : "Authentication");
   account = () => (this.locale === "ja" ? "アカウント" : "Account");
   profile = () => (this.locale === "ja" ? "プロフィール" : "Profile");
@@ -240,27 +252,3 @@ export class I18n {
       ? "データの保存中にエラーが発生しました。" + this.onSystemError()
       : "An error occurred while sending data." + this.onSystemError();
 }
-
-/**
- * Format a date object to an ISO string with the browser timezone.
- *
- * @param {Date} date
- * @returns {string}
- */
-export const formatISO = (date) =>
-  date instanceof Date
-    ? new Date(
-        date.setHours(date.getHours() - new Date().getTimezoneOffset() / 60),
-      )
-        .toISOString()
-        .substring(0, 16)
-    : null;
-
-/**
- * Format a date object with the browser timezone.
- *
- * @param {Date} date
- * @returns {string}
- */
-export const formatDateTime = (date) =>
-  date instanceof Date ? formatISO(date).replace("T", " ") : null;

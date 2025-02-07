@@ -8,6 +8,9 @@
   import SvgAddPhotoAlternate from "../../lib/icons/SvgAddPhotoAlternate.svelte";
   import SvgRemoveSelection from "../../lib/icons/SvgRemoveSelection.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import IconButton from "../../lib/coarse-paper/IconButton.svelte";
+  import SvgArrowBack from "../../lib/icons/SvgArrowBack.svelte";
+  import SvgArrowForward from "../../lib/icons/SvgArrowForward.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -16,7 +19,7 @@
     savePostImage,
     postTargets,
   } from "../../lib/firebase.js";
-  import { formatISO } from "../../lib/i18n.js";
+  import { formatISO, getNextPreDefinedSchedule } from "../../lib/datetime.js";
 
   let active = $state(false);
 
@@ -35,6 +38,11 @@
   );
   let schedule = $state(formatISO(new Date()));
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
+  let showPreDefinedSchedule = $derived(
+    store.conf.preDefinedSchedules?.wd.length > 0 &&
+      store.conf.preDefinedSchedules?.h.length > 0 &&
+      store.conf.preDefinedSchedules?.m.length > 0,
+  );
 
   // Actions
   let result = $state(null);
@@ -94,14 +102,44 @@
     <Wrap>
       <div class="flex flex-col gap-4">
         <Fields>
-          <TextFieldOutlined
-            id="scheduledFor"
-            label={t().schedule()}
-            type="datetime-local"
-            bind:value={schedule}
-            message={t().required()}
-            error={errorSchedule}
-          />
+          <div class="flex flex-row gap-2">
+            <TextFieldOutlined
+              id="scheduledFor"
+              label={t().schedule()}
+              type="datetime-local"
+              bind:value={schedule}
+              message={t().required()}
+              error={errorSchedule}
+            />
+            {#if showPreDefinedSchedule}
+              <IconButton
+                id="prevSchedule"
+                icon={SvgArrowBack}
+                onClick={() => {
+                  schedule = formatISO(
+                    getNextPreDefinedSchedule(
+                      store.conf.preDefinedSchedules,
+                      schedule,
+                      -1,
+                    ),
+                  );
+                }}
+              />
+              <IconButton
+                id="prevSchedule"
+                icon={SvgArrowForward}
+                onClick={() => {
+                  schedule = formatISO(
+                    getNextPreDefinedSchedule(
+                      store.conf.preDefinedSchedules,
+                      schedule,
+                      1,
+                    ),
+                  );
+                }}
+              />
+            {/if}
+          </div>
         </Fields>
         <Fields>
           <Wrap>

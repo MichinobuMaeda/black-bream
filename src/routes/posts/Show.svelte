@@ -8,7 +8,7 @@
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import { store } from "../../lib/store.svelte.js";
-  import { formatDateTime } from "../../lib/i18n";
+  import { formatDateTime } from "../../lib/datetime";
   import { getSavedImageUrl } from "../../lib/firebase.js";
 
   /**

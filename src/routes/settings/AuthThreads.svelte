@@ -9,7 +9,7 @@
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { formatDateTime } from "../../lib/i18n.js";
+  import { formatDateTime } from "../../lib/datetime.js";
   import { updateDocument } from "../../lib/firebase.js";
 
   let active = $state(false);

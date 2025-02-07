@@ -4,7 +4,6 @@
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -14,22 +13,18 @@
 
   // Fields
   let instagramClientId = $state("");
-  let instagramClientSecret = $state("");
   let instagramAccessToken = $state("");
   let instagramEnabled = $state(false);
 
   $effect(() => {
     instagramClientId = store.auth?.instagram?.clientId;
-    instagramClientSecret = store.auth?.instagram?.clientSecret;
     instagramAccessToken = store.auth?.instagram?.accessToken;
     instagramEnabled = !store.auth?.instagram?.deletedAt;
   });
   let errorInstagramIdentifier = $derived(
     instagramEnabled && !instagramClientId ? t().required() : "",
   );
-  let errorInstagramPassword = $derived(
-    instagramEnabled && !instagramClientSecret ? t().required() : "",
-  );
+  let errorInstagramPassword = $derived(instagramEnabled ? t().required() : "");
 
   let errorInstagramAccessToken = $derived(
     instagramEnabled && !instagramAccessToken ? t().required() : "",
@@ -40,7 +35,6 @@
   let changed = $derived(
     !active &&
       (instagramClientId !== store.auth?.instagram?.clientId ||
-        instagramClientSecret !== store.auth?.instagram?.clientSecret ||
         instagramAccessToken !== store.auth?.instagram?.accessToken ||
         instagramEnabled !== !store.auth?.instagram?.deletedAt),
   );
@@ -53,7 +47,6 @@
 
   const onCancel = () => {
     instagramClientId = store.auth?.instagram?.clientId;
-    instagramClientSecret = store.auth?.instagram?.clientSecret;
     instagramAccessToken = store.auth?.instagram?.accessToken;
     instagramEnabled = !store.auth?.instagram?.deletedAt;
   };
@@ -62,12 +55,10 @@
     active = true;
     instagramAccessToken = instagramAccessToken.trim();
     instagramClientId = instagramClientId.trim();
-    instagramClientSecret = instagramClientSecret.trim();
     result = await updateDocument("service", "auth", {
       instagram: {
-        accessToken: instagramAccessToken,
         clientId: instagramClientId,
-        clientSecret: instagramClientSecret,
+        accessToken: instagramAccessToken,
         updatedAt: new Date(),
         deletedAt: instagramEnabled ? null : new Date(),
       },
@@ -90,15 +81,6 @@
         bind:value={instagramClientId}
         message={t().current(store.auth?.instagram?.clientId ?? "--")}
         error={errorInstagramIdentifier}
-      />
-    </Fields>
-    <Fields>
-      <PasswordFieldOutlined
-        id="instagramClientSecret"
-        label="Client Secret"
-        bind:value={instagramClientSecret}
-        message={t().current(store.auth?.instagram?.clientSecret ?? "--")}
-        error={errorInstagramPassword}
       />
     </Fields>
     <Fields>

@@ -27,7 +27,7 @@
   let visible = $state(false);
 </script>
 
-<div class="flex flex-col grow h-16">
+<div class="flex flex-col grow h-[68px]">
   <label
     for={id}
     class={"mt-2 py-2 px-2 relative block rounded-md border" +
@@ -92,14 +92,14 @@
   </label>
   {#if !error}
     <div
-      class="text-sm pl-2
+      class="text-sm pl-2 line-clamp-1 text-ellipsis
         text-lightOnSurface dark:text-darkOnSurface"
     >
       {message}
     </div>
   {:else}
     <div
-      class="text-sm pl-2
+      class="text-sm pl-2 line-clamp-1 text-ellipsis
         text-lightError dark:text-darkError"
     >
       {error}
