@@ -16,11 +16,11 @@ const post = async (bucket, params, id, { text, files }) => {
       return { err: "No media files" };
     }
 
-    const { userId, accessToken } = params;
+    const { clientId, accessToken } = params;
 
     const mediaUrl = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
     let response = await axios.post(
-      `https://graph.instagram.com/v22.0/${userId}/media`,
+      `https://graph.instagram.com/v22.0/${clientId}/media`,
       { caption: text, image_url: mediaUrl },
       {
         headers: {
@@ -39,7 +39,7 @@ const post = async (bucket, params, id, { text, files }) => {
     logger.info(`Created container: ${response.data.id}`);
 
     const { status, statusText } = await axios.post(
-      `https://graph.instagram.com/v22.0/${userId}/media_publish`,
+      `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
       { creation_id: response.data.id },
       {
         headers: {
