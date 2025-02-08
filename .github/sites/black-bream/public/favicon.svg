@@ -30,7 +30,7 @@
      inkscape:window-x="0"
      inkscape:window-y="39"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg1" />
+     inkscape:current-layer="g1" />
   <defs
      id="defs1" />
   <circle
@@ -41,9 +41,11 @@
      r="540" />
   <g
      id="g1"
-     transform="matrix(0.85934919,0.1582084,-0.1582084,0.85934919,161.95049,-50.339621)">
+     transform="matrix(0.85934919,0.1582084,-0.1582084,0.85934919,161.95049,-50.339621)"
+     inkscape:label="g1">
     <g
-       id="layer1">
+       id="layer1"
+       transform="translate(9.5317382,51.774059)">
       <path
          style="fill:#000000;stroke-width:1.01902"
          d="M 55.010508,697.33912 165.89557,462.73547 368.3448,291.23212 l 383.89753,37.21299 107.5249,210.3343 157.92717,-84.13371 -1.6801,287.9962 -159.60722,-80.89781 -194.88889,194.15473 -416.65902,-14.5616 z"

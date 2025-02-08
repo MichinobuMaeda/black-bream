@@ -9,7 +9,7 @@
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import { store } from "../../lib/store.svelte.js";
   import { formatDateTime } from "../../lib/datetime";
-  import { getSavedImageUrl } from "../../lib/firebase.js";
+  import { getSavedImageUrl, postTargets } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -23,6 +23,10 @@
   let savedImages = $derived(post.files ?? []);
   let savedImageUrl = $derived(
     savedImages?.length ? getSavedImageUrl(post.id, savedImages[0]) : null,
+  );
+
+  let targets = postTargets.filter((target) =>
+    (store.conf.postTargets ?? []).includes(target),
   );
 </script>
 
@@ -44,7 +48,7 @@
   <Content>
     <Fields>
       <div class="flex flex-wrap gap-3">
-        {#each Object.keys(post.targets ?? {}) as target}
+        {#each targets as target}
           <span class="flex gap-1">
             <span class="size-6 text-lightPrimary dark:text-darkPrimary">
               <TargetIcon {target} />

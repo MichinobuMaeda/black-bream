@@ -36,7 +36,7 @@
 {/snippet}
 
 <div
-  class="flex flex-row mb-0.5 px-2 sm:px-4 py-0.5 sm:py-1 gap-6 justify-end
+  class="flex flex-row mb-0.5 px-2 sm:px-4 py-1 sm:py-1.5 gap-6 justify-end
     bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
     text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant"
 >
