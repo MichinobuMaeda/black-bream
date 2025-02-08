@@ -148,16 +148,19 @@ export const subscribeAuthState = (store) => {
   });
 };
 
-/** @type {import("firebase/auth").Unsubscribe|null} */
+/** @type {import("firebase/firestore").Unsubscribe|null} */
 let usersUnsub = null;
 
-/** @type {import("firebase/auth").Unsubscribe|null} */
+/** @type {import("firebase/firestore").Unsubscribe|null} */
 let groupsUnsub = null;
 
-/** @type {import("firebase/auth").Unsubscribe|null} */
+/** @type {import("firebase/firestore").Unsubscribe|null} */
 let postsUnsub = null;
 
-/** @type {import("firebase/auth").Unsubscribe|null} */
+/** @type {import("firebase/firestore").Unsubscribe|null} */
+let templatesUnsub = null;
+
+/** @type {import("firebase/firestore").Unsubscribe|null} */
 let authUnsub = null;
 
 /**
@@ -187,10 +190,10 @@ export const unsubscribeUserData = async (store) => {
       store.posts = [];
     }
 
-    if (postsUnsub) {
-      postsUnsub();
-      postsUnsub = null;
-      store.posts = [];
+    if (templatesUnsub) {
+      templatesUnsub();
+      templatesUnsub = null;
+      store.templates = [];
     }
 
     if (authUnsub) {
@@ -260,6 +263,23 @@ export const subscribeUserData = (store) => {
       },
       (error) => {
         console.error(`onSnapshot posts: ${error}`);
+        unsubscribeUserData(store);
+      },
+    );
+  }
+
+  if (!templatesUnsub) {
+    templatesUnsub = onSnapshot(
+      query(collection(db, "templates"), orderBy("name", "asc")),
+      (snap) => {
+        store.templates = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        console.log(`templates: ${store.templates.length}`);
+      },
+      (error) => {
+        console.error(`onSnapshot templates: ${error}`);
         unsubscribeUserData(store);
       },
     );

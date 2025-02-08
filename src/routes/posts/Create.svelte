@@ -23,6 +23,9 @@
 
   let active = $state(false);
 
+  let templates = $state((store.templates ?? []).filter((t) => !t.deletedAt));
+  let showTemplates = $state(templates.length > 0);
+
   // Fields
   let text = $state("");
   let errorText = $derived(active ? "" : !text ? t().required() : "");
@@ -99,104 +102,129 @@
 </h3>
 {#if store.operator}
   <Content>
-    <Wrap>
-      <div class="flex flex-col gap-4">
-        <Fields>
-          <div class="flex flex-row gap-2">
-            <TextFieldOutlined
-              id="scheduledFor"
-              label={t().schedule()}
-              type="datetime-local"
-              bind:value={schedule}
-              message={t().required()}
-              error={errorSchedule}
+    {#if showTemplates}
+      <Fields>
+        <ButtonText
+          id="no-template"
+          label={t().noTemplate()}
+          onClick={() => {
+            showTemplates = false;
+          }}
+        />
+        {#each templates as template}
+          <div class="flex flex-row gap-4">
+            <ButtonText
+              id={template.id}
+              label={template.name}
+              onClick={() => {
+                showTemplates = false;
+                text = template.text;
+              }}
             />
-            {#if showPreDefinedSchedule}
-              <IconButton
-                id="prevSchedule"
-                icon={SvgArrowBack}
-                onClick={() => {
-                  schedule = formatISO(
-                    getNextPreDefinedSchedule(
-                      store.conf.preDefinedSchedules,
-                      schedule,
-                      -1,
-                    ),
-                  );
-                }}
+            {template.text.split("\n").join(" / ")}
+          </div>
+        {/each}
+      </Fields>
+    {:else}
+      <Wrap>
+        <div class="flex flex-col gap-4">
+          <Fields>
+            <div class="flex flex-row gap-2">
+              <TextFieldOutlined
+                id="scheduledFor"
+                label={t().schedule()}
+                type="datetime-local"
+                bind:value={schedule}
+                message={t().required()}
+                error={errorSchedule}
               />
-              <IconButton
-                id="prevSchedule"
-                icon={SvgArrowForward}
-                onClick={() => {
-                  schedule = formatISO(
-                    getNextPreDefinedSchedule(
-                      store.conf.preDefinedSchedules,
-                      schedule,
-                      1,
-                    ),
-                  );
-                }}
+              {#if showPreDefinedSchedule}
+                <IconButton
+                  id="prevSchedule"
+                  icon={SvgArrowBack}
+                  onClick={() => {
+                    schedule = formatISO(
+                      getNextPreDefinedSchedule(
+                        store.conf.preDefinedSchedules,
+                        schedule,
+                        -1,
+                      ),
+                    );
+                  }}
+                />
+                <IconButton
+                  id="prevSchedule"
+                  icon={SvgArrowForward}
+                  onClick={() => {
+                    schedule = formatISO(
+                      getNextPreDefinedSchedule(
+                        store.conf.preDefinedSchedules,
+                        schedule,
+                        1,
+                      ),
+                    );
+                  }}
+                />
+              {/if}
+            </div>
+          </Fields>
+          <Fields>
+            <Wrap>
+              <GroupedCheckBox
+                id="targets"
+                items={targetItems}
+                bind:value={targets}
+              />
+            </Wrap>
+          </Fields>
+        </div>
+        <Fields>
+          <TextFieldOutlined
+            id="text"
+            label={t().text()}
+            type="text"
+            lines={6}
+            bind:value={text}
+            message={t().required()}
+            error={errorText}
+          />
+          <div class="flex flex-row gap-4">
+            <ButtonText
+              id="add-image"
+              icon={SvgAddPhotoAlternate}
+              label={t().image()}
+              onClick={() => document.getElementById("add-image-field").click()}
+            />
+            {#if selectedImages}
+              <ButtonText
+                id="remove-image"
+                icon={SvgRemoveSelection}
+                label={t().delete()}
+                danger
+                onClick={() => (selectedImages = null)}
               />
             {/if}
           </div>
-        </Fields>
-        <Fields>
-          <Wrap>
-            <GroupedCheckBox
-              id="targets"
-              items={targetItems}
-              bind:value={targets}
-            />
-          </Wrap>
-        </Fields>
-      </div>
-      <Fields>
-        <TextFieldOutlined
-          id="text"
-          label={t().text()}
-          type="text"
-          lines={6}
-          bind:value={text}
-          message={t().required()}
-          error={errorText}
-        />
-        <div class="flex flex-row gap-4">
-          <ButtonText
-            id="add-image"
-            icon={SvgAddPhotoAlternate}
-            label={t().image()}
-            onClick={() => document.getElementById("add-image-field").click()}
+          <input
+            id="add-image-field"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            bind:files={selectedImages}
           />
           {#if selectedImages}
-            <ButtonText
-              id="remove-image"
-              icon={SvgRemoveSelection}
-              label={t().delete()}
-              danger
-              onClick={() => (selectedImages = null)}
+            <img
+              id="image-selected"
+              class="w-96"
+              alt="selected"
+              src={URL.createObjectURL(selectedImages[0])}
             />
           {/if}
-        </div>
-        <input
-          id="add-image-field"
-          type="file"
-          accept="image/*"
-          class="hidden"
-          bind:files={selectedImages}
-        />
-        {#if selectedImages}
-          <img
-            id="image-selected"
-            class="w-96"
-            alt="selected"
-            src={URL.createObjectURL(selectedImages[0])}
-          />
-        {/if}
+        </Fields>
+      </Wrap>
+      <Fields>
+        <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
       </Fields>
-    </Wrap>
-    <Fields>
-      <ActionSave id="save" {changed} {valid} {onCancel} {onSave} {error} />
-    </Fields>
+    {/if}
   </Content>
 {/if}

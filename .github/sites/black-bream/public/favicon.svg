@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    sodipodi:docname="favicon.svg"
-   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +41,7 @@
      r="540" />
   <g
      id="g1"
-     transform="rotate(10.431493,765.45318,529.59167)">
+     transform="matrix(0.85934919,0.1582084,-0.1582084,0.85934919,161.95049,-50.339621)">
     <g
        id="layer1">
       <path
@@ -49,7 +49,7 @@
          d="M 55.010508,697.33912 165.89557,462.73547 368.3448,291.23212 l 383.89753,37.21299 107.5249,210.3343 157.92717,-84.13371 -1.6801,287.9962 -159.60722,-80.89781 -194.88889,194.15473 -416.65902,-14.5616 z"
          id="path1" />
       <ellipse
-         style="fill:#FFDE3F;fill-opacity:1;stroke-width:1.30831"
+         style="fill:#ffde3f;fill-opacity:1;stroke-width:1.30831"
          id="path2"
          cx="244.31142"
          cy="576.80145"

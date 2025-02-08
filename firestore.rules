@@ -36,6 +36,10 @@ service cloud.firestore {
       allow read, update: if isManager();
       allow read: if isActiveAccount();
     }
+    match /templates/{template} {
+      allow read, create, update: if isManager();
+      allow read: if isActiveAccount();
+    }
     match /{document=**} {
       allow read, write: if false;
     }

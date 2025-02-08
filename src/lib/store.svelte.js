@@ -12,6 +12,7 @@ let auth = $state(undefined);
 let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
+let templates = $state([]);
 let user = $derived(
   authUser && users.length && groups.length
     ? users.find(
@@ -75,6 +76,12 @@ export const store = {
   },
   set posts(value) {
     posts = value;
+  },
+  get templates() {
+    return templates;
+  },
+  set templates(value) {
+    templates = value;
   },
   get user() {
     return user;

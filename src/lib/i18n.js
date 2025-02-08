@@ -54,6 +54,10 @@ export class I18n {
   post = () => (this.locale === "ja" ? "投稿" : "Post");
   recentPosts = () => (this.locale === "ja" ? "最近の投稿" : "Recent posts");
   text = () => (this.locale === "ja" ? "文面" : "Text");
+  templates = () => (this.locale === "ja" ? "雛形" : "Templates");
+  template = () => (this.locale === "ja" ? "雛形" : "Template");
+  noTemplate = () =>
+    this.locale === "ja" ? "テンプレートを使用しない" : "Do not use a template";
   preDefinedSchedules = () =>
     this.locale === "ja" ? "事前設定スケジュール" : "Pre-defined schedules";
   dayOfWeek = () => (this.locale === "ja" ? "曜日" : "Day of week");
