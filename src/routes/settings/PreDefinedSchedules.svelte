@@ -2,10 +2,13 @@
   import Content from "../../lib/components/Content.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
+  import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
+  import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
 
   let active = $state(false);
+  let edit = $state(false);
 
   // Fields
   let wd = $state(store.conf.preDefinedSchedules?.wd ?? []);
@@ -69,6 +72,7 @@
     wd = store.conf.preDefinedSchedules?.wd ?? [];
     h = store.conf.preDefinedSchedules?.h ?? [];
     m = store.conf.preDefinedSchedules?.m ?? [];
+    edit = false;
   };
 
   const onSave = async () => {
@@ -81,41 +85,71 @@
 </script>
 
 <h3>{t().preDefinedSchedules()}</h3>
-<Content>
-  <div class="flex flex-row gap-1">
-    <div class="flex flex-col w-1/4">
-      <h5>{t().dayOfWeek()}</h5>
-      <GroupedCheckBox
-        id="preDefinedSchedulesWd"
-        items={wdItems}
-        bind:value={wd}
-      />
+{#if edit}
+  <Content>
+    <div class="flex flex-row gap-1">
+      <div class="flex flex-col w-1/4">
+        <h5>{t().dayOfWeek()}</h5>
+        <GroupedCheckBox
+          id="preDefinedSchedulesWd"
+          items={wdItems}
+          bind:value={wd}
+        />
+      </div>
+      <div class="flex flex-col w-1/4">
+        <h5>{t().hour()}</h5>
+        <GroupedCheckBox
+          id="preDefinedSchedulesH"
+          items={hItems}
+          bind:value={h}
+        />
+      </div>
+      <div class="flex flex-col w-1/4">
+        <h5>{t().minute()}</h5>
+        <GroupedCheckBox
+          id="preDefinedSchedulesM"
+          items={mItems}
+          bind:value={m}
+        />
+      </div>
     </div>
-    <div class="flex flex-col w-1/4">
-      <h5>{t().hour()}</h5>
-      <GroupedCheckBox
-        id="preDefinedSchedulesH"
-        items={hItems}
-        bind:value={h}
-      />
+    <ActionSave
+      id="updateBluesky"
+      {changed}
+      {valid}
+      {onCancel}
+      {onSave}
+      {error}
+      wide
+    />
+  </Content>
+{:else}
+  <Content>
+    <ButtonText
+      id="editPreDefinedSchedules"
+      icon={SvgEdit}
+      label={t().edit()}
+      onClick={() => (edit = true)}
+    />
+    <div class="flex flex-row gap-2">
+      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+        {t().dayOfWeek()}
+      </span>
+      <span class="font-mono">
+        {wd.map((v) => wdItems.find((i) => i.value === v).label).join(" ")}
+      </span>
     </div>
-    <div class="flex flex-col w-1/4">
-      <h5>{t().minute()}</h5>
-      <GroupedCheckBox
-        id="preDefinedSchedulesM"
-        items={mItems}
-        bind:value={m}
-      />
+    <div class="flex flex-row gap-2">
+      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+        {t().hour()}
+      </span>
+      <span class="font-mono">{h.join(", ")}</span>
     </div>
-  </div>
-  <ActionSave
-    id="updateBluesky"
-    {changed}
-    {valid}
-    {onCancel}
-    {onSave}
-    {error}
-    cancelOnlyChanged
-    wide
-  />
-</Content>
+    <div class="flex flex-row gap-2">
+      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+        {t().minute()}
+      </span>
+      <span class="font-mono">{m.join(", ")}</span>
+    </div>
+  </Content>
+{/if}

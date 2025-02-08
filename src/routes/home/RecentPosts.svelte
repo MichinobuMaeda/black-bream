@@ -4,7 +4,13 @@
   import { t, store } from "../../lib/store.svelte.js";
 
   let posts = $derived(
-    store.posts.filter((post) => post.status === "completed").slice(0, 4),
+    store.posts
+      .filter((post) =>
+        Object.values(post.targets ?? {}).some(
+          (value) => value.status === "completed",
+        ),
+      )
+      .slice(0, 8),
   );
 </script>
 

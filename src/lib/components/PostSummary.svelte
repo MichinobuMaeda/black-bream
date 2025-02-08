@@ -4,6 +4,7 @@
   import StatusIcon from "./StatusIcon.svelte";
   import { formatDateTime } from "../datetime.js";
   import { postTargets } from "../firebase.js";
+  import { store } from "../store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -12,6 +13,10 @@
 
   /** @type {Props} */
   let { post } = $props();
+
+  let targets = postTargets.filter((target) =>
+    (store.conf.postTargets ?? []).includes(target),
+  );
 </script>
 
 <div class="flex flex-col lg:flex-row gap-0.5 lg:gap-4">
@@ -21,7 +26,7 @@
       {formatDateTime(post.scheduledFor?.toDate())}
     </a>
     <span class="flex flex-row gap-1">
-      {#each postTargets as target}
+      {#each targets as target}
         {#if Object.keys(post.targets ?? {}).includes(target)}
           <span class="size-5 text-lightPrimary dark:text-darkPrimary">
             <TargetIcon {target} />
