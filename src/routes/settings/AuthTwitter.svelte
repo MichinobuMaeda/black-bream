@@ -21,7 +21,7 @@
   $effect(() => {
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterBearerToken = store.auth?.twitter?.accessToken;
+    twitterBearerToken = store.auth?.twitter?.clientSecret;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   });
 
@@ -54,7 +54,7 @@
   const onCancel = () => {
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterBearerToken = store.auth?.twitter?.accessToken;
+    twitterBearerToken = store.auth?.twitter?.clientSecret;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   };
 
