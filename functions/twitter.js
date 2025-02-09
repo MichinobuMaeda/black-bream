@@ -64,7 +64,7 @@ const post = async (bucket, params, id, { text, files }) => {
     const ret = await axios.post("https://api.x.com/2/tweets", json, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${params.token}`,
+        Authorization: `Bearer ${params.accessToken}`,
       },
     });
 
