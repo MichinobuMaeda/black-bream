@@ -28,7 +28,7 @@ const post = async (bucket, params, id, { text, files }) => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${params.accessToken}`,
+            Authorization: `Bearer ${params.bearerToken}`,
           },
         },
       );
@@ -64,7 +64,7 @@ const post = async (bucket, params, id, { text, files }) => {
     const ret = await axios.post("https://api.x.com/2/tweets", json, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${params.accessToken}`,
+        Authorization: `Bearer ${params.bearerToken}`,
       },
     });
 

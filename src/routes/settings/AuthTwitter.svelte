@@ -8,7 +8,6 @@
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { formatDateTime } from "../../lib/datetime.js";
   import { updateDocument } from "../../lib/firebase.js";
 
   let active = $state(false);
@@ -16,15 +15,13 @@
   // Fields
   let twitterClientId = $state("");
   let twitterClientSecret = $state("");
-  let twitterAccessToken = $state("");
-  let twitterExpiredAt = $state(null);
+  let twitterBearerToken = $state("");
   let twitterEnabled = $state(false);
 
   $effect(() => {
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterAccessToken = store.auth?.twitter?.accessToken;
-    twitterExpiredAt = store.auth?.twitter?.expiredAt;
+    twitterBearerToken = store.auth?.twitter?.accessToken;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   });
 
@@ -34,8 +31,8 @@
   let errorTwitterClientSecret = $derived(
     twitterEnabled && !twitterClientSecret ? t().required() : "",
   );
-  let errorTwitterAccessToken = $derived(
-    twitterEnabled && !twitterAccessToken ? t().required() : "",
+  let errorTwitterBearerToken = $derived(
+    twitterEnabled && !twitterBearerToken ? t().required() : "",
   );
 
   // Actions
@@ -44,19 +41,20 @@
     !active &&
       (twitterClientId !== store.auth?.twitter?.clientId ||
         twitterClientSecret !== store.auth?.twitter?.clientSecret ||
+        errorTwitterBearerToken !== store.auth?.twitter?.bearerToken ||
         twitterEnabled !== !store.auth?.twitter?.deletedAt),
   );
   let valid = $derived(
     !errorTwitterClientId &&
       !errorTwitterClientSecret &&
-      !errorTwitterAccessToken,
+      !errorTwitterBearerToken,
   );
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterAccessToken = store.auth?.twitter?.accessToken;
+    twitterBearerToken = store.auth?.twitter?.accessToken;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   };
 
@@ -64,12 +62,12 @@
     active = true;
     twitterClientId = twitterClientId.trim();
     twitterClientSecret = twitterClientSecret.trim();
-    twitterAccessToken = twitterAccessToken.trim();
+    twitterBearerToken = twitterBearerToken.trim();
     result = await updateDocument("service", "auth", {
       twitter: {
         clientId: twitterClientId,
         clientSecret: twitterClientSecret,
-        accessToken: twitterAccessToken,
+        bearerToken: twitterBearerToken,
         updatedAt: new Date(),
         deletedAt: twitterEnabled ? null : new Date(),
       },
@@ -105,11 +103,11 @@
     </Fields>
     <Fields>
       <TextFieldOutlined
-        id="twitterAccessToken"
-        label="Access Token"
-        bind:value={twitterAccessToken}
-        message={`expired: ${formatDateTime(twitterExpiredAt?.toDate() || "--")}`}
-        error={errorTwitterAccessToken}
+        id="twitterBearerToken"
+        label="Bearer Token"
+        bind:value={twitterBearerToken}
+        message={t().current(store.auth?.twitter?.bearerToken ?? "--")}
+        error={errorTwitterBearerToken}
       />
     </Fields>
   </Wrap>
