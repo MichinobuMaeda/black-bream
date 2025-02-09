@@ -2,6 +2,7 @@ const { logger } = require("firebase-functions/v2");
 
 const mastodon = require("./mastodon.js");
 const bluesky = require("./bluesky.js");
+const twitter = require("./twitter.js");
 const threads = require("./threads.js");
 const instagram = require("./instagram.js");
 
@@ -195,6 +196,9 @@ const post = async (db, bucket, { id, target }) => {
         break;
       case "bluesky":
         ret = await bluesky.post(bucket, params, id, postSnap.data());
+        break;
+      case "twitter":
+        ret = await twitter.post(bucket, params, id, postSnap.data());
         break;
       case "threads":
         ret = await threads.post(bucket, params, id, postSnap.data());
