@@ -595,7 +595,13 @@ export const callFunction = async (name, param) => {
   }
 };
 
-export const postTargets = ["mastodon", "bluesky", "threads", "instagram"];
+export const postTargets = [
+  "mastodon",
+  "bluesky",
+  "twitter",
+  "threads",
+  "instagram",
+];
 
 export const socialLoginProviders = [
   {

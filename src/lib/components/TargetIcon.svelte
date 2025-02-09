@@ -1,6 +1,7 @@
 <script>
   import SvgMastodon from "../icons/SvgMastodon.svelte";
   import SvgBluesky from "../icons/SvgBluesky.svelte";
+  import SvgTwitter from "../icons/SvgTwitter.svelte";
   import SvgThreads from "../icons/SvgThreads.svelte";
   import SvgInstagram from "../icons/SvgInstagram.svelte";
 
@@ -17,6 +18,8 @@
   <SvgMastodon />
 {:else if target === "bluesky"}
   <SvgBluesky />
+{:else if target === "twitter"}
+  <SvgTwitter />
 {:else if target === "threads"}
   <SvgThreads />
 {:else if target === "instagram"}
