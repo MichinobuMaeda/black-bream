@@ -56,7 +56,7 @@
             <span
               class="size-6 text-lightOnBackground dark:text-darkOnBackground"
             >
-              <StatusIcon status={post.targets[target].status} />
+              <StatusIcon status={post.targets[target]?.status} />
             </span>
           </span>
         {/each}

@@ -5,10 +5,11 @@
   import SvgTask from "../icons/SvgTask.svelte";
   import SvgScanDelete from "../icons/SvgScanDelete.svelte";
   import SvgError from "../icons/SvgError.svelte";
+  import SvgUnknownMed from "../icons/SvgUnknownMed.svelte";
 
   /**
    * @typedef {Object} Props
-   * @property {string} status
+   * @property {string} [status]
    */
 
   /** @type {Props} */
@@ -27,4 +28,6 @@
   <SvgScanDelete />
 {:else if status === "failed"}
   <SvgError />
+{:else}
+  <SvgUnknownMed />
 {/if}
