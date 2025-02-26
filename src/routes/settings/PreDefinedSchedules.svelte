@@ -81,6 +81,7 @@
       preDefinedSchedules: { wd, h, m },
     });
     active = false;
+    edit = false;
   };
 </script>
 

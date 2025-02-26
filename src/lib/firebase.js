@@ -1,3 +1,4 @@
+import * as crypto from "node:crypto";
 import { initializeApp } from "firebase/app";
 import {
   initializeAppCheck,
@@ -47,8 +48,15 @@ import {
 } from "firebase/storage";
 import { Jimp } from "jimp";
 
-import { loadEmail, removeEmail, saveEmail } from "./localstorage";
-import { config, reCaptchaKey, region } from "../firebaseConfig";
+import { config, reCaptchaKey, region } from "../firebaseConfig.js";
+import {
+  loadEmail,
+  removeEmail,
+  saveEmail,
+  loadTwitterState,
+  loadTwitterChallenge,
+} from "./localstorage.js";
+import { mimeTypeList } from "./utils.js";
 
 const imageBasePath = "public/posts/";
 
@@ -337,7 +345,7 @@ export const createDocument = async (col, data, setId = false) => {
     new Date()
       .toISOString()
       .replace(/[^0-9]/g, "")
-      .slice(2) + Math.random().toString(36).slice(-6);
+      .slice(2) + crypto.randomBytes(6).toString("hex");
   try {
     let ret = {};
     if (setId) {
@@ -380,8 +388,9 @@ export const getSavedImageUrl = async (id, name) =>
 export const savePostImage = async (id, file) => {
   try {
     const ext = file.name.split(".").pop();
+    const mimeType = mimeTypeList["." + ext] ?? "application/octet-stream";
     const metadata = {
-      contentType: `image/${ext}`,
+      contentType: mimeType,
     };
     const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
     console.log(`saveImage: ${imageRef.fullPath}`);
@@ -390,7 +399,7 @@ export const savePostImage = async (id, file) => {
       await uploadBytes(imageRef, file, metadata);
     } else {
       const image = await Jimp.read(await file.arrayBuffer());
-      image.resize({ w: Math.min(image.width / 2, 1280), h: Jimp.AUTO });
+      image.resize({ w: Math.min(image.width / 2, 1280) });
       const buffer = await image.getBuffer(metadata.contentType);
       await uploadBytes(imageRef, buffer, metadata);
     }
@@ -752,6 +761,75 @@ export const setThreadsLongAccessToken = async (code) => {
       "threads.expiredAt": new Date(
         new Date().getTime() + exchangeData.expires_in * 1000,
       ),
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e };
+  }
+};
+
+/**
+ * Set Threads long access token
+ *
+ * @param {string} status
+ * @param {string} code
+ * @returns {Promise<object>}
+ */
+export const setTwitterAccessToken = async (status, code) => {
+  try {
+    console.log(`setTwitterAccessToken(${status}, ${code})`);
+
+    if (status !== loadTwitterState()) {
+      const err = `invalid state: ${status}`;
+      console.error(err);
+      return { err };
+    }
+
+    if (code === "error") {
+      const err = `invalid code: ${code}`;
+      console.error(err);
+      return { err };
+    }
+
+    const authRef = doc(db, "service", "auth");
+    const auth = await getDoc(authRef);
+    const { clientId, callBackUrl } = auth.get("twitter");
+
+    const formData = new URLSearchParams();
+    formData.append("code", code);
+    formData.append("grant_type", "authorization_code");
+    formData.append("client_id", clientId);
+    formData.append("redirect_uri", callBackUrl);
+    formData.append("code_verifier", loadTwitterChallenge());
+
+    let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
+    });
+
+    if (oauthResp.status !== 200) {
+      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+
+    const oauthData = await oauthResp.json();
+    if (!oauthData.refresh_token) {
+      const err = `/2/oauth2/token: failed to get refresh token ${JSON.stringify(oauthData)}`;
+      console.error(err);
+      return { err };
+    }
+
+    console.log(
+      `setTwitterAccessToken() accessToken: ${oauthData.refresh_token}`,
+    );
+
+    await updateDoc(authRef, {
+      "threads.refreshToken": oauthData.refresh_token,
+      "threads.expiredAt": new Date(new Date().getTime() + 2 * 3600 * 1000),
       updatedAt: new Date(),
     });
 

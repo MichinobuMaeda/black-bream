@@ -1,131 +1,211 @@
 <script>
+  import * as crypto from "node:crypto";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
+  import IconButton from "../../lib/coarse-paper/IconButton.svelte";
+  import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
+  import SvgUnfoldMore from "../../lib/icons/SvgUnfoldMore.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
+  import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
+  import {
+    saveTwitterState,
+    saveTwitterChallenge,
+  } from "../../lib/localstorage";
 
+  let edit = $state(false);
   let active = $state(false);
 
   // Fields
+  let twitterCallBackUrl = $state("");
   let twitterClientId = $state("");
   let twitterClientSecret = $state("");
-  let twitterBearerToken = $state("");
+  let twitterAccessToken = $state("");
+  let twitterRefreshToken = $state("");
   let twitterEnabled = $state(false);
 
   $effect(() => {
+    twitterCallBackUrl = store.auth?.twitter?.callBackUrl;
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterBearerToken = store.auth?.twitter?.clientSecret;
+    twitterAccessToken = store.auth?.twitter?.accessToken;
+    twitterRefreshToken = store.auth?.twitter?.refreshToken;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   });
 
-  let errorTwitterClientId = $derived(
+  let errorTwitterService = $derived(
+    twitterEnabled && !twitterCallBackUrl ? t().required() : "",
+  );
+  let errorTwitterIdentifier = $derived(
     twitterEnabled && !twitterClientId ? t().required() : "",
   );
-  let errorTwitterClientSecret = $derived(
+  let errorTwitterPassword = $derived(
     twitterEnabled && !twitterClientSecret ? t().required() : "",
   );
-  let errorTwitterBearerToken = $derived(
-    twitterEnabled && !twitterBearerToken ? t().required() : "",
+
+  let twitterAccessTokenIsValid = $derived(twitterAccessToken);
+
+  let twitterAccessTokenReady = $derived(
+    store.auth?.twitter?.callBackUrl &&
+      store.auth?.twitter?.clientId &&
+      store.auth?.twitter?.clientSecret,
   );
 
   // Actions
   let result = $state(null);
   let changed = $derived(
     !active &&
-      (twitterClientId !== store.auth?.twitter?.clientId ||
+      (twitterCallBackUrl !== store.auth?.twitter?.callBackUrl ||
+        twitterClientId !== store.auth?.twitter?.clientId ||
         twitterClientSecret !== store.auth?.twitter?.clientSecret ||
-        errorTwitterBearerToken !== store.auth?.twitter?.bearerToken ||
         twitterEnabled !== !store.auth?.twitter?.deletedAt),
   );
   let valid = $derived(
-    !errorTwitterClientId &&
-      !errorTwitterClientSecret &&
-      !errorTwitterBearerToken,
+    !errorTwitterService && !errorTwitterIdentifier && !errorTwitterPassword,
   );
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
+    twitterCallBackUrl = store.auth?.twitter?.callBackUrl;
     twitterClientId = store.auth?.twitter?.clientId;
     twitterClientSecret = store.auth?.twitter?.clientSecret;
-    twitterBearerToken = store.auth?.twitter?.clientSecret;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
+    edit = false;
   };
 
   const onSave = async () => {
     active = true;
+    twitterCallBackUrl = twitterCallBackUrl.trim();
     twitterClientId = twitterClientId.trim();
     twitterClientSecret = twitterClientSecret.trim();
-    twitterBearerToken = twitterBearerToken.trim();
     result = await updateDocument("service", "auth", {
       twitter: {
+        callBackUrl: twitterCallBackUrl,
         clientId: twitterClientId,
         clientSecret: twitterClientSecret,
-        bearerToken: twitterBearerToken,
         updatedAt: new Date(),
         deletedAt: twitterEnabled ? null : new Date(),
       },
     });
     active = false;
   };
+
+  const getTwitterAccessToken = async () => {
+    const state = crypto.randomBytes(16).toString("hex");
+    saveTwitterState(state);
+    const challenge = crypto.randomBytes(32).toString("hex");
+    saveTwitterChallenge(challenge);
+
+    const url =
+      "https://x.com/i/oauth2/authorize" +
+      "?response_type=code" +
+      `&client_id=${twitterClientId}` +
+      `&redirect_uri=${twitterCallBackUrl}` +
+      "&scope=tweet.write" +
+      `&state=${state}` +
+      `&code_challenge=${challenge}` +
+      "&code_challenge_method=plain";
+
+    window.open(url, "_system");
+  };
 </script>
 
 <h3>
-  <span class="size-6"><TargetIcon target="twitter" /></span>
-  Twitter
+  <span class="flex flex-row items-center gap-2 grow">
+    <span class="size-6"><TargetIcon target="twitter" /></span>
+    Twitter
+  </span>
+  {#if edit}
+    <IconButton
+      id="twitterCancelEdit"
+      icon={SvgUnfoldLess}
+      onClick={onCancel}
+    />
+  {:else}
+    <IconButton
+      id="twitterEdit"
+      icon={SvgUnfoldMore}
+      onClick={() => (edit = true)}
+    />
+  {/if}
 </h3>
-<Content>
-  <Wrap>
-    <Fields>
-      <TextFieldOutlined
-        id="twitterClientId"
-        label="Client ID"
-        type="text"
-        bind:value={twitterClientId}
-        message={t().current(store.auth?.twitter?.clientId ?? "--")}
-        error={errorTwitterClientId}
-      />
-    </Fields>
-    <Fields>
-      <PasswordFieldOutlined
-        id="twitterClientSecret"
-        label="Client Secret"
-        bind:value={twitterClientSecret}
-        message={t().current(store.auth?.twitter?.clientSecret ?? "--")}
-        error={errorTwitterClientSecret}
-      />
-    </Fields>
-    <Fields>
-      <TextFieldOutlined
-        id="twitterBearerToken"
-        label="Bearer Token"
-        bind:value={twitterBearerToken}
-        message={t().current(store.auth?.twitter?.bearerToken ?? "--")}
-        error={errorTwitterBearerToken}
-      />
-    </Fields>
-  </Wrap>
-  <Wrap>
-    <div class="flex grow gap-4 items-center">
-      <Switch id="twitterDisabled" bind:checked={twitterEnabled} />
-      {t().enabled()}
-    </div>
-    <Fields>
-      <ActionSave
-        id="updateThreads"
-        {changed}
-        {valid}
-        {onCancel}
-        {onSave}
-        {error}
-        cancelOnlyChanged
-      />
-    </Fields>
-  </Wrap>
-</Content>
+{#if edit}
+  <Content>
+    <Wrap>
+      <Fields>
+        <TextFieldOutlined
+          id="twitterClientId"
+          label="Client ID"
+          type="text"
+          bind:value={twitterClientId}
+          message={t().current(store.auth?.twitter?.clientId ?? "--")}
+          error={errorTwitterIdentifier}
+        />
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="twitterClientSecret"
+          label="Client Secret"
+          bind:value={twitterClientSecret}
+          message={t().current(store.auth?.twitter?.clientSecret ?? "--")}
+          error={errorTwitterPassword}
+        />
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="twitterCallBackUrl"
+          label="Call back URL"
+          type="text"
+          bind:value={twitterCallBackUrl}
+          message={t().current(store.auth?.twitter?.callBackUrl ?? "--")}
+          error={errorTwitterService}
+        />
+      </Fields>
+      <Fields>
+        {#if twitterAccessTokenIsValid}
+          <TextFieldOutlined
+            id="twitterAccessToken"
+            label="Access Token"
+            bind:value={twitterAccessToken}
+            message={t().current(store.auth?.twitter?.accessToken ?? "--")}
+            readonly
+          />
+          <TextFieldOutlined
+            id="twitterRefreshToken"
+            label="Refresh Token"
+            bind:value={twitterRefreshToken}
+            message={t().current(store.auth?.twitter?.refreshToken ?? "--")}
+            readonly
+          />
+        {:else if twitterAccessTokenReady && !changed}
+          <ButtonOutlined
+            id="getTwitterAccessToken"
+            label={t().getAccessToken()}
+            onClick={getTwitterAccessToken}
+          />
+        {/if}
+      </Fields>
+    </Wrap>
+    <Wrap>
+      <div class="flex grow gap-4 items-center">
+        <Switch id="twitterDisabled" bind:checked={twitterEnabled} />
+        {t().enabled()}
+      </div>
+      <Fields>
+        <ActionSave
+          id="updateTwitter"
+          {changed}
+          {valid}
+          {onCancel}
+          {onSave}
+          {error}
+        />
+      </Fields>
+    </Wrap>
+  </Content>
+{/if}

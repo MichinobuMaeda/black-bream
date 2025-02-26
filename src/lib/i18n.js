@@ -20,7 +20,7 @@ export class I18n {
   /**
    * Create a new instance of I18n
    *
-   * @param {StringFormat} locale
+   * @param {string} locale
    */
   constructor(locale) {
     this.locale = locale;

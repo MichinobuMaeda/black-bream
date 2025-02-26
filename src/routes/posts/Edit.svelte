@@ -1,5 +1,5 @@
 <script>
-  import { pop } from "svelte-spa-router";
+  import { pop, push } from "svelte-spa-router";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
@@ -16,6 +16,7 @@
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import {
+    createDocument,
     updateDocument,
     savePostImage,
     getSavedImageUrl,
@@ -96,34 +97,51 @@
   let valid = $derived(!errorText && !errorTargets && !errorSchedule);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
-  const onCancel = async () => {
+  const onCancel = async (next = null) => {
     text = post?.text;
     targets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
     schedule = formatISO(post?.scheduledFor?.toDate());
-    pop();
+    if (next) {
+      await push(`/posts/${next}`);
+    } else {
+      await pop();
+    }
   };
 
   const onSave = async () => {
+    let next = null;
     active = true;
     text = text.trim();
 
-    if (!deletedSavedImages) {
-      result = await updateDocument("posts", post?.id, {
-        text,
-        scheduledFor: new Date(schedule),
-        deletedAt: deleted ? new Date() : null,
-      });
+    const data = deletedSavedImages
+      ? {
+          text,
+          files:
+            selectedImages && selectedImages[0]
+              ? [`1.${selectedImages[0].name.split(".").pop()}`]
+              : [],
+          scheduledFor: new Date(schedule),
+          deletedAt: deleted ? new Date() : null,
+        }
+      : {
+          text,
+          scheduledFor: new Date(schedule),
+          deletedAt: deleted ? new Date() : null,
+        };
+
+    if (!deleted && !!post?.deletedAt) {
+      result = await createDocument("posts", data, true);
+      next = result.data?.id;
+    } else if (
+      !deleted &&
+      new Date(schedule).getTime() !== post?.scheduledFor?.toDate().getTime()
+    ) {
+      await updateDocument("posts", post?.id, { deletedAt: new Date() });
+      result = await createDocument("posts", data, true);
+      next = result.data?.id;
     } else {
-      result = await updateDocument("posts", post?.id, {
-        text,
-        files:
-          selectedImages && selectedImages[0]
-            ? [`1.${selectedImages[0].name.split(".").pop()}`]
-            : [],
-        scheduledFor: new Date(schedule),
-        deletedAt: deleted ? new Date() : null,
-      });
+      result = await updateDocument("posts", post?.id, data);
     }
 
     if (!result.err && selectedImages && selectedImages[0]) {
@@ -132,7 +150,7 @@
 
     active = false;
     if (!result.err) {
-      await onCancel();
+      await onCancel(next);
     }
   };
 </script>

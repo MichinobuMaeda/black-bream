@@ -1,5 +1,8 @@
 <script>
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
+  import IconButton from "../../lib/coarse-paper/IconButton.svelte";
+  import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
+  import SvgUnfoldMore from "../../lib/icons/SvgUnfoldMore.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
@@ -9,6 +12,7 @@
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
 
+  let edit = $state(false);
   let active = $state(false);
 
   // Fields
@@ -43,6 +47,7 @@
   const onCancel = () => {
     mastodonToken = store.auth?.mastodon?.token;
     mastodonEnabled = !store.auth?.mastodon?.deletedAt;
+    edit = false;
   };
 
   const onSave = async () => {
@@ -62,45 +67,61 @@
 </script>
 
 <h3>
-  <span class="size-6"><TargetIcon target="mastodon" /></span>
-  Mastodon
+  <span class="flex flex-row items-center gap-2 grow">
+    <span class="size-6"><TargetIcon target="mastodon" /></span>
+    Mastodon
+  </span>
+  {#if edit}
+    <IconButton
+      id="instagramCancelEdit"
+      icon={SvgUnfoldLess}
+      onClick={onCancel}
+    />
+  {:else}
+    <IconButton
+      id="instagramEdit"
+      icon={SvgUnfoldMore}
+      onClick={() => (edit = true)}
+    />
+  {/if}
 </h3>
-<Content>
-  <Wrap>
-    <Fields>
-      <TextFieldOutlined
-        id="mastodonToken"
-        label="Access token"
-        type="text"
-        bind:value={mastodonToken}
-        message={t().current(store.auth?.mastodon?.token ?? "--")}
-        error={errorMastodonToken}
-      />
-    </Fields>
-    <Fields>
-      <TextFieldOutlined
-        id="mastodonUrl"
-        label="URL"
-        type="text"
-        bind:value={mastodonUrl}
-        message={t().current(store.auth?.mastodon?.url ?? "--")}
-        error={errorMastodonUrl}
-      />
-    </Fields>
-    <div class="flex grow gap-4 items-center">
-      <Switch id="mastodonDisabled" bind:checked={mastodonEnabled} />
-      {t().enabled()}
-    </div>
-    <Fields>
-      <ActionSave
-        id="updateMastodon"
-        {changed}
-        {valid}
-        {onCancel}
-        {onSave}
-        {error}
-        cancelOnlyChanged
-      />
-    </Fields>
-  </Wrap>
-</Content>
+{#if edit}
+  <Content>
+    <Wrap>
+      <Fields>
+        <TextFieldOutlined
+          id="mastodonToken"
+          label="Access token"
+          type="text"
+          bind:value={mastodonToken}
+          message={t().current(store.auth?.mastodon?.token ?? "--")}
+          error={errorMastodonToken}
+        />
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="mastodonUrl"
+          label="URL"
+          type="text"
+          bind:value={mastodonUrl}
+          message={t().current(store.auth?.mastodon?.url ?? "--")}
+          error={errorMastodonUrl}
+        />
+      </Fields>
+      <div class="flex grow gap-4 items-center">
+        <Switch id="mastodonDisabled" bind:checked={mastodonEnabled} />
+        {t().enabled()}
+      </div>
+      <Fields>
+        <ActionSave
+          id="updateMastodon"
+          {changed}
+          {valid}
+          {onCancel}
+          {onSave}
+          {error}
+        />
+      </Fields>
+    </Wrap>
+  </Content>
+{/if}

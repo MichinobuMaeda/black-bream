@@ -35,7 +35,7 @@ const localKeyEmail = "black_bream_email";
  * @returns {string}
  */
 export const loadEmail = () => {
-  return window.localStorage.getItem(localKeyEmail) ?? "ja";
+  return window.localStorage.getItem(localKeyEmail);
 };
 
 /**
@@ -55,4 +55,54 @@ export const removeEmail = () => {
  */
 export const saveEmail = (value) => {
   window.localStorage.setItem(localKeyEmail, value);
+};
+
+/**
+ * The key used to store the twitter auth state code in local storage.
+ * @constant {string}
+ */
+const localKeyTwitterState = "black_bream_twitter_state";
+
+/**
+ * Load the twitter auth state code from the local storage
+ *
+ * @returns {string}
+ */
+export const loadTwitterState = () => {
+  return window.localStorage.getItem(localKeyTwitterState);
+};
+
+/**
+ * Save the twitter auth state code to the local storage
+ *
+ * @param {string} value
+ * @returns {void}
+ */
+export const saveTwitterState = (value) => {
+  window.localStorage.setItem(localKeyTwitterState, value);
+};
+
+/**
+ * The key used to store the twitter auth challenge code in local storage.
+ * @constant {string}
+ */
+const localKeyTwitterChallenge = "black_bream_twitter_challenge";
+
+/**
+ * Load the twitter auth state code from the local storage
+ *
+ * @returns {string}
+ */
+export const loadTwitterChallenge = () => {
+  return window.localStorage.getItem(localKeyTwitterChallenge);
+};
+
+/**
+ * Save the twitter auth state code to the local storage
+ *
+ * @param {string} value
+ * @returns {void}
+ */
+export const saveTwitterChallenge = (value) => {
+  window.localStorage.setItem(localKeyTwitterChallenge, value);
 };

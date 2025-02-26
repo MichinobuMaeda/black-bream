@@ -19,10 +19,10 @@
   <SiteDescription />
 {/if}
 {#if store.admin}
-  <LoginMethods />
   <AuthMastodon />
   <AuthBluesky />
   <AuthTwitter />
   <AuthThreads />
   <AuthInstagram />
+  <LoginMethods />
 {/if}

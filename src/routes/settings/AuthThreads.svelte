@@ -1,10 +1,12 @@
 <script>
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
+  import IconButton from "../../lib/coarse-paper/IconButton.svelte";
+  import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
+  import SvgUnfoldMore from "../../lib/icons/SvgUnfoldMore.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import PasswordFieldOutlined from "../../lib/coarse-paper/PasswordFieldOutlined.svelte";
   import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
@@ -12,6 +14,7 @@
   import { formatDateTime } from "../../lib/datetime.js";
   import { updateDocument } from "../../lib/firebase.js";
 
+  let edit = $state(false);
   let active = $state(false);
 
   // Fields
@@ -79,6 +82,7 @@
     threadsClientId = store.auth?.threads?.clientId;
     threadsClientSecret = store.auth?.threads?.clientSecret;
     threadsEnabled = !store.auth?.threads?.deletedAt;
+    edit = false;
   };
 
   const onSave = async () => {
@@ -100,73 +104,89 @@
 </script>
 
 <h3>
-  <span class="size-6"><TargetIcon target="threads" /></span>
-  Threads
+  <span class="flex flex-row items-center gap-2 grow">
+    <span class="size-6"><TargetIcon target="threads" /></span>
+    Threads
+  </span>
+  {#if edit}
+    <IconButton
+      id="threadsCancelEdit"
+      icon={SvgUnfoldLess}
+      onClick={onCancel}
+    />
+  {:else}
+    <IconButton
+      id="threadsEdit"
+      icon={SvgUnfoldMore}
+      onClick={() => (edit = true)}
+    />
+  {/if}
 </h3>
-<Content>
-  <Wrap>
-    <Fields>
-      <TextFieldOutlined
-        id="threadsClientId"
-        label="Client ID"
-        type="text"
-        bind:value={threadsClientId}
-        message={t().current(store.auth?.threads?.clientId ?? "--")}
-        error={errorThreadsIdentifier}
-      />
-    </Fields>
-    <Fields>
-      <PasswordFieldOutlined
-        id="threadsClientSecret"
-        label="Client Secret"
-        bind:value={threadsClientSecret}
-        message={t().current(store.auth?.threads?.clientSecret ?? "--")}
-        error={errorThreadsPassword}
-      />
-    </Fields>
-    <Fields>
-      <TextFieldOutlined
-        id="threadsCallBackUrl"
-        label="Call back URL"
-        type="text"
-        bind:value={threadsCallBackUrl}
-        message={t().current(store.auth?.threads?.callBackUrl ?? "--")}
-        error={errorThreadsService}
-      />
-    </Fields>
-    <Fields>
-      {#if threadsAccessTokenIsValid}
-        <PasswordFieldOutlined
-          id="threadsAccessToken"
-          label="Access Token"
-          bind:value={threadsAccessToken}
-          message={`expired: ${formatDateTime(threadsExpiredAt?.toDate() || "--")}`}
-          readonly
+{#if edit}
+  <Content>
+    <Wrap>
+      <Fields>
+        <TextFieldOutlined
+          id="threadsClientId"
+          label="Client ID"
+          type="text"
+          bind:value={threadsClientId}
+          message={t().current(store.auth?.threads?.clientId ?? "--")}
+          error={errorThreadsIdentifier}
         />
-      {:else if threadsAccessTokenReady && !changed}
-        <ButtonOutlined
-          id="getThreadsAccessToken"
-          label={t().getAccessToken()}
-          onClick={() => window.open(url, "_system")}
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="threadsClientSecret"
+          label="Client Secret"
+          bind:value={threadsClientSecret}
+          message={t().current(store.auth?.threads?.clientSecret ?? "--")}
+          error={errorThreadsPassword}
         />
-      {/if}
-    </Fields>
-  </Wrap>
-  <Wrap>
-    <div class="flex grow gap-4 items-center">
-      <Switch id="threadsDisabled" bind:checked={threadsEnabled} />
-      {t().enabled()}
-    </div>
-    <Fields>
-      <ActionSave
-        id="updateThreads"
-        {changed}
-        {valid}
-        {onCancel}
-        {onSave}
-        {error}
-        cancelOnlyChanged
-      />
-    </Fields>
-  </Wrap>
-</Content>
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="threadsCallBackUrl"
+          label="Call back URL"
+          type="text"
+          bind:value={threadsCallBackUrl}
+          message={t().current(store.auth?.threads?.callBackUrl ?? "--")}
+          error={errorThreadsService}
+        />
+      </Fields>
+      <Fields>
+        {#if threadsAccessTokenIsValid}
+          <TextFieldOutlined
+            id="threadsAccessToken"
+            label="Access Token"
+            bind:value={threadsAccessToken}
+            message={`expired: ${formatDateTime(threadsExpiredAt?.toDate() || "--")}`}
+            readonly
+          />
+        {:else if threadsAccessTokenReady && !changed}
+          <ButtonOutlined
+            id="getThreadsAccessToken"
+            label={t().getAccessToken()}
+            onClick={() => window.open(url, "_system")}
+          />
+        {/if}
+      </Fields>
+    </Wrap>
+    <Wrap>
+      <div class="flex grow gap-4 items-center">
+        <Switch id="threadsDisabled" bind:checked={threadsEnabled} />
+        {t().enabled()}
+      </div>
+      <Fields>
+        <ActionSave
+          id="updateThreads"
+          {changed}
+          {valid}
+          {onCancel}
+          {onSave}
+          {error}
+        />
+      </Fields>
+    </Wrap>
+  </Content>
+{/if}
