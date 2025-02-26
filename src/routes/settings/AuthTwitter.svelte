@@ -95,7 +95,7 @@
     active = false;
   };
 
-  const getTwitterAccessToken = async () => {
+  const getTwitterAccessToken = () => {
     const state = crypto.randomBytes(16).toString("hex");
     saveTwitterState(state);
     const challenge = crypto.randomBytes(32).toString("hex");
@@ -186,7 +186,7 @@
           <ButtonOutlined
             id="getTwitterAccessToken"
             label={t().getAccessToken()}
-            onClick={getTwitterAccessToken}
+            onClick={() => getTwitterAccessToken()}
           />
         {/if}
       </Fields>
