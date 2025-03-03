@@ -29,14 +29,33 @@
   });
 
   $effect(() => {
-    if (
-      store.authUser &&
-      store.users.length &&
-      store.groups.length &&
-      !store.user
-    ) {
-      console.error("No privileges: ${store.authUser.uid}");
-      unsubscribeUserData(store);
+    if (store.authUser && store.users.length && store.groups.length) {
+      store.user = store.users.find(
+        (user) =>
+          user.id === store.authUser.uid &&
+          !user.deletedAt &&
+          !user.restrictedAt,
+      );
+
+      if (store.user) {
+        store.admin = !!store.groups
+          .find((group) => group.id === "admins")
+          ?.users.includes(store.user?.id);
+        store.manager = !!store.groups
+          .find((group) => group.id === "managers")
+          ?.users.includes(store.user?.id);
+        store.operator = !!store.groups
+          .find((group) => group.id === "operators")
+          ?.users.includes(store.user?.id);
+      } else {
+        console.error("No privileges: ${store.authUser.uid}");
+        unsubscribeUserData(store);
+      }
+    } else {
+      store.user = undefined;
+      store.admin = false;
+      store.manager = false;
+      store.operator = false;
     }
   });
 </script>

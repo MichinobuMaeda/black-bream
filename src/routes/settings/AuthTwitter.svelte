@@ -1,5 +1,5 @@
 <script>
-  import * as crypto from "node:crypto";
+  import { nanoid } from "nanoid";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -96,9 +96,9 @@
   };
 
   const getTwitterAccessToken = () => {
-    const state = crypto.randomBytes(16).toString("hex");
+    const state = nanoid(16);
     saveTwitterState(state);
-    const challenge = crypto.randomBytes(32).toString("hex");
+    const challenge = nanoid(32);
     saveTwitterChallenge(challenge);
 
     const url =

@@ -13,26 +13,10 @@ let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
 let templates = $state([]);
-let user = $derived(
-  authUser && users.length && groups.length
-    ? users.find(
-        (user) =>
-          user.id === authUser.uid && !user.deletedAt && !user.restrictedAt,
-      )
-    : undefined,
-);
-let admin = $derived(
-  groups.find((group) => group.id === "admins")?.users.includes(user?.id) ??
-    false,
-);
-let manager = $derived(
-  groups.find((group) => group.id === "managers")?.users.includes(user?.id) ??
-    false,
-);
-let operator = $derived(
-  groups.find((group) => group.id === "operators")?.users.includes(user?.id) ??
-    false,
-);
+let user = $state(undefined);
+let admin = $state(false);
+let manager = $state(false);
+let operator = $state(false);
 
 export const store = {
   get locale() {
@@ -86,13 +70,25 @@ export const store = {
   get user() {
     return user;
   },
+  set user(value) {
+    user = value;
+  },
   get admin() {
     return admin;
+  },
+  set admin(value) {
+    admin = value;
   },
   get manager() {
     return manager;
   },
+  set manager(value) {
+    manager = value;
+  },
   get operator() {
     return operator;
+  },
+  set operator(value) {
+    operator = value;
   },
 };

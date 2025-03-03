@@ -1,4 +1,4 @@
-import * as crypto from "node:crypto";
+import { nanoid } from "nanoid";
 import { initializeApp } from "firebase/app";
 import {
   initializeAppCheck,
@@ -345,7 +345,7 @@ export const createDocument = async (col, data, setId = false) => {
     new Date()
       .toISOString()
       .replace(/[^0-9]/g, "")
-      .slice(2) + crypto.randomBytes(6).toString("hex");
+      .slice(2) + nanoid(6);
   try {
     let ret = {};
     if (setId) {
