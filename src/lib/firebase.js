@@ -48,13 +48,7 @@ import {
 } from "firebase/storage";
 
 import { config, reCaptchaKey, region } from "../firebaseConfig.js";
-import {
-  loadEmail,
-  removeEmail,
-  saveEmail,
-  loadTwitterState,
-  loadTwitterChallenge,
-} from "./localstorage.js";
+import { loadEmail, removeEmail, saveEmail } from "./localstorage.js";
 import { mimeTypeList } from "./utils.js";
 
 const imageBasePath = "public/posts/";
@@ -753,76 +747,6 @@ export const setThreadsLongAccessToken = async (code) => {
       "threads.expiredAt": new Date(
         new Date().getTime() + exchangeData.expires_in * 1000,
       ),
-      updatedAt: new Date(),
-    });
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e };
-  }
-};
-
-/**
- * Set Threads long access token
- *
- * @param {string} status
- * @param {string} code
- * @returns {Promise<object>}
- */
-export const setTwitterAccessToken = async (status, code) => {
-  try {
-    console.log(`setTwitterAccessToken(${status}, ${code})`);
-
-    if (status !== loadTwitterState()) {
-      const err = `invalid state: ${status}`;
-      console.error(err);
-      return { err };
-    }
-
-    if (code === "error") {
-      const err = `invalid code: ${code}`;
-      console.error(err);
-      return { err };
-    }
-
-    const authRef = doc(db, "service", "auth");
-    const auth = await getDoc(authRef);
-    const { clientId, callBackUrl } = auth.get("twitter");
-
-    const formData = new URLSearchParams();
-    formData.append("code", code);
-    formData.append("grant_type", "authorization_code");
-    formData.append("client_id", clientId);
-    formData.append("redirect_uri", callBackUrl);
-    formData.append("code_verifier", loadTwitterChallenge());
-
-    let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData,
-    });
-
-    if (oauthResp.status !== 200) {
-      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-
-    const oauthData = await oauthResp.json();
-    if (!oauthData.refresh_token) {
-      const err = `/2/oauth2/token: failed to get refresh token ${JSON.stringify(oauthData)}`;
-      console.error(err);
-      return { err };
-    }
-
-    console.log(
-      `setTwitterAccessToken() refresh_token: ${oauthData.refresh_token}`,
-    );
-
-    await updateDoc(authRef, {
-      "threads.accessToken": oauthData.access_token,
-      "threads.refreshToken": oauthData.refresh_token,
-      "threads.expiredAt": new Date(new Date().getTime() + 2 * 3600 * 1000),
       updatedAt: new Date(),
     });
 

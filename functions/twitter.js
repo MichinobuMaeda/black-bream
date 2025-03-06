@@ -4,6 +4,75 @@ const axios = require("axios");
 const { getMediaAsBlob } = require("./utils.js");
 
 /**
+ * Set access token
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} data
+ * @returns {Promise<object>}
+ */
+const setAccessToken = async (db, { status, code, challenge }) => {
+  const expiredAt = new Date(new Date().getTime() + 2 * 3600 * 1000);
+  try {
+    console.log(JSON.stringify({ status, code, challenge }));
+
+    if (!status || status === "ng") {
+      const err = `invalid state: ${status}`;
+      console.error(err);
+      return { err };
+    }
+
+    if (!code || code === "error") {
+      const err = `invalid code: ${code}`;
+      console.error(err);
+      return { err };
+    }
+
+    if (!challenge) {
+      const err = `invalid challenge: ${challenge}`;
+      console.error(err);
+      return { err };
+    }
+
+    const authRef = db.collection("service").doc("auth");
+    const auth = await authRef.get();
+    const { clientId, callBackUrl } = auth.get("twitter");
+
+    const formData = new URLSearchParams();
+    formData.append("code", code);
+    formData.append("grant_type", "authorization_code");
+    formData.append("client_id", clientId);
+    formData.append("redirect_uri", callBackUrl);
+    formData.append("code_verifier", challenge);
+
+    let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
+    });
+
+    if (oauthResp.status !== 200) {
+      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+
+    const oauthData = await oauthResp.json();
+    console.log(JSON.stringify(oauthData));
+
+    await authRef.update({
+      "twitter.accessToken": oauthData.access_token,
+      "twitter.refreshToken": oauthData.refresh_token,
+      "twitter.expiredAt": expiredAt,
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+/**
  * Post to Twitter
  *
  * @param {Bucket} bucket
@@ -82,4 +151,4 @@ const post = async (bucket, params, id, { text, files }) => {
   }
 };
 
-module.exports = { post };
+module.exports = { setAccessToken, post };

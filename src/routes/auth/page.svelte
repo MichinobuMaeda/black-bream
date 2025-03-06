@@ -1,11 +1,11 @@
 <script>
   import { push } from "svelte-spa-router";
   import Content from "../../lib/components/Content.svelte";
+  import { setThreadsLongAccessToken, callFunction } from "../../lib/firebase";
   import {
-    setThreadsLongAccessToken,
-    setTwitterAccessToken,
-  } from "../../lib/firebase";
-
+    loadTwitterState,
+    loadTwitterChallenge,
+  } from "../../lib/localstorage.js";
   /**
    * @typedef {Object} Props
    * @param {object} params
@@ -38,15 +38,22 @@
     case "twitter":
       switch (params.action) {
         case "callback":
-          if (params.status !== "ng") {
-            (async () => {
-              result = await setTwitterAccessToken(params.status, params.data);
-              if (!result.err) {
-                push("/settings");
-              }
-            })();
-          } else {
-            result = { err: params.data };
+          {
+            const param = {
+              status: loadTwitterState(),
+              challenge: loadTwitterChallenge(),
+              code: params.data,
+            };
+            if (params.status === param.status) {
+              (async () => {
+                result = await callFunction("setTwitterAccessToken", param);
+                if (!result.err) {
+                  push("/settings");
+                }
+              })();
+            } else {
+              result = { err: params.data };
+            }
           }
           break;
         default:
