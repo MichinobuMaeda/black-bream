@@ -106,7 +106,7 @@
       "?response_type=code" +
       `&client_id=${twitterClientId}` +
       `&redirect_uri=${twitterCallBackUrl}` +
-      "&scope=tweet.write" +
+      "&scope=tweet.write%20offline.access" +
       `&state=${state}` +
       `&code_challenge=${challenge}` +
       "&code_challenge_method=plain";

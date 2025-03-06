@@ -11,7 +11,6 @@ const { getMediaAsBlob } = require("./utils.js");
  * @returns {Promise<object>}
  */
 const setAccessToken = async (db, { status, code, challenge }) => {
-  const expiredAt = new Date(new Date().getTime() + 2 * 3600 * 1000);
   try {
     console.log(JSON.stringify({ status, code, challenge }));
 
@@ -62,10 +61,13 @@ const setAccessToken = async (db, { status, code, challenge }) => {
 
     const oauthData = await oauthResp.json();
     console.log(JSON.stringify(oauthData));
+    const expiredAt = new Date(
+      new Date().getTime() + oauthData.expires_in * 1000,
+    );
 
     await authRef.update({
-      "twitter.accessToken": oauthData.access_token,
-      "twitter.refreshToken": oauthData.refresh_token,
+      "twitter.accessToken": oauthData.access_token ?? null,
+      "twitter.refreshToken": oauthData.refresh_token ?? null,
       "twitter.expiredAt": expiredAt,
       updatedAt: new Date(),
     });
