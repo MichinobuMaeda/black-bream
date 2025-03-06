@@ -31,7 +31,7 @@
         case "twitter":
           switch (action) {
             case "callback":
-              status = params.get("status") || "ng";
+              status = params.get("state") || "ng";
               data = params.get("code") || "error";
               break;
             default:
