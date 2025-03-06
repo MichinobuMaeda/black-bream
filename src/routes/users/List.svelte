@@ -25,7 +25,7 @@
   {/if}
 </h3>
 <Content>
-  {#each users as user}
+  {#each users as user (user.id)}
     <a class="flex flex-row gap-1" href="/users/{user.id}" use:link>
       <span class="size-6">
         {#if user.deletedAt}

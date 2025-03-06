@@ -48,7 +48,7 @@
   <Content>
     <Fields>
       <div class="flex flex-wrap gap-3">
-        {#each targets as target}
+        {#each targets as target (target)}
           <span class="flex gap-1">
             <span class="size-6 text-lightPrimary dark:text-darkPrimary">
               <TargetIcon {target} />
@@ -74,6 +74,8 @@
         {#if url}
           <img id="image-saved" class="w-96" alt="selected" src={url} />
         {/if}
+      {:catch}
+        <div>Error loading image</div>
       {/await}
     </Fields>
   </Content>

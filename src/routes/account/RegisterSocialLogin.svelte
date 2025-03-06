@@ -42,7 +42,7 @@
     <ErrorMessage>{t().errorOnDataSend()}</ErrorMessage>
   {/if}
   <Wrap>
-    {#each providers as provider}
+    {#each providers as provider (provider.id)}
       <div class="flex">
         <ButtonFilled
           id={provider.id}

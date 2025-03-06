@@ -41,7 +41,7 @@
     text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant"
 >
   <div class="flex gap-2">
-    {#each locales as locale}
+    {#each locales as locale (locale.value)}
       {@render localeItem(locale.value, locale.label)}
     {/each}
   </div>

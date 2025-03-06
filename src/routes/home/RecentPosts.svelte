@@ -16,7 +16,7 @@
 
 <h3>{t().recentPosts()}</h3>
 <Content>
-  {#each posts as post}
+  {#each posts as post (post.id)}
     <PostSummary {post} />
   {/each}
 </Content>

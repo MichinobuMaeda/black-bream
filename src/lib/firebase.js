@@ -46,7 +46,6 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { Jimp } from "jimp";
 
 import { config, reCaptchaKey, region } from "../firebaseConfig.js";
 import {
@@ -395,14 +394,7 @@ export const savePostImage = async (id, file) => {
     const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
     console.log(`saveImage: ${imageRef.fullPath}`);
 
-    if (file.size < 1000 * 1000) {
-      await uploadBytes(imageRef, file, metadata);
-    } else {
-      const image = await Jimp.read(await file.arrayBuffer());
-      image.resize({ w: Math.min(image.width / 2, 1280) });
-      const buffer = await image.getBuffer(metadata.contentType);
-      await uploadBytes(imageRef, buffer, metadata);
-    }
+    await uploadBytes(imageRef, file, metadata);
 
     return { err: undefined };
   } catch (e) {

@@ -33,7 +33,7 @@
 </h3>
 <h4>{t().memberOf()}</h4>
 <Content>
-  {#each groups as group}
+  {#each groups as group (group.id)}
     <a class="flex flex-row gap-1" href="/groups/{group.id}" use:link>
       <span class="size-6">
         {#if group.deletedAt}

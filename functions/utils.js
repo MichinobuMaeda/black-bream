@@ -1,5 +1,6 @@
 const { logger } = require("firebase-functions/v2");
 const axios = require("axios");
+const sharp = require("sharp");
 const { WritableStream } = require("htmlparser2/WritableStream");
 const { getDownloadURL } = require("firebase-admin/storage");
 
@@ -184,10 +185,35 @@ const getMediaAsBlob = async (bucket, id, file) => {
       };
 };
 
+/**
+ * Reduce image file size
+ *
+ * @param {Uint8Array} image
+ * @param {number} byte
+ * @returns {Uint8Array}
+ */
+const reduceImageSize = (image, byte) => {
+  const size = image.length;
+  if (size <= byte) {
+    return image;
+  }
+  const { width, height } = sharp(image).metadata();
+  const ratio = size / byte;
+  const buffer = Buffer.from(image.buffer);
+  const ret = Uint8Array(
+    sharp(buffer)
+      .resize(width / ratio, height / ratio)
+      .toBuffer(),
+  );
+  logger.info(`Image size reduced from ${size} to ${ret.length}`);
+  return ret;
+};
+
 module.exports = {
   generateLinkCard,
   getMimeTypes,
   getMediaDownloadUrl,
   getMediaAsUint8Array,
   getMediaAsBlob,
+  reduceImageSize,
 };

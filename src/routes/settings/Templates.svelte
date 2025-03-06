@@ -124,7 +124,7 @@
         deleted = false;
       }}
     />
-    {#each templates as item}
+    {#each templates as item (item.id)}
       <div class="flex flex-row gap-4">
         <ButtonText
           id={item.id}

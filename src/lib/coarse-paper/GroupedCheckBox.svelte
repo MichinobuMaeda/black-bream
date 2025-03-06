@@ -10,7 +10,7 @@
   let { id, items, value = $bindable() } = $props();
 </script>
 
-{#each items as item, index}
+{#each items as item, index (item.value)}
   <label
     for={`${id}-${index}`}
     class="cursor-pointer items-start gap-2 text-base
