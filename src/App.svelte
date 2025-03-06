@@ -9,6 +9,46 @@
     subscribeAuthState,
   } from "./lib/firebase.js";
 
+  if (window.location.pathname.startsWith("/auth/")) {
+    const [item, action] = window.location.pathname.split("/").slice(2);
+    const params = new URLSearchParams(window.location.search);
+    let status = "ok";
+    let data = "";
+    switch (item) {
+      case "threads":
+        switch (action) {
+          case "callback":
+            {
+              const code = (params.get("code") || "").replace(/#_/, "");
+              if (code) {
+                status = "ok";
+                data = code;
+              } else {
+                status = "ng";
+                data = params.get("error") || "";
+              }
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+      case "twitter":
+        switch (action) {
+          case "callback":
+            status = params.get("state") || "ng";
+            data = params.get("code") || "error";
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+    window.location.replace(`/#/auth/${item}/${action}/${status}/${data}`);
+  }
+
   store.locale = loadLocale();
   initFirebaseConnections(window.location.href);
   setAuthLocale(store.locale);
