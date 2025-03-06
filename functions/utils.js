@@ -197,9 +197,9 @@ const reduceImageSize = (image, byte) => {
   if (size <= byte) {
     return image;
   }
-  logger.info(`Image size reduced ${size} <= ${byte}`);
   const { width, height } = sharp(image).metadata();
   const ratio = size / byte;
+  logger.info(JSON.stringify({ width, height, size, byte, ratio }));
   const buffer = Buffer.from(image.buffer);
   const ret = Uint8Array(
     sharp(buffer)
