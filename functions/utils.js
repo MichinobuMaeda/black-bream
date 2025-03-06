@@ -194,17 +194,19 @@ const getMediaAsBlob = async (bucket, id, file) => {
  */
 const reduceImageSize = async (image, byte) => {
   const { width, height, size } = await sharp(image).metadata();
+
   if (size <= byte) {
     return image;
   }
-  const ratio = size / byte;
-  logger.info(JSON.stringify({ width, height, size, byte, ratio }));
+
+  logger.info(JSON.stringify({ width, height, size, byte }));
   const buffer = Buffer.from(image.buffer);
+
   const ret = new Uint8Array(
-    sharp(buffer)
+    await sharp(buffer)
       .resize(
-        Math.min(1024, Math.floor(width / ratio)),
-        Math.min(1024, Math.floor(height / ratio)),
+        Math.min(1024, Math.floor((width / size) * byte)),
+        Math.min(1024, Math.floor((height / size) * byte)),
         { fit: "inside" },
       )
       .toBuffer(),
