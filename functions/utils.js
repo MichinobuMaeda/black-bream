@@ -203,7 +203,11 @@ const reduceImageSize = async (image, byte) => {
   const buffer = Buffer.from(image.buffer);
   const ret = Uint8Array(
     sharp(buffer)
-      .resize(width / ratio, height / ratio)
+      .resize(
+        Math.min(1024, Math.floor(width / ratio)),
+        Math.min(1024, Math.floor(height / ratio)),
+        { fit: "inside" },
+      )
       .toBuffer(),
   );
   logger.info(`Image size reduced from ${size} to ${ret.length}`);
