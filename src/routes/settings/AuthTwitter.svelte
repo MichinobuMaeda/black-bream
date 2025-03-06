@@ -27,6 +27,7 @@
   let twitterClientSecret = $state("");
   let twitterAccessToken = $state("");
   let twitterRefreshToken = $state("");
+  let twitterExpiredAt = $state(null);
   let twitterEnabled = $state(false);
 
   $effect(() => {
@@ -35,6 +36,7 @@
     twitterClientSecret = store.auth?.twitter?.clientSecret;
     twitterAccessToken = store.auth?.twitter?.accessToken;
     twitterRefreshToken = store.auth?.twitter?.refreshToken;
+    twitterExpiredAt = store.auth?.twitter?.expiredAt;
     twitterEnabled = !store.auth?.twitter?.deletedAt;
   });
 
@@ -48,7 +50,11 @@
     twitterEnabled && !twitterClientSecret ? t().required() : "",
   );
 
-  let twitterAccessTokenIsValid = $derived(twitterAccessToken);
+  let twitterAccessTokenIsValid = $derived(
+    twitterAccessToken &&
+      twitterExpiredAt &&
+      twitterExpiredAt.toDate() > new Date(),
+  );
 
   let twitterAccessTokenReady = $derived(
     store.auth?.twitter?.callBackUrl &&
