@@ -35,18 +35,22 @@ const setAccessToken = async (db, { status, code, challenge }) => {
 
     const authRef = db.collection("service").doc("auth");
     const auth = await authRef.get();
-    const { clientId, callBackUrl } = auth.get("twitter");
+    const { clientId, clientSecret, callBackUrl } = auth.get("twitter");
+
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
     const formData = new URLSearchParams();
     formData.append("code", code);
     formData.append("grant_type", "authorization_code");
-    formData.append("client_id", clientId);
     formData.append("redirect_uri", callBackUrl);
     formData.append("code_verifier", challenge);
 
     let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${basic}`,
+      },
       body: formData,
     });
 
