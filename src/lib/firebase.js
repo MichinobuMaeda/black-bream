@@ -25,7 +25,6 @@ import {
   connectFirestoreEmulator,
   collection,
   doc,
-  getDoc,
   updateDoc,
   addDoc,
   setDoc,
@@ -680,78 +679,3 @@ export const groupsOfUser = (store, uid) =>
     (group) =>
       (store.manager || !group.deletedAt) && (group.users ?? []).includes(uid),
   );
-
-/**
- * Set Threads long access token
- *
- * @param {string} code
- * @returns {Promise<object>}
- */
-export const setThreadsLongAccessToken = async (code) => {
-  try {
-    console.log(`setThreadsLongAccessToken(${code})`);
-    const authRef = doc(db, "service", "auth");
-    const auth = await getDoc(authRef);
-    const { clientId, clientSecret, callBackUrl } = auth.get("threads");
-
-    const formData = new FormData();
-    formData.append("client_id", clientId);
-    formData.append("client_secret", clientSecret);
-    formData.append("grant_type", "authorization_code");
-    formData.append("redirect_uri", callBackUrl);
-    formData.append("code", code);
-
-    let oauthResp = await fetch(
-      "https://graph.threads.net/oauth/access_token",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-    if (oauthResp.status !== 200) {
-      const err = `/oauth/access_token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-    const oauthData = await oauthResp.json();
-    if (!oauthData.access_token) {
-      const err = "/oauth/access_token: failed to get access token";
-      console.error(err);
-      return { err };
-    }
-    console.log(
-      `setThreadsLongAccessToken() accessToken: ${oauthData.access_token}`,
-    );
-
-    const exchangeResp = await fetch(
-      "https://graph.threads.net/access_token" +
-        "?grant_type=th_exchange_token" +
-        `&client_secret=${clientSecret}` +
-        `&access_token=${oauthData.access_token}`,
-    );
-    if (exchangeResp.status !== 200) {
-      const err = `/access_token: ${exchangeResp.status} ${exchangeResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-    const exchangeData = await exchangeResp.json();
-    if (!exchangeData.access_token) {
-      const err = `/access_token: failed to get access token`;
-      console.error(err);
-      return { err };
-    }
-
-    await updateDoc(authRef, {
-      "threads.accessToken": exchangeData.access_token,
-      "threads.userId": oauthData.user_id,
-      "threads.expiredAt": new Date(
-        new Date().getTime() + exchangeData.expires_in * 1000,
-      ),
-      updatedAt: new Date(),
-    });
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e };
-  }
-};

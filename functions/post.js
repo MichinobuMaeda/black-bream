@@ -198,7 +198,7 @@ const post = async (db, bucket, { id, target }) => {
         ret = await bluesky.post(bucket, params, id, postSnap.data());
         break;
       case "twitter":
-        ret = await twitter.post(bucket, params, id, postSnap.data());
+        ret = await twitter.post(db, bucket, params, id, postSnap.data());
         break;
       case "threads":
         ret = await threads.post(bucket, params, id, postSnap.data());

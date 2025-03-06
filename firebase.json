@@ -34,15 +34,6 @@
             "value": "no-store"
           }
         ]
-      },
-      {
-        "source": "/auth/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store"
-          }
-        ]
       }
     ]
   },

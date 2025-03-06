@@ -1,7 +1,7 @@
 <script>
   import { push } from "svelte-spa-router";
   import Content from "../../lib/components/Content.svelte";
-  import { setThreadsLongAccessToken, callFunction } from "../../lib/firebase";
+  import { callFunction } from "../../lib/firebase";
   import {
     loadTwitterState,
     loadTwitterChallenge,
@@ -22,7 +22,7 @@
         case "callback":
           if (params.status === "ok") {
             (async () => {
-              result = await setThreadsLongAccessToken(params.data);
+              result = await callFunction("setTwitterAccessToken", params.data);
               if (!result.err) {
                 push("/settings");
               }

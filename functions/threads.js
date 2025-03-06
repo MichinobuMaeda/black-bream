@@ -65,6 +65,83 @@ const post = async (bucket, params, id, { text, files }) => {
 };
 
 /**
+ * Set long access token
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} data
+ * @returns {Promise<object>}
+ */
+const setThreadsLongAccessToken = async (db, { code }) => {
+  try {
+    console.log(`setThreadsLongAccessToken(${code})`);
+
+    const authRef = db.collection("service").doc("auth");
+    const auth = await authRef.get();
+    const { clientId, clientSecret, callBackUrl } = auth.get("threads");
+
+    const formData = new FormData();
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+    formData.append("grant_type", "authorization_code");
+    formData.append("redirect_uri", callBackUrl);
+    formData.append("code", code);
+
+    let oauthResp = await fetch(
+      "https://graph.threads.net/oauth/access_token",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+    if (oauthResp.status !== 200) {
+      const err = `/oauth/access_token: ${oauthResp.status} ${oauthResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+    const oauthData = await oauthResp.json();
+    if (!oauthData.access_token) {
+      const err = "/oauth/access_token: failed to get access token";
+      console.error(err);
+      return { err };
+    }
+    console.log(
+      `setThreadsLongAccessToken() accessToken: ${oauthData.access_token}`,
+    );
+
+    const exchangeResp = await fetch(
+      "https://graph.threads.net/access_token" +
+        "?grant_type=th_exchange_token" +
+        `&client_secret=${clientSecret}` +
+        `&access_token=${oauthData.access_token}`,
+    );
+    if (exchangeResp.status !== 200) {
+      const err = `/access_token: ${exchangeResp.status} ${exchangeResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+    const exchangeData = await exchangeResp.json();
+    if (!exchangeData.access_token) {
+      const err = `/access_token: failed to get access token`;
+      console.error(err);
+      return { err };
+    }
+
+    await authRef.update({
+      "threads.accessToken": exchangeData.access_token,
+      "threads.userId": oauthData.user_id,
+      "threads.expiredAt": new Date(
+        new Date().getTime() + exchangeData.expires_in * 1000,
+      ),
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e };
+  }
+};
+
+/**
  * Refresh Threads access token
  *
  * @param {FirebaseFirestore.Firestore} db
@@ -130,4 +207,4 @@ const refreshThreadsAccessToken = async (db) => {
   }
 };
 
-module.exports = { post, refreshThreadsAccessToken };
+module.exports = { post, setThreadsLongAccessToken, refreshThreadsAccessToken };

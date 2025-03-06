@@ -16,6 +16,7 @@ const { getStorage, getDownloadURL } = require("firebase-admin/storage");
 const post = require("./post");
 const { refreshThreadsAccessToken } = require("./threads");
 const account = require("./account");
+const threads = require("./threads");
 const twitter = require("./twitter");
 const deployment = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
@@ -150,9 +151,15 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
   ),
 );
 
+exports.setThreadsLongAccessToken = onCall(optOnCall, ({ data, auth }) =>
+  account.gateForGroupMembers(getFirestore(app), auth, "admins", () =>
+    threads.setThreadsLongAccessToken(getFirestore(app), data),
+  ),
+);
+
 exports.setTwitterAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "admins", () =>
-    twitter.setAccessToken(getFirestore(app), data),
+    twitter.setTwitterAccessToken(getFirestore(app), data),
   ),
 );
 
