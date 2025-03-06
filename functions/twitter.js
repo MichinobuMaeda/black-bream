@@ -20,6 +20,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
     if (retRefresh.err) {
       return { err: retRefresh.err };
     }
+    const accessToken = retRefresh.data ?? params.accessToken;
 
     const mediaIds = [];
     if (files?.length) {
@@ -34,7 +35,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${params.accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
@@ -174,12 +175,12 @@ const refreshTwitterAccessToken = async (db) => {
   try {
     const authRef = db.collection("service").doc("auth");
     const auth = await authRef.get();
-    const { clientId, clientSecret, refreshToken, expiredAt } =
+    const { clientId, clientSecret, refreshToken /* , expiredAt */ } =
       auth.get("twitter");
 
-    if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
-      return { err: undefined };
-    }
+    // if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
+    //   return { err: undefined };
+    // }
 
     const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -214,7 +215,7 @@ const refreshTwitterAccessToken = async (db) => {
       updatedAt: new Date(),
     });
 
-    return { err: undefined };
+    return { err: undefined, data: oauthData.access_token };
   } catch (e) {
     return { err: e.toString() };
   }
