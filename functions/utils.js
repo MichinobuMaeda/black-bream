@@ -192,12 +192,12 @@ const getMediaAsBlob = async (bucket, id, file) => {
  * @param {number} byte
  * @returns {Uint8Array}
  */
-const reduceImageSize = (image, byte) => {
+const reduceImageSize = async (image, byte) => {
   const size = image.length;
   if (size <= byte) {
     return image;
   }
-  const { width, height } = sharp(image).metadata();
+  const { width, height } = await sharp(image).metadata();
   const ratio = size / byte;
   logger.info(JSON.stringify({ width, height, size, byte, ratio }));
   const buffer = Buffer.from(image.buffer);

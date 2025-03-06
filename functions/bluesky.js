@@ -36,7 +36,7 @@ const post = async (bucket, params, id, { text, files }) => {
       const encoding = getMimeTypes(files[0]);
 
       const { data } = await agent.uploadBlob(
-        reduceImageSize(new Uint8Array(result.data), 1000 * 1000),
+        await reduceImageSize(new Uint8Array(result.data), 1000 * 1000),
         { encoding },
       );
 
@@ -57,7 +57,7 @@ const post = async (bucket, params, id, { text, files }) => {
 
           if (response.status === 200) {
             const { data } = await agent.uploadBlob(
-              reduceImageSize(new Uint8Array(response.data), 1000 * 1000),
+              await reduceImageSize(new Uint8Array(response.data), 1000 * 1000),
               { encoding },
             );
             thumb = data.blob;
