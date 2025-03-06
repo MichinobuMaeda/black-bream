@@ -32,4 +32,8 @@
   {:else}
     <List />
   {/if}
+{:else if params?.item}
+  <Show item={params?.item} />
+{:else}
+  <List />
 {/if}

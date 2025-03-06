@@ -816,10 +816,11 @@ export const setTwitterAccessToken = async (status, code) => {
     }
 
     console.log(
-      `setTwitterAccessToken() accessToken: ${oauthData.refresh_token}`,
+      `setTwitterAccessToken() refresh_token: ${oauthData.refresh_token}`,
     );
 
     await updateDoc(authRef, {
+      "threads.accessToken": oauthData.access_token,
       "threads.refreshToken": oauthData.refresh_token,
       "threads.expiredAt": new Date(new Date().getTime() + 2 * 3600 * 1000),
       updatedAt: new Date(),
