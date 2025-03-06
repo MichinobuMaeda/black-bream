@@ -21,8 +21,9 @@
       switch (params.action) {
         case "callback":
           if (params.status === "ok") {
+            const code = params.data;
             (async () => {
-              result = await callFunction("setTwitterAccessToken", params.data);
+              result = await callFunction("setTwitterAccessToken", { code });
               if (!result.err) {
                 push("/settings");
               }
