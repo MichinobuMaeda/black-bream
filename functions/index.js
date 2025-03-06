@@ -153,7 +153,7 @@ exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
 
 exports.setThreadsLongAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "admins", () =>
-    threads.setThreadsLongAccessToken(getFirestore(app), data),
+    threads.setThreadsAccessToken(getFirestore(app), data),
   ),
 );
 
