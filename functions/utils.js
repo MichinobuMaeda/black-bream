@@ -197,6 +197,7 @@ const reduceImageSize = (image, byte) => {
   if (size <= byte) {
     return image;
   }
+  logger.info(`Image size reduced ${size} <= ${byte}`);
   const { width, height } = sharp(image).metadata();
   const ratio = size / byte;
   const buffer = Buffer.from(image.buffer);
