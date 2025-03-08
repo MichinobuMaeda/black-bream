@@ -81,7 +81,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
     const ret = await axios.post(
       "https://api.x.com/2/tweets",
-      media_ids.length ? { text, media_ids } : { text },
+      media_ids.length ? { text, media: { media_ids } } : { text },
       {
         headers: {
           "Content-Type": "application/json",
