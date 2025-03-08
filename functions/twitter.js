@@ -59,9 +59,17 @@ const post = async (db, bucket, params, id, { text, files }) => {
     const hash = createHash("sha256");
     hash.update(text);
 
+    const regexUrl = /https:\/\/[\S]+/;
+    const card_uri = text.match(regexUrl) ? text.match(regexUrl)[0] : "";
+    text = text.replace(card_uri, "").trim();
+
     const ret = await axios.post(
       "https://api.x.com/2/tweets",
-      media_ids.length ? { text, media_ids: media_ids } : { text },
+      media_ids.length
+        ? { text, media_ids }
+        : card_uri
+          ? { text, card_uri }
+          : { text },
       {
         headers: {
           "Content-Type": "application/json",
