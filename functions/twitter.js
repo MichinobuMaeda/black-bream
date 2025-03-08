@@ -57,9 +57,13 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
       media_ids.push(data.id);
 
-      if (status === 200 && data.processing_info.state === "in_progress") {
+      if (
+        status === 200 &&
+        data.processing_info &&
+        data.processing_info.state.state === "in_progress"
+      ) {
         const wait = Math.min(
-          data.processing_info.check_after_secs,
+          data.processing_info.check_after_secs ?? 0,
           timeout * timeout,
         );
         logger.info(`twitter wait media upload: ${wait} sec.`);
