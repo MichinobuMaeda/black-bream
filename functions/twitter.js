@@ -22,7 +22,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
     }
     const accessToken = retRefresh.data ?? params.accessToken;
 
-    const mediaIds = [];
+    const media_ids = [];
     if (files?.length) {
       const blob = await getMediaAsBlob(bucket, id, files[0]);
 
@@ -41,7 +41,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
       );
       logger.info(`twitter post media: ${status} ${JSON.stringify(data)}`);
 
-      mediaIds.push(data.id);
+      media_ids.push(data.id);
 
       if (status === 200 && data.processing_info.state === "in_progress") {
         const wait = Math.min(
@@ -59,21 +59,16 @@ const post = async (db, bucket, params, id, { text, files }) => {
     const hash = createHash("sha256");
     hash.update(text);
 
-    const json = {
-      text,
-      language: "ja",
-    };
-    if (mediaIds.length) {
-      logger.info(`twitter add media: ${mediaIds.join(",")}`);
-      json["media_ids"] = mediaIds;
-    }
-
-    const ret = await axios.post("https://api.x.com/2/tweets", json, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${params.accessToken}`,
+    const ret = await axios.post(
+      "https://api.x.com/2/tweets",
+      media_ids.length ? { text, media_ids: media_ids } : { text },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${params.accessToken}`,
+        },
       },
-    });
+    );
 
     logger.info(
       `twitter post media: ${ret.status} ${JSON.stringify(ret.data)}`,
