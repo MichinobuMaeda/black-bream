@@ -75,7 +75,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
     logger.info(
       `twitter post media: ${ret.status} ${JSON.stringify(ret.data)}`,
     );
-    if (ret.status !== 200) {
+    if (ret.status !== 201) {
       return { err: `${ret.status} ${ret.statusText}` };
     }
 
