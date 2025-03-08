@@ -106,13 +106,14 @@
     saveTwitterState(state);
     const challenge = nanoid(32);
     saveTwitterChallenge(challenge);
+    const scope = ["tweet.read", "tweet.write", "users.read", "offline.access"];
 
     const url =
       "https://x.com/i/oauth2/authorize" +
       "?response_type=code" +
       `&client_id=${twitterClientId}` +
       `&redirect_uri=${twitterCallBackUrl}` +
-      "&scope=tweet.write%20offline.access" +
+      `&scope=${scope.join("%20")}` +
       `&state=${state}` +
       `&code_challenge=${challenge}` +
       "&code_challenge_method=plain";

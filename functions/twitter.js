@@ -175,12 +175,15 @@ const refreshTwitterAccessToken = async (db) => {
   try {
     const authRef = db.collection("service").doc("auth");
     const auth = await authRef.get();
-    const { clientId, clientSecret, refreshToken /* , expiredAt */ } =
-      auth.get("twitter");
+    const params = auth.get("twitter");
+    const { clientId, clientSecret, accessToken, refreshToken, expiredAt } =
+      params;
 
-    // if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
-    //   return { err: undefined };
-    // }
+    if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
+      return { err: undefined };
+    }
+
+    logger.info(JSON.stringify(params));
 
     const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -205,13 +208,13 @@ const refreshTwitterAccessToken = async (db) => {
 
     const oauthData = await oauthResp.json();
     console.log(JSON.stringify(oauthData));
-    const expiredAtNew = new Date(
-      new Date().getTime() + oauthData.expires_in * 1000,
-    );
 
     await authRef.update({
-      "twitter.accessToken": oauthData.access_token ?? null,
-      "twitter.expiredAt": expiredAtNew,
+      "twitter.accessToken": oauthData.access_token ?? accessToken,
+      "twitter.refreshToken": oauthData.refresh_token ?? refreshToken,
+      "twitter.expiredAt": new Date(
+        new Date().getTime() + oauthData.expires_in * 1000,
+      ),
       updatedAt: new Date(),
     });
 
