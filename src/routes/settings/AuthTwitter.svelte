@@ -106,7 +106,13 @@
     saveTwitterState(state);
     const challenge = nanoid(32);
     saveTwitterChallenge(challenge);
-    const scope = ["tweet.read", "tweet.write", "users.read", "offline.access"];
+    const scope = [
+      "tweet.read",
+      "tweet.write",
+      "media.write",
+      "users.read",
+      "offline.access",
+    ];
 
     const url =
       "https://x.com/i/oauth2/authorize" +
