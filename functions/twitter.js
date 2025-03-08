@@ -41,7 +41,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
       );
 
       const form = new FormData();
-      form.append("file", new Blob([image], { type: encoding }), files[0]);
+      form.append("media", new Blob([image], { type: encoding }), files[0]);
 
       const { status, statusText, data } = await axios.post(
         "https://api.x.com/2/media/upload",
