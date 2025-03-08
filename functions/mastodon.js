@@ -1,7 +1,11 @@
 const { logger } = require("firebase-functions/v2");
 const { createHash } = require("node:crypto");
 const axios = require("axios");
-const { getMediaAsBlob } = require("./utils.js");
+const {
+  getMimeTypes,
+  getMediaAsUint8Array,
+  reduceImageSize,
+} = require("./utils.js");
 
 /**
  * Post to Mastodon
@@ -17,10 +21,21 @@ const post = async (bucket, params, id, { text, files }) => {
   try {
     const mediaIds = [];
     if (files?.length) {
-      const blob = await getMediaAsBlob(bucket, id, files[0]);
+      // const blob = await getMediaAsBlob(bucket, id, files[0]);
+      const result = await getMediaAsUint8Array(bucket, id, files[0]);
+      const encoding = getMimeTypes(files[0]);
+
+      if (result.err) {
+        return { err: result.err, data: undefined };
+      }
+
+      const image = await reduceImageSize(
+        new Uint8Array(result.data),
+        1000 * 1000,
+      );
 
       const form = new FormData();
-      form.append("file", blob.data, files[0]);
+      form.append("file", new Blob([image], { type: encoding }), files[0]);
 
       const { status, statusText, data } = await axios.post(
         `${params.url}/v2/media`,
