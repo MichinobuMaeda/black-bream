@@ -3,6 +3,7 @@ const { logger } = require("firebase-functions/v2");
 const twitter = require("./twitter.js");
 const mastodon = require("./mastodon.js");
 const misskey = require("./misskey.js");
+const tumblr = require("./tumblr.js");
 const bluesky = require("./bluesky.js");
 const threads = require("./threads.js");
 const instagram = require("./instagram.js");
@@ -200,6 +201,9 @@ const post = async (db, bucket, { id, target }) => {
         break;
       case "misskey":
         ret = await misskey.post(bucket, params, id, postSnap.data());
+        break;
+      case "tumblr":
+        ret = await tumblr.post(bucket, params, id, postSnap.data());
         break;
       case "bluesky":
         ret = await bluesky.post(bucket, params, id, postSnap.data());
