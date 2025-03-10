@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 
 /**
  * Post to Instagram
@@ -19,14 +18,15 @@ const post = async (bucket, params, id, { text, files }) => {
     const { clientId, accessToken } = params;
 
     const mediaUrl = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
-    let response = await axios.post(
+    let response = await fetch(
       `https://graph.instagram.com/v22.0/${clientId}/media`,
-      { caption: text, image_url: mediaUrl },
       {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ caption: text, image_url: mediaUrl }),
       },
     );
 
@@ -38,14 +38,15 @@ const post = async (bucket, params, id, { text, files }) => {
 
     logger.info(`Created container: ${response.data.id}`);
 
-    const { status, statusText } = await axios.post(
+    const { status, statusText } = await fetch(
       `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
-      { creation_id: response.data.id },
       {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ creation_id: response.data.id }),
       },
     );
 

@@ -1,12 +1,12 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
-const axios = require("axios");
 const { getMediaAsBlob } = require("./utils.js");
 
 const { post } = require("./mastodon.js");
+const { bool } = require("sharp");
 
 jest.mock("firebase-functions/logger");
-jest.mock("axios");
 jest.mock("./utils.js");
+global.fetch = jest.fn();
 
 FormData.prototype.append = jest.fn();
 
@@ -39,7 +39,7 @@ describe("post", () => {
 
   it("should post to Mastodon.", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
+    global.fetch.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
     // Execute
     const result = await post(bucket, params, id, dataText);
@@ -48,22 +48,22 @@ describe("post", () => {
     expect(result).toEqual({ err: undefined });
     expect(getMediaAsBlob).not.toHaveBeenCalled();
     expect(FormData.prototype.append).not.toHaveBeenCalled();
-    expect(axios.get).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+          }),
         },
       ],
     ]);
@@ -71,7 +71,7 @@ describe("post", () => {
 
   it("should post with image to Mastodon.", async () => {
     // Prepare
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "media-id" } }),
       )
@@ -86,33 +86,34 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", blob, "1.jpg"],
     ]);
-    expect(axios.get).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `${params.url}/v2/media`,
-        expect.any(FormData),
         {
+          method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${params.token}`,
           },
+          body: expect.any(FormData),
         },
       ],
       [
         `${params.url}/v1/statuses`,
+
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-          media_ids: ["media-id"],
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+            media_ids: ["media-id"],
+          }),
         },
       ],
     ]);
@@ -121,12 +122,12 @@ describe("post", () => {
   it("should wait to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
       )
+      .mockImplementationOnce(() => Promise.resolve({ status: 200 }))
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
-    axios.get.mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
     // Execute
     const result = await post(bucket, params, id, dataImage);
@@ -137,7 +138,17 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", blob, "1.jpg"],
     ]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
+      [
+        `${params.url}/v2/media`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${params.token}`,
+          },
+          body: expect.any(FormData),
+        },
+      ],
       [
         `${params.url}/v1/media/media-id`,
         {
@@ -146,33 +157,22 @@ describe("post", () => {
           },
         },
       ],
-    ]);
-    expect(axios.post.mock.calls).toEqual([
-      [
-        `${params.url}/v2/media`,
-        expect.any(FormData),
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${params.token}`,
-          },
-        },
-      ],
       [
         `${params.url}/v1/statuses`,
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-          media_ids: ["media-id"],
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+            media_ids: ["media-id"],
+          }),
         },
       ],
     ]);
@@ -181,12 +181,12 @@ describe("post", () => {
   it("should wait twice to upload image and post with image to Mastodon.", async () => {
     // Prepare
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 202, data: { id: "media-id" } }),
       )
+      .mockImplementationOnce(() => Promise.resolve({ status: 206 }))
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
-    axios.get.mockImplementationOnce(() => Promise.resolve({ status: 206 }));
 
     // Execute
     const result = await post(bucket, params, id, dataImage);
@@ -197,7 +197,17 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", blob, "1.jpg"],
     ]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
+      [
+        `${params.url}/v2/media`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${params.token}`,
+          },
+          body: expect.any(FormData),
+        },
+      ],
       [
         `${params.url}/v1/media/media-id`,
         {
@@ -206,33 +216,22 @@ describe("post", () => {
           },
         },
       ],
-    ]);
-    expect(axios.post.mock.calls).toEqual([
-      [
-        `${params.url}/v2/media`,
-        expect.any(FormData),
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${params.token}`,
-          },
-        },
-      ],
       [
         `${params.url}/v1/statuses`,
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-          media_ids: ["media-id"],
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+            media_ids: ["media-id"],
+          }),
         },
       ],
     ]);
@@ -240,7 +239,7 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #1", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 500,
         statusText: "Server error",
@@ -256,16 +255,15 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", blob, "1.jpg"],
     ]);
-    expect(axios.get).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `${params.url}/v2/media`,
-        expect.any(FormData),
         {
+          method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${params.token}`,
           },
+          body: expect.any(FormData),
         },
       ],
     ]);
@@ -273,12 +271,13 @@ describe("post", () => {
 
   it("should return error, if failed to upload image. #2", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() =>
-      Promise.resolve({ status: 202, data: { id: "media-id" } }),
-    );
-    axios.get.mockImplementationOnce(() =>
-      Promise.resolve({ status: 500, statusText: "Server error" }),
-    );
+    global.fetch
+      .mockImplementationOnce(() =>
+        Promise.resolve({ status: 202, data: { id: "media-id" } }),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve({ status: 500, statusText: "Server error" }),
+      );
 
     // Execute
     const result = await post(bucket, params, id, dataImage);
@@ -289,7 +288,17 @@ describe("post", () => {
     expect(FormData.prototype.append.mock.calls).toEqual([
       ["file", blob, "1.jpg"],
     ]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
+      [
+        `${params.url}/v2/media`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${params.token}`,
+          },
+          body: expect.any(FormData),
+        },
+      ],
       [
         `${params.url}/v1/media/media-id`,
         {
@@ -299,23 +308,11 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(axios.post.mock.calls).toEqual([
-      [
-        `${params.url}/v2/media`,
-        expect.any(FormData),
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${params.token}`,
-          },
-        },
-      ],
-    ]);
   });
 
   it("should return error, if axis.post raises an exception for Mastodon.", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() => Promise.reject("error"));
+    global.fetch.mockImplementationOnce(() => Promise.reject("error"));
 
     // Execute
     const result = await post(bucket, params, id, dataText);
@@ -324,21 +321,22 @@ describe("post", () => {
     expect(result).toEqual({ err: "error" });
     expect(getMediaAsBlob).not.toHaveBeenCalled();
     expect(FormData.prototype.append).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+          }),
         },
       ],
     ]);
@@ -346,7 +344,7 @@ describe("post", () => {
 
   it("should return error, if axis.post returns error status for Mastodon.", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({ status: 500, statusText: "Server error" }),
     );
 
@@ -356,21 +354,22 @@ describe("post", () => {
     // Verify
     expect(result).toEqual({ err: "500 Server error" });
     expect(FormData.prototype.append).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `${params.url}/v1/statuses`,
         {
-          status: "Text",
-          sensitive: false,
-          visibility: "public",
-          language: "ja",
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${params.token}`,
             "Idempotency-Key": expect.any(String),
           },
+          body: JSON.stringify({
+            status: "Text",
+            sensitive: false,
+            visibility: "public",
+            language: "ja",
+          }),
         },
       ],
     ]);

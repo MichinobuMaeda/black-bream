@@ -37,8 +37,8 @@ const post = async (db, bucket, params, id, { text, files }) => {
         text = text.replace(url, "").trim();
         body = JSON.stringify({
           content: [
-            { type: "link", url },
             { type: "text", text },
+            { type: "link", url },
           ],
         });
       } else {

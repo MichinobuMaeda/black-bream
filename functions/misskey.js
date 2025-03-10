@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 const { getMediaAsUint8Array, reduceImageSize } = require("./utils.js");
 
 /**
@@ -30,14 +29,14 @@ const post = async (bucket, params, id, { text, files }) => {
       form.append("name", files[0]);
       form.append("isSensitive", false);
 
-      const { status, statusText, data } = await axios.post(
+      const { status, statusText, data } = await fetch(
         `${params.url}/drive/files/create`,
-        form,
         {
+          method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${params.token}`,
           },
+          body: form,
         },
       );
       logger.info(`misskey post media: ${status} ${JSON.stringify(data)}`);
@@ -54,11 +53,13 @@ const post = async (bucket, params, id, { text, files }) => {
       ? { visibility, text, mediaIds }
       : { visibility, text };
 
-    const ret = await axios.post(`${params.url}/notes/create`, json, {
+    const ret = await fetch(`${params.url}/notes/create`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.token}`,
       },
+      body: JSON.stringify(json),
     });
 
     logger.info(

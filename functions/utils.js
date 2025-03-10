@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 const sharp = require("sharp");
 const { WritableStream } = require("htmlparser2/WritableStream");
 const { getDownloadURL } = require("firebase-admin/storage");
@@ -24,7 +23,7 @@ const generateLinkCard = async (text) => {
       thumbUrl: null,
     };
 
-    const html = await axios.get(data.uri, { responseType: "stream" });
+    const html = await fetch(data.uri);
 
     if (html.status !== 200) {
       return { err: undefined, data: null };
@@ -64,12 +63,7 @@ const generateLinkCard = async (text) => {
       },
     });
 
-    const htmlParser = html.data.pipe(parserStream);
-
-    await new Promise((resolve, reject) => {
-      htmlParser.on("finish", resolve);
-      htmlParser.on("error", reject);
-    });
+    parserStream.write(html.text);
 
     return { err: undefined, data };
   } catch (e) {

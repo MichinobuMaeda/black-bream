@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 const {
   getMimeTypes,
   getMediaAsUint8Array,
@@ -42,14 +41,14 @@ const post = async (db, bucket, params, id, { text, files }) => {
       const form = new FormData();
       form.append("media", new Blob([image], { type: encoding }), files[0]);
 
-      const { status, statusText, data } = await axios.post(
+      const { status, statusText, data } = await fetch(
         "https://api.x.com/2/media/upload",
-        form,
         {
+          method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${accessToken}`,
           },
+          body: form,
         },
       );
       logger.info(`twitter post media: ${status} ${JSON.stringify(data)}`);
@@ -74,16 +73,16 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
     text = text.trim();
 
-    const ret = await axios.post(
-      "https://api.x.com/2/tweets",
-      media_ids.length ? { text, media: { media_ids } } : { text },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+    const ret = await fetch("https://api.x.com/2/tweets", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
-    );
+      body: JSON.stringify(
+        media_ids.length ? { text, media: { media_ids } } : { text },
+      ),
+    });
 
     logger.info(
       `twitter post media: ${ret.status} ${JSON.stringify(ret.data)}`,

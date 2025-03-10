@@ -1,13 +1,12 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const { Timestamp } = require("firebase-admin/firestore");
 const storage = require("firebase-admin/storage");
-const axios = require("axios");
 
 const { post, refreshThreadsAccessToken } = require("./threads.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("firebase-admin/storage");
-jest.mock("axios");
+global.fetch = jest.fn();
 
 process.env.PUBLIC_POST_MEDIA_URL = "https://public-post-media-url";
 
@@ -30,7 +29,7 @@ describe("post", () => {
 
   it("should post to Threads.", async () => {
     // Prepare
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "01234566789" } }),
       )
@@ -42,24 +41,26 @@ describe("post", () => {
     // Verify
     expect(result).toEqual({ err: undefined });
     expect(bucket.file).not.toHaveBeenCalled();
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
           "?creation_id=01234566789" +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
     ]);
   });
 
   it("should post with image to Threads.", async () => {
     // Prepare
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "01234566789" } }),
       )
@@ -70,44 +71,47 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: undefined });
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=IMAGE" +
           `&text=${encodeURIComponent("Text")}` +
           "&image_url=https://public-post-media-url/public/posts/post-id/1.jpg" +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
           "?creation_id=01234566789" +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
     ]);
   });
 
   it("should return error, if axis.post raises an exception for Threads.", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() => Promise.reject("error"));
+    global.fetch.mockImplementationOnce(() => Promise.reject("error"));
 
     // Execute
     const result = await post(bucket, params, id, dataText);
 
     // Verify
     expect(result).toEqual({ err: "error" });
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
     ]);
   });
 
   it("should return error, if axis.post returns error status for Threads.", async () => {
     // Prepare
-    axios.post.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({ status: 500, statusText: "Server error" }),
     );
 
@@ -118,19 +122,20 @@ describe("post", () => {
     expect(result).toEqual({
       err: "Failed to create container: 500 Server error",
     });
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
     ]);
   });
 
   it("should return error, if axis.post returns error status for Threads #2.", async () => {
     // Prepare
-    axios.post
+    global.fetch
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 200, data: { id: "01234566789" } }),
       )
@@ -143,17 +148,19 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "Failed to publish: 500 Server error" });
-    expect(axios.post.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
           "?creation_id=01234566789" +
           `&access_token=${params.accessToken}`,
+        { method: "POST" },
       ],
     ]);
   });
@@ -199,7 +206,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -215,7 +222,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -233,7 +240,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -251,7 +258,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -274,7 +281,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -295,7 +302,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
@@ -321,7 +328,7 @@ describe("refreshThreadsAccessToken", () => {
       expect(db.collection.mock.calls).toEqual([["service"]]);
       expect(collection.doc.mock.calls).toEqual([["auth"]]);
       expect(authRef.get.mock.calls).toEqual([[]]);
-      expect(axios.get).not.toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalled();
       expect(authRef.update).not.toHaveBeenCalled();
     },
   );
@@ -336,7 +343,7 @@ describe("refreshThreadsAccessToken", () => {
           new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
         ),
       }));
-    axios.get.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 200,
         data: {
@@ -354,7 +361,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         "https://https://graph.threads.net/refresh_access_token" +
           "?grant_type=th_refresh_token" +
@@ -371,7 +378,7 @@ describe("refreshThreadsAccessToken", () => {
     ]);
   });
 
-  it("should return error, if axios.get not returns status 200.", async () => {
+  it("should return error, if fetch not returns status 200.", async () => {
     // Prepare
     authSnap.get
       .mockImplementationOnce(() => null)
@@ -381,7 +388,7 @@ describe("refreshThreadsAccessToken", () => {
           new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
         ),
       }));
-    axios.get.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 500,
         statusText: "Server error",
@@ -398,7 +405,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         "https://https://graph.threads.net/refresh_access_token" +
           "?grant_type=th_refresh_token" +
@@ -408,7 +415,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(authRef.update).not.toHaveBeenCalled();
   });
 
-  it("should return error, if axios.get raises an exception.", async () => {
+  it("should return error, if fetch raises an exception.", async () => {
     // Prepare
     authSnap.get
       .mockImplementationOnce(() => null)
@@ -418,7 +425,7 @@ describe("refreshThreadsAccessToken", () => {
           new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
         ),
       }));
-    axios.get.mockImplementationOnce(() => Promise.reject("error"));
+    global.fetch.mockImplementationOnce(() => Promise.reject("error"));
 
     // Execute
     const result = await refreshThreadsAccessToken(db);
@@ -428,7 +435,7 @@ describe("refreshThreadsAccessToken", () => {
     expect(db.collection.mock.calls).toEqual([["service"]]);
     expect(collection.doc.mock.calls).toEqual([["auth"]]);
     expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(axios.get.mock.calls).toEqual([
+    expect(global.fetch.mock.calls).toEqual([
       [
         "https://https://graph.threads.net/refresh_access_token" +
           "?grant_type=th_refresh_token" +

@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 
 /**
  * Post to Threads
@@ -33,7 +32,7 @@ const post = async (bucket, params, id, { text, files }) => {
     }
 
     logger.info(url);
-    retContainer = await axios.post(url);
+    retContainer = await fetch(url, { method: "POST" });
 
     if (retContainer.status !== 200) {
       return {
@@ -43,10 +42,11 @@ const post = async (bucket, params, id, { text, files }) => {
       };
     }
 
-    const retPublish = await axios.post(
+    const retPublish = await fetch(
       `https://graph.threads.net/v1.0/${userId}/threads_publish` +
         `?creation_id=${retContainer.data.id}` +
         `&access_token=${accessToken}`,
+      { method: "POST" },
     );
 
     if (retPublish.status !== 200) {
@@ -177,7 +177,7 @@ const refreshThreadsAccessToken = async (db) => {
       expiredAt &&
       expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
     ) {
-      const result = await axios.get(
+      const result = await fetch(
         "https://https://graph.threads.net/refresh_access_token" +
           "?grant_type=th_refresh_token" +
           `&access_token=${accessToken}`,

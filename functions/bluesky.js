@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
 const {
@@ -50,14 +49,12 @@ const post = async (bucket, params, id, { text, files }) => {
         let thumb = undefined;
 
         if (thumbUrl) {
-          const response = await axios.get(thumbUrl, {
-            responseType: "arraybuffer",
-          });
+          const response = await fetch(thumbUrl);
           const encoding = getMimeTypes(thumbUrl, response.headers);
 
           if (response.status === 200) {
             const { data } = await agent.uploadBlob(
-              await reduceImageSize(new Uint8Array(response.data), 1000 * 1000),
+              await reduceImageSize(await response.bytes(), 1000 * 1000),
               { encoding },
             );
             thumb = data.blob;

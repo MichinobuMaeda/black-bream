@@ -1,6 +1,5 @@
 const { logger } = require("firebase-functions/v2");
 const { createHash } = require("node:crypto");
-const axios = require("axios");
 const { getMediaAsBlob } = require("./utils.js");
 
 /**
@@ -22,14 +21,14 @@ const post = async (bucket, params, id, { text, files }) => {
       const form = new FormData();
       form.append("file", blob.data, files[0]);
 
-      const { status, statusText, data } = await axios.post(
+      const { status, statusText, data } = await fetch(
         `${params.url}/v2/media`,
-        form,
         {
+          method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${params.token}`,
           },
+          body: form,
         },
       );
       logger.info(`mastodon post media: ${status} ${JSON.stringify(data)}`);
@@ -38,7 +37,7 @@ const post = async (bucket, params, id, { text, files }) => {
 
       if (status === 202) {
         await new Promise((r) => setTimeout(r, timeout * 1000));
-        const res = await axios.get(`${params.url}/v1/media/${data.id}`, {
+        const res = await fetch(`${params.url}/v1/media/${data.id}`, {
           headers: {
             Authorization: `Bearer ${params.token}`,
           },
@@ -71,12 +70,14 @@ const post = async (bucket, params, id, { text, files }) => {
       json["media_ids"] = mediaIds;
     }
 
-    const ret = await axios.post(`${params.url}/v1/statuses`, json, {
+    const ret = await fetch(`${params.url}/v1/statuses`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.token}`,
         "Idempotency-Key": hash.digest("hex"),
       },
+      body: JSON.stringify(json),
     });
 
     logger.info(

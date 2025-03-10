@@ -1,12 +1,10 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
-const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
 let { generateLinkCard, getMediaAsUint8Array } = require("./utils.js");
 const { post } = require("./bluesky.js");
 
 jest.mock("firebase-functions/logger");
-jest.mock("axios");
 jest.mock("@atproto/api");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
@@ -14,6 +12,7 @@ BskyAgent.prototype.uploadBlob = jest.fn(() =>
   Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
 jest.mock("./utils.js");
+global.fetch = jest.fn();
 
 FormData.prototype.append = jest.fn();
 
@@ -131,10 +130,10 @@ describe("post", () => {
         },
       }),
     );
-    axios.get.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 200,
-        data: new ArrayBuffer(10),
+        bytes: () => Promise.resolve(new ArrayBuffer(10)),
       }),
     );
 
@@ -165,13 +164,8 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com/thumb.jpg",
-        {
-          responseType: "arraybuffer",
-        },
-      ],
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com/thumb.jpg"],
     ]);
   });
 
@@ -215,7 +209,7 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("should post to Bluesky with an link card, if text includes url. #3", async () => {
@@ -231,10 +225,9 @@ describe("post", () => {
         },
       }),
     );
-    axios.get.mockImplementationOnce(() =>
+    global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 404,
-        data: undefined,
       }),
     );
 
@@ -264,13 +257,8 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com/thumb.jpg",
-        {
-          responseType: "arraybuffer",
-        },
-      ],
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com/thumb.jpg"],
     ]);
   });
 

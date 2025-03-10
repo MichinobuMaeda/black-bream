@@ -1,7 +1,6 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const Readable = require("stream").Readable;
 const { getDownloadURL } = require("firebase-admin/storage");
-const axios = require("axios");
 const { BskyAgent } = require("@atproto/api");
 
 const {
@@ -13,11 +12,11 @@ const {
 } = require("./utils.js");
 
 jest.mock("firebase-functions/logger");
-jest.mock("axios");
 jest.mock("firebase-admin/storage");
 jest.mock("@atproto/api");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
+global.fetch = jest.fn();
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -35,14 +34,13 @@ describe("generateLinkCard", () => {
       err: undefined,
       data: null,
     });
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("should returns null, if axios.get() returns status 404.", async () => {
+  it("should returns null, if fetch() returns status 404.", async () => {
     // Prepare
-    axios.get.mockResolvedValue({
+    global.fetch.mockResolvedValue({
       status: 404,
-      data: null,
     });
 
     // Execute
@@ -57,20 +55,16 @@ describe("generateLinkCard", () => {
 
   it("should returns card data, if text includes url. #1", async () => {
     // Prepare
-    const data = new Readable();
-    data._read = () => {};
-    data.push(`<html>
+    const text = `<html>
 <head>
   <title>Title</title>
   <meta name="description" content="Description">
   <meta property="og:image" content="https://example.com/thumb.jpg">
 </head>
-</html>`);
-    data.push(null);
-
-    axios.get.mockResolvedValue({
+</html>`;
+    global.fetch.mockResolvedValue({
       status: 200,
-      data,
+      text,
     });
 
     // Execute
@@ -86,32 +80,22 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com",
-        {
-          responseType: "stream",
-        },
-      ],
-    ]);
+    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
   });
 
   it("should returns card data, if text includes url. #2", async () => {
     // Prepare
-    const data = new Readable();
-    data._read = () => {};
-    data.push(`<html>
+    const text = `<html>
 <head>
   <meta name="twitter:title" content="Title" />
   <meta name="twitter:description" content="Description">
   <meta name="twitter:image" content="https://example.com/thumb.jpg">
 </head>
-</html>`);
-    data.push(null);
+</html>`;
 
-    axios.get.mockResolvedValue({
+    global.fetch.mockResolvedValue({
       status: 200,
-      data,
+      text,
     });
 
     // Execute
@@ -127,32 +111,22 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com",
-        {
-          responseType: "stream",
-        },
-      ],
-    ]);
+    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
   });
 
   it("should returns card data, if text includes url. #3", async () => {
     // Prepare
-    const data = new Readable();
-    data._read = () => {};
-    data.push(`<html>
+    const text = `<html>
 <head>
   <meta property="og:title" content="Title" />
   <meta property="og:description" content="Description">
   <meta property="og:image" content="https://example.com/thumb.jpg">
 </head>
-</html>`);
-    data.push(null);
+</html>`;
 
-    axios.get.mockResolvedValue({
+    global.fetch.mockResolvedValue({
       status: 200,
-      data,
+      text,
     });
 
     // Execute
@@ -168,21 +142,12 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com",
-        {
-          responseType: "stream",
-        },
-      ],
-    ]);
+    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
   });
 
   it("should returns first occurring data.", async () => {
     // Prepare
-    const data = new Readable();
-    data._read = () => {};
-    data.push(`<html>
+    const text = `<html>
 <head>
   <meta property="og:title" content="Title" />
   <meta name="twitter:title" content="Title #2" />
@@ -191,12 +156,11 @@ describe("generateLinkCard", () => {
   <meta property="og:image" content="https://example.com/thumb.jpg">
   <meta name="twitter:image" content="https://example.com/thumb02.jpg">
 </head>
-</html>`);
-    data.push(null);
+</html>`;
 
-    axios.get.mockResolvedValue({
+    global.fetch.mockResolvedValue({
       status: 200,
-      data,
+      text,
     });
 
     // Execute
@@ -212,19 +176,12 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(axios.get.mock.calls).toEqual([
-      [
-        "https://example.com",
-        {
-          responseType: "stream",
-        },
-      ],
-    ]);
+    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
   });
 
-  it("should returns error, if axios.get() throws an exception.", async () => {
+  it("should returns error, if fetch() throws an exception.", async () => {
     // Prepare
-    axios.get.mockRejectedValue("test error");
+    global.fetch.mockRejectedValue("test error");
 
     // Execute
     const result = await generateLinkCard("test\nhttps://example.com\ntest");
