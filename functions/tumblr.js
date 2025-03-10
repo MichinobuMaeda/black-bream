@@ -48,13 +48,13 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
     logger.info(
       JSON.stringify({
-        url: "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
+        url: `https://api.tumblr.com/v2/blog/${params.blogId}/posts`,
         body,
       }),
     );
 
     const ret = await fetch(
-      "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
+      `https://api.tumblr.com/v2/blog/${params.blogId}/posts`,
       {
         method: "POST",
         headers: {
