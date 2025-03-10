@@ -24,25 +24,34 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
     if (files?.length) {
       const url = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
-      body = [
-        { type: "image", media: { url } },
-        { type: "text", text },
-      ];
+      body = {
+        content: [
+          { type: "image", media: { url } },
+          { type: "text", text },
+        ],
+      };
     } else {
       const result = await generateLinkCard(text);
       if (result.data) {
         const url = result.data.url;
         text = text.replace(url, "").trim();
-        body = [
-          { type: "link", url },
-          { type: "text", text },
-        ];
+        body = {
+          content: [
+            { type: "link", url },
+            { type: "text", text },
+          ],
+        };
       } else {
-        body = [{ type: "text", text }];
+        body = { content: [{ type: "text", text }] };
       }
     }
 
-    logger.info(JSON.stringify(body));
+    logger.info(
+      JSON.stringify({
+        url: "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
+        body,
+      }),
+    );
 
     const ret = await fetch(
       "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
