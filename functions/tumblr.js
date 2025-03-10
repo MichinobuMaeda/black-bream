@@ -19,18 +19,30 @@ const post = async (db, bucket, params, id, { text, files }) => {
     }
     const accessToken = retRefresh.data ?? params.accessToken;
 
-    const url = files?.length
-      ? `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`
-      : undefined;
     text = text.trim();
-    let card = undefined;
-    if (!url) {
+    let body = undefined;
+
+    if (files?.length) {
+      const url = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
+      body = [
+        { type: "image", media: { url } },
+        { type: "text", text },
+      ];
+    } else {
       const result = await generateLinkCard(text);
       if (result.data) {
-        card = result.data;
-        text = text.replace(card.uri, "").trim();
+        const url = result.data.url;
+        text = text.replace(url, "").trim();
+        body = [
+          { type: "link", url },
+          { type: "text", text },
+        ];
+      } else {
+        body = [{ type: "text", text }];
       }
     }
+
+    logger.info(JSON.stringify(body));
 
     const ret = await fetch(
       "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
@@ -40,24 +52,13 @@ const post = async (db, bucket, params, id, { text, files }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: {
-          content: url
-            ? [
-                { type: "image", media: { url } },
-                { type: "text", text },
-              ]
-            : card
-              ? [
-                  { type: "link", media: { url } },
-                  { type: "text", text },
-                ]
-              : [{ type: "text", text }],
-        },
+        body,
       },
     );
 
     logger.info(`tumblr post media: ${ret.status} ${JSON.stringify(ret.data)}`);
     if (ret.status !== 201) {
+      logger.error(JSON.stringify(ret.json()));
       return { err: `${ret.status} ${ret.statusText}` };
     }
 
