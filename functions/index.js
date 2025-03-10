@@ -18,6 +18,7 @@ const { refreshThreadsAccessToken } = require("./threads");
 const account = require("./account");
 const threads = require("./threads");
 const twitter = require("./twitter");
+const tumblr = require("./tumblr");
 const deployment = require("./deployment");
 const { createUiTestData } = require("./ui_test_data");
 
@@ -160,6 +161,12 @@ exports.setThreadsAccessToken = onCall(optOnCall, ({ data, auth }) =>
 exports.setTwitterAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(getFirestore(app), auth, "admins", () =>
     twitter.setTwitterAccessToken(getFirestore(app), data),
+  ),
+);
+
+exports.setTumblrAccessToken = onCall(optOnCall, ({ data, auth }) =>
+  account.gateForGroupMembers(getFirestore(app), auth, "admins", () =>
+    tumblr.setTumblrAccessToken(getFirestore(app), data),
   ),
 );
 
