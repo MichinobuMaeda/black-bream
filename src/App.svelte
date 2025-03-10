@@ -12,7 +12,7 @@
   if (window.location.pathname.startsWith("/auth/")) {
     const [item, action] = window.location.pathname.split("/").slice(2);
     const params = new URLSearchParams(window.location.search);
-    let status = "ok";
+    let status = "";
     let data = "";
     switch (item) {
       case "threads":
@@ -20,6 +20,24 @@
           case "callback":
             {
               const code = (params.get("code") || "").replace(/#_/, "");
+              if (code) {
+                status = "ok";
+                data = code;
+              } else {
+                status = "ng";
+                data = params.get("error") || "";
+              }
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+      case "tumblr":
+        switch (action) {
+          case "callback":
+            {
+              const code = params.get("code") || "";
               if (code) {
                 status = "ok";
                 data = code;
