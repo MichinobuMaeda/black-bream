@@ -97,7 +97,7 @@
         callBackUrl: tumblrCallBackUrl,
         clientId: tumblrClientId,
         clientSecret: tumblrClientSecret,
-        BlogId: tumblrBlogId,
+        blogId: tumblrBlogId,
         updatedAt: new Date(),
         deletedAt: tumblrEnabled ? null : new Date(),
       },
@@ -112,8 +112,8 @@
 
     const url =
       "https://www.tumblr.com/oauth2/authorize" +
-      `&client_id=${tumblrClientId}` +
-      "?response_type=code" +
+      `?client_id=${tumblrClientId}` +
+      "&response_type=code" +
       `&scope=${scope.join("%20")}` +
       `&redirect_uri=${tumblrCallBackUrl}` +
       `&state=${state}`;
@@ -172,7 +172,7 @@
       <Fields>
         <TextFieldOutlined
           id="tumblrBlogId"
-          label="Consumer Key"
+          label="Blog ID"
           type="text"
           bind:value={tumblrBlogId}
           message={t().current(store.auth?.tumblr?.blogId ?? "--")}
