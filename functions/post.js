@@ -203,7 +203,7 @@ const post = async (db, bucket, { id, target }) => {
         ret = await misskey.post(bucket, params, id, postSnap.data());
         break;
       case "tumblr":
-        ret = await tumblr.post(bucket, params, id, postSnap.data());
+        ret = await tumblr.post(db, bucket, params, id, postSnap.data());
         break;
       case "bluesky":
         ret = await bluesky.post(bucket, params, id, postSnap.data());
