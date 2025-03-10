@@ -41,10 +41,11 @@ const post = async (bucket, params, id, { text, files }) => {
           ` ${retContainer.status} ${retContainer.statusText}`,
       };
     }
+    const json = await retContainer.json();
 
     const retPublish = await fetch(
       `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-        `?creation_id=${retContainer.data.id}` +
+        `?creation_id=${json.id}` +
         `&access_token=${accessToken}`,
       { method: "POST" },
     );
@@ -184,11 +185,12 @@ const refreshThreadsAccessToken = async (db) => {
       );
 
       if (result.status === 200) {
+        const json = await result.json();
         logger.info("Threads access token refreshed");
         await authRef.update({
-          "threads.accessToken": result.data.access_token,
+          "threads.accessToken": json.access_token,
           "threads.expiredAt": new Date(
-            new Date().getTime() + result.data.expires_in * 1000,
+            new Date().getTime() + json.expires_in * 1000,
           ),
         });
       } else {

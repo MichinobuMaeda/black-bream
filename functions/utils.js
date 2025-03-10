@@ -63,7 +63,7 @@ const generateLinkCard = async (text) => {
       },
     });
 
-    parserStream.write(html.text);
+    parserStream.write(await html.text());
 
     return { err: undefined, data };
   } catch (e) {

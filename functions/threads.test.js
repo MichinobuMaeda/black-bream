@@ -31,7 +31,10 @@ describe("post", () => {
     // Prepare
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 200, data: { id: "01234566789" } }),
+        Promise.resolve({
+          status: 200,
+          json: () => Promise.resolve({ id: "01234566789" }),
+        }),
       )
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
@@ -62,7 +65,10 @@ describe("post", () => {
     // Prepare
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 200, data: { id: "01234566789" } }),
+        Promise.resolve({
+          status: 200,
+          json: () => Promise.resolve({ id: "01234566789" }),
+        }),
       )
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
@@ -137,7 +143,10 @@ describe("post", () => {
     // Prepare
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 200, data: { id: "01234566789" } }),
+        Promise.resolve({
+          status: 200,
+          json: () => Promise.resolve({ id: "01234566789" }),
+        }),
       )
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 500, statusText: "Server error" }),
@@ -346,10 +355,11 @@ describe("refreshThreadsAccessToken", () => {
     global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         status: 200,
-        data: {
-          access_token: "new-access-token",
-          expiredIn: 3600,
-        },
+        json: () =>
+          Promise.resolve({
+            access_token: "new-access-token",
+            expiredIn: 3600,
+          }),
       }),
     );
 

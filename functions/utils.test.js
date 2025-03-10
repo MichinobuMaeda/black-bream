@@ -64,7 +64,7 @@ describe("generateLinkCard", () => {
 </html>`;
     global.fetch.mockResolvedValue({
       status: 200,
-      text,
+      text: () => Promise.resolve(text),
     });
 
     // Execute
@@ -95,7 +95,7 @@ describe("generateLinkCard", () => {
 
     global.fetch.mockResolvedValue({
       status: 200,
-      text,
+      text: () => Promise.resolve(text),
     });
 
     // Execute
@@ -126,7 +126,7 @@ describe("generateLinkCard", () => {
 
     global.fetch.mockResolvedValue({
       status: 200,
-      text,
+      text: () => Promise.resolve(text),
     });
 
     // Execute
@@ -160,7 +160,7 @@ describe("generateLinkCard", () => {
 
     global.fetch.mockResolvedValue({
       status: 200,
-      text,
+      text: () => Promise.resolve(text),
     });
 
     // Execute
