@@ -83,14 +83,15 @@ const setTumblrAccessToken = async (db, { code }) => {
       body: formData,
     });
 
+    const oauthData = await oauthResp.json();
+    console.log(JSON.stringify(oauthData));
+
     if (oauthResp.status !== 200) {
-      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
+      const err = `/v2/oauth2/token: ${oauthResp.status}`;
       console.error(err);
       return { err };
     }
 
-    const oauthData = await oauthResp.json();
-    console.log(JSON.stringify(oauthData));
     const expiredAt = new Date(
       new Date().getTime() + oauthData.expires_in * 1000,
     );
