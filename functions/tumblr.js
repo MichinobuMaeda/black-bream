@@ -33,7 +33,7 @@ const post = async (db, bucket, params, id, { text, files }) => {
     } else {
       const result = await generateLinkCard(text);
       if (result.data) {
-        const url = result.data.url;
+        const url = result.data.uri;
         text = text.replace(url, "").trim();
         body = JSON.stringify({
           content: [
