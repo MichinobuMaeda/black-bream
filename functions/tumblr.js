@@ -66,7 +66,9 @@ const post = async (db, bucket, params, id, { text, files }) => {
     );
 
     if (ret.status !== 201) {
-      return { err: `${ret.status} ${ret.statusText} ${await ret.json()}` };
+      return {
+        err: `${ret.status} ${ret.statusText} ${JSON.stringify(await ret.json())}`,
+      };
     }
 
     return { err: undefined };
