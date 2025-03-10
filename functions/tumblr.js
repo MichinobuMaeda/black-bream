@@ -1,0 +1,180 @@
+const { logger } = require("firebase-functions/v2");
+const axios = require("axios");
+
+/**
+ * Post to Tumblr
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {Bucket} bucket
+ * @param {object} params
+ * @param {string} id
+ * @param {object} data
+ * @returns {Promise<object>}
+ */
+const post = async (db, bucket, params, id, { text, files }) => {
+  try {
+    const retRefresh = await refreshTumblrAccessToken(db);
+    if (retRefresh.err) {
+      return { err: retRefresh.err };
+    }
+    const accessToken = retRefresh.data ?? params.accessToken;
+
+    const url = files?.length
+      ? `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`
+      : undefined;
+    text = text.trim();
+
+    const ret = await axios.post(
+      "https://api.tumblr.com/v2/blog/{params.tumblrBlogId}/posts",
+      url
+        ? { content: [{ type: "text", text }, { url }] }
+        : { content: [{ type: "text", text }] },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    logger.info(`tumblr post media: ${ret.status} ${JSON.stringify(ret.data)}`);
+    if (ret.status !== 201) {
+      return { err: `${ret.status} ${ret.statusText}` };
+    }
+
+    return { err: undefined };
+  } catch (e) {
+    logger.error(e);
+    return { err: e.toString() };
+  }
+};
+
+/**
+ * Set access token
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} data
+ * @returns {Promise<object>}
+ */
+const setTumblrAccessToken = async (db, { status, code, challenge }) => {
+  try {
+    console.log(JSON.stringify({ status, code, challenge }));
+
+    if (!status || status === "ng") {
+      const err = `invalid state: ${status}`;
+      console.error(err);
+      return { err };
+    }
+
+    if (!code || code === "error") {
+      const err = `invalid code: ${code}`;
+      console.error(err);
+      return { err };
+    }
+
+    if (!challenge) {
+      const err = `invalid challenge: ${challenge}`;
+      console.error(err);
+      return { err };
+    }
+
+    const authRef = db.collection("service").doc("auth");
+    const auth = await authRef.get();
+    const { clientId, clientSecret, callBackUrl } = auth.get("tumblr");
+
+    const formData = new FormData();
+    formData.append("grant_type", "authorization_code");
+    formData.append("code", code);
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+    formData.append("redirect_uri", callBackUrl);
+
+    let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data" },
+      body: formData,
+    });
+
+    if (oauthResp.status !== 200) {
+      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+
+    const oauthData = await oauthResp.json();
+    console.log(JSON.stringify(oauthData));
+    const expiredAt = new Date(
+      new Date().getTime() + oauthData.expires_in * 1000,
+    );
+
+    await authRef.update({
+      "tumblr.accessToken": oauthData.access_token ?? null,
+      "tumblr.refreshToken": oauthData.refresh_token ?? null,
+      "tumblr.expiredAt": expiredAt,
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+/**
+ * Refresh access token
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} data
+ * @returns {Promise<object>}
+ */
+const refreshTumblrAccessToken = async (db) => {
+  try {
+    const authRef = db.collection("service").doc("auth");
+    const auth = await authRef.get();
+    const params = auth.get("tumblr");
+    const { clientId, clientSecret, accessToken, refreshToken, expiredAt } =
+      params;
+
+    if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
+      return { err: undefined };
+    }
+
+    logger.info(JSON.stringify(params));
+
+    const formData = new FormData();
+    formData.append("grant_type", "refresh_token");
+    formData.append("refresh_token", refreshToken);
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+
+    let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data" },
+      body: formData,
+    });
+
+    if (oauthResp.status !== 200) {
+      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
+      console.error(err);
+      return { err };
+    }
+
+    const oauthData = await oauthResp.json();
+    console.log(JSON.stringify(oauthData));
+
+    await authRef.update({
+      "tumblr.accessToken": oauthData.access_token ?? accessToken,
+      "tumblr.refreshToken": oauthData.refresh_token ?? refreshToken,
+      "tumblr.expiredAt": new Date(
+        new Date().getTime() + oauthData.expires_in * 1000,
+      ),
+      updatedAt: new Date(),
+    });
+
+    return { err: undefined, data: oauthData.access_token };
+  } catch (e) {
+    return { err: e.toString() };
+  }
+};
+
+module.exports = { post, setTumblrAccessToken };

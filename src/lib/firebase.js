@@ -52,6 +52,35 @@ import { mimeTypeList } from "./utils.js";
 
 const imageBasePath = "public/posts/";
 
+export const postTargets = [
+  "twitter",
+  "mastodon",
+  "misskey",
+  "bluesky",
+  "threads",
+  "instagram",
+  "tumblr",
+];
+
+export const socialLoginProviders = [
+  {
+    id: "email_link",
+    label: "Email Link",
+  },
+  {
+    id: "password_link",
+    label: "Password Link",
+  },
+  {
+    id: "google",
+    label: "Google",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+  },
+];
+
 /**
  * Firebase objects
  */
@@ -588,34 +617,6 @@ export const callFunction = async (name, param) => {
     return { err: "error", data: undefined };
   }
 };
-
-export const postTargets = [
-  "twitter",
-  "mastodon",
-  "misskey",
-  "bluesky",
-  "threads",
-  "instagram",
-];
-
-export const socialLoginProviders = [
-  {
-    id: "email_link",
-    label: "Email Link",
-  },
-  {
-    id: "password_link",
-    label: "Password Link",
-  },
-  {
-    id: "google",
-    label: "Google",
-  },
-  {
-    id: "github",
-    label: "GitHub",
-  },
-];
 
 /**
  * Social login

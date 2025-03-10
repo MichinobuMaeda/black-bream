@@ -5,6 +5,7 @@
   import {
     loadTwitterState,
     loadTwitterChallenge,
+    loadTumblrState,
   } from "../../lib/localstorage.js";
   /**
    * @typedef {Object} Props
@@ -35,6 +36,26 @@
         default:
           result = { err: "Invalid action" };
       }
+      break;
+    case "tumblr":
+      switch (params.action) {
+        case "callback":
+          if (params.status === loadTumblrState()) {
+            const code = params.data;
+            (async () => {
+              result = await callFunction("setTumblrAccessToken", { code });
+              if (!result.err) {
+                push("/settings");
+              }
+            })();
+          } else {
+            result = { err: params.data };
+          }
+          break;
+        default:
+          result = { err: "Invalid action" };
+      }
+
       break;
     case "twitter":
       switch (params.action) {

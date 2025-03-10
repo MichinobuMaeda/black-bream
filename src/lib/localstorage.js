@@ -106,3 +106,28 @@ export const loadTwitterChallenge = () => {
 export const saveTwitterChallenge = (value) => {
   window.localStorage.setItem(localKeyTwitterChallenge, value);
 };
+
+/**
+ * The key used to store the tumblr auth state code in local storage.
+ * @constant {string}
+ */
+const localKeyTumblrState = "black_bream_tumblr_state";
+
+/**
+ * Load the tumblr auth state code from the local storage
+ *
+ * @returns {string}
+ */
+export const loadTumblrState = () => {
+  return window.localStorage.getItem(localKeyTumblrState);
+};
+
+/**
+ * Save the tumblr auth state code to the local storage
+ *
+ * @param {string} value
+ * @returns {void}
+ */
+export const saveTumblrState = (value) => {
+  window.localStorage.setItem(localKeyTumblrState, value);
+};
