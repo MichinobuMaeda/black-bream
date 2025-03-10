@@ -6,6 +6,7 @@
   import LoginMethods from "./LoginMethods.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
+  import AuthTumblr from "./AuthTumblr.svelte";
   import AuthMisskey from "./AuthMisskey.svelte";
   import AuthBluesky from "./AuthBluesky.svelte";
   import AuthThreads from "./AuthThreads.svelte";
@@ -23,6 +24,7 @@
   <AuthTwitter />
   <AuthMastodon />
   <AuthMisskey />
+  <AuthTumblr />
   <AuthBluesky />
   <AuthThreads />
   <AuthInstagram />
