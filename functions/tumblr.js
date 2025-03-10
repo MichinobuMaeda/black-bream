@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const axios = require("axios");
 
 /**
  * Post to Tumblr
@@ -24,16 +23,17 @@ const post = async (db, bucket, params, id, { text, files }) => {
       : undefined;
     text = text.trim();
 
-    const ret = await axios.post(
+    const ret = await fetch(
       "https://api.tumblr.com/v2/blog/{params.tumblrBlogId}/posts",
-      url
-        ? { content: [{ type: "text", text }, { url }] }
-        : { content: [{ type: "text", text }] },
       {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
+        body: url
+          ? { content: [{ type: "text", text }, { url }] }
+          : { content: [{ type: "text", text }] },
       },
     );
 
