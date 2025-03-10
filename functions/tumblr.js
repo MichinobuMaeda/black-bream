@@ -1,4 +1,5 @@
 const { logger } = require("firebase-functions/v2");
+const { generateLinkCard } = require("./utils");
 
 /**
  * Post to Tumblr
@@ -22,18 +23,36 @@ const post = async (db, bucket, params, id, { text, files }) => {
       ? `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`
       : undefined;
     text = text.trim();
+    let card = undefined;
+    if (!url) {
+      const result = await generateLinkCard(text);
+      if (result.data) {
+        card = result.data;
+        text = text.replace(card.uri, "").trim();
+      }
+    }
 
     const ret = await fetch(
-      "https://api.tumblr.com/v2/blog/{params.tumblrBlogId}/posts",
+      "https://api.tumblr.com/v2/blog/{params.blogId}/posts",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: url
-          ? { content: [{ type: "text", text }, { url }] }
-          : { content: [{ type: "text", text }] },
+        body: {
+          content: url
+            ? [
+                { type: "image", media: { url } },
+                { type: "text", text },
+              ]
+            : card
+              ? [
+                  { type: "link", media: { url } },
+                  { type: "text", text },
+                ]
+              : [{ type: "text", text }],
+        },
       },
     );
 
