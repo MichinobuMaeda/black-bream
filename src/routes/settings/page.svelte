@@ -4,9 +4,10 @@
   import PreDefinedSchedules from "./PreDefinedSchedules.svelte";
   import SiteDescription from "./SiteDescription.svelte";
   import LoginMethods from "./LoginMethods.svelte";
-  import AuthMastodon from "./AuthMastodon.svelte";
-  import AuthBluesky from "./AuthBluesky.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
+  import AuthMastodon from "./AuthMastodon.svelte";
+  import AuthMisskey from "./AuthMisskey.svelte";
+  import AuthBluesky from "./AuthBluesky.svelte";
   import AuthThreads from "./AuthThreads.svelte";
   import AuthInstagram from "./AuthInstagram.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -19,9 +20,10 @@
   <SiteDescription />
 {/if}
 {#if store.admin}
-  <AuthMastodon />
-  <AuthBluesky />
   <AuthTwitter />
+  <AuthMastodon />
+  <AuthMisskey />
+  <AuthBluesky />
   <AuthThreads />
   <AuthInstagram />
   <LoginMethods />

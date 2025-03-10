@@ -1,5 +1,4 @@
 const { logger } = require("firebase-functions/v2");
-const { createHash } = require("node:crypto");
 const axios = require("axios");
 const {
   getMimeTypes,
@@ -74,10 +73,6 @@ const post = async (db, bucket, params, id, { text, files }) => {
     }
 
     text = text.trim();
-
-    // Mastodon: Idempotency keys are stored for up to 1 hour.
-    const hash = createHash("sha256");
-    hash.update(text);
 
     const ret = await axios.post(
       "https://api.x.com/2/tweets",

@@ -590,9 +590,10 @@ export const callFunction = async (name, param) => {
 };
 
 export const postTargets = [
-  "mastodon",
-  "bluesky",
   "twitter",
+  "mastodon",
+  "misskey",
+  "bluesky",
   "threads",
   "instagram",
 ];
