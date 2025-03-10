@@ -36,16 +36,8 @@
       case "tumblr":
         switch (action) {
           case "callback":
-            {
-              const code = params.get("code") || "";
-              if (code) {
-                status = "ok";
-                data = code;
-              } else {
-                status = "ng";
-                data = params.get("error") || "";
-              }
-            }
+            status = params.get("state") || "ng";
+            data = params.get("code") || "error";
             break;
           default:
             break;

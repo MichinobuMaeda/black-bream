@@ -55,7 +55,6 @@
         default:
           result = { err: "Invalid action" };
       }
-
       break;
     case "twitter":
       switch (params.action) {
