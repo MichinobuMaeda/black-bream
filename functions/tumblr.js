@@ -65,10 +65,8 @@ const post = async (db, bucket, params, id, { text, files }) => {
       },
     );
 
-    logger.info(`tumblr post: ${ret.status} ${JSON.stringify(ret.json())}`);
     if (ret.status !== 201) {
-      logger.error(JSON.stringify(ret.json()));
-      return { err: `${ret.status} ${ret.statusText}` };
+      return { err: `${ret.status} ${ret.statusText} ${await ret.json()}` };
     }
 
     return { err: undefined };
