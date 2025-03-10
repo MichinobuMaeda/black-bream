@@ -79,7 +79,6 @@ const setTumblrAccessToken = async (db, { code }) => {
 
     let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
       method: "POST",
-      headers: { "Content-Type": "multipart/form-data" },
       body: formData,
     });
 
@@ -87,7 +86,7 @@ const setTumblrAccessToken = async (db, { code }) => {
     console.log(JSON.stringify(oauthData));
 
     if (oauthResp.status !== 200) {
-      const err = `/v2/oauth2/token: ${oauthResp.status}`;
+      const err = `/v2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
       console.error(err);
       return { err };
     }
@@ -138,7 +137,6 @@ const refreshTumblrAccessToken = async (db) => {
 
     let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
       method: "POST",
-      headers: { "Content-Type": "multipart/form-data" },
       body: formData,
     });
 
