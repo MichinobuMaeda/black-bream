@@ -56,24 +56,12 @@ const post = async (db, bucket, params, id, { text, files }) => {
  * @param {object} data
  * @returns {Promise<object>}
  */
-const setTumblrAccessToken = async (db, { status, code, challenge }) => {
+const setTumblrAccessToken = async (db, { code }) => {
   try {
-    console.log(JSON.stringify({ status, code, challenge }));
-
-    if (!status || status === "ng") {
-      const err = `invalid state: ${status}`;
-      console.error(err);
-      return { err };
-    }
+    console.log(JSON.stringify({ code }));
 
     if (!code || code === "error") {
       const err = `invalid code: ${code}`;
-      console.error(err);
-      return { err };
-    }
-
-    if (!challenge) {
-      const err = `invalid challenge: ${challenge}`;
       console.error(err);
       return { err };
     }
