@@ -24,25 +24,25 @@ const post = async (db, bucket, params, id, { text, files }) => {
 
     if (files?.length) {
       const url = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
-      body = {
+      body = JSON.stringify({
         content: [
           { type: "image", media: { url } },
           { type: "text", text },
         ],
-      };
+      });
     } else {
       const result = await generateLinkCard(text);
       if (result.data) {
         const url = result.data.url;
         text = text.replace(url, "").trim();
-        body = {
+        body = JSON.stringify({
           content: [
             { type: "link", url },
             { type: "text", text },
           ],
-        };
+        });
       } else {
-        body = { content: [{ type: "text", text }] };
+        body = JSON.stringify({ content: [{ type: "text", text }] });
       }
     }
 
