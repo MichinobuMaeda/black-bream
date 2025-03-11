@@ -41,16 +41,15 @@ const post = async (db, bucket, params, id, { text, files }) => {
       const form = new FormData();
       form.append("media", new Blob([image], { type: encoding }), files[0]);
 
-      const { status, statusText, data } = await fetch(
-        "https://api.x.com/2/media/upload",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: form,
+      const resMedia = await fetch("https://api.x.com/2/media/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      );
+        body: form,
+      });
+      const { status, statusText } = resMedia;
+      const data = await resMedia.json();
       logger.info(`twitter post media: ${status} ${JSON.stringify(data)}`);
 
       media_ids.push(data.id);

@@ -21,16 +21,15 @@ const post = async (bucket, params, id, { text, files }) => {
       const form = new FormData();
       form.append("file", blob.data, files[0]);
 
-      const { status, statusText, data } = await fetch(
-        `${params.url}/v2/media`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${params.token}`,
-          },
-          body: form,
+      const resMedia = await fetch(`${params.url}/v2/media`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${params.token}`,
         },
-      );
+        body: form,
+      });
+      const { status, statusText } = resMedia;
+      const data = await resMedia.json();
       logger.info(`mastodon post media: ${status} ${JSON.stringify(data)}`);
 
       mediaIds.push(data.id);
@@ -42,9 +41,7 @@ const post = async (bucket, params, id, { text, files }) => {
             Authorization: `Bearer ${params.token}`,
           },
         });
-        logger.info(
-          `mastodon get media: ${res.status}  ${JSON.stringify(res.data)}`,
-        );
+        logger.info(`mastodon get media: ${res.status}`);
         if (res.status === 206) {
           await new Promise((r) => setTimeout(r, timeout * timeout * 1000));
         } else if (res.status !== 200) {

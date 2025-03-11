@@ -73,7 +73,10 @@ describe("post", () => {
     // Prepare
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 200, data: { id: "media-id" } }),
+        Promise.resolve({
+          status: 200,
+          json: () => Promise.resolve({ id: "media-id" }),
+        }),
       )
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
 
@@ -124,7 +127,10 @@ describe("post", () => {
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 202, data: { id: "media-id" } }),
+        Promise.resolve({
+          status: 202,
+          json: () => Promise.resolve({ id: "media-id" }),
+        }),
       )
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }))
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
@@ -183,7 +189,10 @@ describe("post", () => {
     process.env.IMAGE_UPLOAD_TIMEOUT = 1.1;
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 202, data: { id: "media-id" } }),
+        Promise.resolve({
+          status: 202,
+          json: () => Promise.resolve({ id: "media-id" }),
+        }),
       )
       .mockImplementationOnce(() => Promise.resolve({ status: 206 }))
       .mockImplementationOnce(() => Promise.resolve({ status: 200 }));
@@ -243,7 +252,7 @@ describe("post", () => {
       Promise.resolve({
         status: 500,
         statusText: "Server error",
-        data: { id: "media-id" },
+        json: () => Promise.resolve({ id: "media-id" }),
       }),
     );
 
@@ -273,7 +282,10 @@ describe("post", () => {
     // Prepare
     global.fetch
       .mockImplementationOnce(() =>
-        Promise.resolve({ status: 202, data: { id: "media-id" } }),
+        Promise.resolve({
+          status: 202,
+          json: () => Promise.resolve({ id: "media-id" }),
+        }),
       )
       .mockImplementationOnce(() =>
         Promise.resolve({ status: 500, statusText: "Server error" }),
