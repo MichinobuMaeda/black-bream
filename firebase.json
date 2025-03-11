@@ -34,6 +34,15 @@
             "value": "no-cache, no-store, max-age=0"
           }
         ]
+      },
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "https://www.google.com"
+          }
+        ]
       }
     ]
   },
