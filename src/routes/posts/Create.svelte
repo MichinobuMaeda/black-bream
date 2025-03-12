@@ -65,6 +65,7 @@
 
   const onSave = async () => {
     active = true;
+    const status = "requested";
     text = text.trim();
     const files =
       selectedImages && selectedImages[0]
@@ -82,7 +83,6 @@
         {},
       );
     const scheduledFor = new Date(schedule);
-    const status = "requested";
 
     result = await createDocument(
       "posts",

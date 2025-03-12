@@ -112,6 +112,7 @@
 
   const onSave = async () => {
     let next = null;
+    const status = post.status;
     active = true;
     text = text.trim();
     const files = deletedSavedImages
@@ -135,6 +136,7 @@
     const data = { text, files, targets, scheduledFor };
 
     if (!deleted && !!post?.deletedAt) {
+      data.status = "requested";
       result = await createDocument("posts", data, true);
       next = result.data?.id;
     } else if (
@@ -142,6 +144,7 @@
       new Date(schedule).getTime() !== post?.scheduledFor?.toDate().getTime()
     ) {
       await updateDocument("posts", post?.id, { deletedAt: new Date() });
+      data.status = "requested";
       result = await createDocument("posts", data, true);
       next = result.data?.id;
     } else {
