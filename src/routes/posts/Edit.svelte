@@ -21,6 +21,7 @@
     savePostImage,
     getSavedImageUrl,
     postTargets,
+    imageRequiredTargets,
   } from "../../lib/firebase.js";
   import { formatISO, getNextPreDefinedSchedule } from "../../lib/datetime.js";
 
@@ -45,9 +46,9 @@
       label: target,
     }));
   let orgTargets = $derived(Object.keys(post?.targets ?? {}));
-  let targets = $state([]);
+  let checkedTargets = $state([]);
   let errorTargets = $derived(
-    active ? "" : !targets.length ? t().required() : "",
+    active ? "" : !checkedTargets.length ? t().required() : "",
   );
   let schedule = $state(null);
   let savedImages = $state([]);
@@ -65,7 +66,7 @@
   $effect(() => {
     if (post) {
       text = post.text;
-      targets = Object.keys(post.targets ?? {});
+      checkedTargets = Object.keys(post.targets ?? {});
       savedImages = post.files ?? [];
       schedule = formatISO(post.scheduledFor?.toDate());
       deleted = !!post.deletedAt;
@@ -87,8 +88,8 @@
   let changed = $derived(
     !active &&
       (text !== post?.text ||
-        targets.length !== orgTargets.length ||
-        !targets.every((target) => orgTargets.includes(target)) ||
+        checkedTargets.length !== orgTargets.length ||
+        !checkedTargets.every((target) => orgTargets.includes(target)) ||
         new Date(schedule).getTime() !==
           post?.scheduledFor?.toDate().getTime() ||
         deletedSavedImages ||
@@ -99,7 +100,7 @@
 
   const onCancel = async (next = null) => {
     text = post?.text;
-    targets = Object.keys(post?.targets ?? {});
+    checkedTargets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
     schedule = formatISO(post?.scheduledFor?.toDate());
     if (next) {
@@ -113,22 +114,25 @@
     let next = null;
     active = true;
     text = text.trim();
+    const files = deletedSavedImages
+      ? selectedImages && selectedImages[0]
+        ? [`1.${selectedImages[0].name.split(".").pop()}`]
+        : []
+      : savedImages;
+    const targets = checkedTargets
+      .filter(
+        (target) => files.length || !imageRequiredTargets.includes(target),
+      )
+      .reduce(
+        (acc, cur) => ({
+          ...acc,
+          [cur]: { status, createdAt: new Date() },
+        }),
+        {},
+      );
+    const scheduledFor = new Date(schedule);
 
-    const data = deletedSavedImages
-      ? {
-          text,
-          files:
-            selectedImages && selectedImages[0]
-              ? [`1.${selectedImages[0].name.split(".").pop()}`]
-              : [],
-          scheduledFor: new Date(schedule),
-          deletedAt: deleted ? new Date() : null,
-        }
-      : {
-          text,
-          scheduledFor: new Date(schedule),
-          deletedAt: deleted ? new Date() : null,
-        };
+    const data = { text, files, targets, scheduledFor };
 
     if (!deleted && !!post?.deletedAt) {
       result = await createDocument("posts", data, true);
@@ -208,9 +212,16 @@
             <GroupedCheckBox
               id="targets"
               items={targetItems}
-              bind:value={targets}
+              bind:value={checkedTargets}
             />
           </Wrap>
+        </Fields>
+        <Fields>
+          {#if !selectedImages?.length && imageRequiredTargets.some( (target) => checkedTargets.includes(target), )}
+            <p class="text-lightPrimary dark:text-darkPrimary">
+              {t().skipPostingWithoutImage(imageRequiredTargets)}
+            </p>
+          {/if}
         </Fields>
       </div>
       <Fields>

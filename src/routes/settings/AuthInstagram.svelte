@@ -25,10 +25,9 @@
     instagramAccessToken = store.auth?.instagram?.accessToken;
     instagramEnabled = !store.auth?.instagram?.deletedAt;
   });
-  let errorInstagramIdentifier = $derived(
+  let errorInstagramClientId = $derived(
     instagramEnabled && !instagramClientId ? t().required() : "",
   );
-  let errorInstagramPassword = $derived(instagramEnabled ? t().required() : "");
 
   let errorInstagramAccessToken = $derived(
     instagramEnabled && !instagramAccessToken ? t().required() : "",
@@ -42,11 +41,7 @@
         instagramAccessToken !== store.auth?.instagram?.accessToken ||
         instagramEnabled !== !store.auth?.instagram?.deletedAt),
   );
-  let valid = $derived(
-    !errorInstagramIdentifier &&
-      !errorInstagramPassword &&
-      !errorInstagramAccessToken,
-  );
+  let valid = $derived(!errorInstagramClientId && !errorInstagramAccessToken);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
@@ -101,7 +96,7 @@
           type="text"
           bind:value={instagramClientId}
           message={t().current(store.auth?.instagram?.clientId ?? "--")}
-          error={errorInstagramIdentifier}
+          error={errorInstagramClientId}
         />
       </Fields>
       <Fields>

@@ -62,6 +62,8 @@ export const postTargets = [
   "tumblr",
 ];
 
+export const imageRequiredTargets = ["instagram"];
+
 export const socialLoginProviders = [
   {
     id: "email_link",

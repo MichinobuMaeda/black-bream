@@ -60,7 +60,7 @@ export class I18n {
     this.locale === "ja" ? "テンプレートを使用しない" : "Do not use a template";
   preDefinedSchedules = () =>
     this.locale === "ja" ? "事前設定スケジュール" : "Pre-defined schedules";
-  dayOfWeek = () => (this.locale === "ja" ? "曜日" : "Day of week");
+  dayOfWeek = () => (this.locale === "ja" ? "曜日" : "DoW");
   hour = () => (this.locale === "ja" ? "時" : "Hour");
   minute = () => (this.locale === "ja" ? "分" : "Minute");
   sunday = () => (this.locale === "ja" ? "日" : "Su");
@@ -69,7 +69,7 @@ export class I18n {
   wednesday = () => (this.locale === "ja" ? "水" : "We");
   thursday = () => (this.locale === "ja" ? "木" : "Th");
   friday = () => (this.locale === "ja" ? "金" : "Fr");
-  saturday = () => (this.locale === "ja" ? "土" : "");
+  saturday = () => (this.locale === "ja" ? "土" : "Sa");
   authentication = () => (this.locale === "ja" ? "認証" : "Authentication");
   account = () => (this.locale === "ja" ? "アカウント" : "Account");
   profile = () => (this.locale === "ja" ? "プロフィール" : "Profile");
@@ -130,6 +130,10 @@ export class I18n {
     this.locale === "ja" ? "今すぐログアウトする" : "Logout now";
   getAccessToken = () =>
     this.locale === "ja" ? "Access Token を取得する" : "Get access token";
+  skipPostingWithoutImage = (targets) =>
+    this.locale === "ja"
+      ? `画像が設定されていないため投稿をスキップします: ${targets.join(", ")}`
+      : `No image set. Skip posting: ${targets.join(", ")}`;
 
   current = (value) =>
     this.locale === "ja" ? `変更前: ${value}` : `Current: ${value}`;

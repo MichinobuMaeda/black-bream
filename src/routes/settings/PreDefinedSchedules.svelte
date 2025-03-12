@@ -15,35 +15,14 @@
   let h = $state(store.conf.preDefinedSchedules?.h ?? []);
   let m = $state(store.conf.preDefinedSchedules?.m ?? []);
 
-  const wdItems = [
-    {
-      value: 0,
-      label: t().sunday(),
-    },
-    {
-      value: 1,
-      label: t().monday(),
-    },
-    {
-      value: 2,
-      label: t().tuesday(),
-    },
-    {
-      value: 3,
-      label: t().wednesday(),
-    },
-    {
-      value: 4,
-      label: t().thursday(),
-    },
-    {
-      value: 5,
-      label: t().friday(),
-    },
-    {
-      value: 6,
-      label: t().saturday(),
-    },
+  const wdItems = () => [
+    { value: 0, label: t().sunday() },
+    { value: 1, label: t().monday() },
+    { value: 2, label: t().tuesday() },
+    { value: 3, label: t().wednesday() },
+    { value: 4, label: t().thursday() },
+    { value: 5, label: t().friday() },
+    { value: 6, label: t().saturday() },
   ];
   const hItems = Array.from({ length: 24 }, (_, i) => i).map((i) => ({
     value: i,
@@ -93,7 +72,7 @@
         <h5>{t().dayOfWeek()}</h5>
         <GroupedCheckBox
           id="preDefinedSchedulesWd"
-          items={wdItems}
+          items={wdItems()}
           bind:value={wd}
         />
       </div>
@@ -137,7 +116,7 @@
         {t().dayOfWeek()}
       </span>
       <span class="font-mono">
-        {wd.map((v) => wdItems.find((i) => i.value === v).label).join(" ")}
+        {wd.map((v) => wdItems().find((i) => i.value === v).label).join(" ")}
       </span>
     </div>
     <div class="flex flex-row gap-2">

@@ -18,6 +18,7 @@
     createDocument,
     savePostImage,
     postTargets,
+    imageRequiredTargets,
   } from "../../lib/firebase.js";
   import { formatISO, getNextPreDefinedSchedule } from "../../lib/datetime.js";
 
@@ -35,9 +36,9 @@
       value: target,
       label: target,
     }));
-  let targets = $state([]);
+  let checkedTargets = $state(targetItems.map((item) => item.value));
   let errorTargets = $derived(
-    active ? "" : !targets.length ? t().required() : "",
+    active ? "" : !checkedTargets.length ? t().required() : "",
   );
   let schedule = $state(formatISO(new Date()));
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
@@ -55,7 +56,7 @@
 
   const onCancel = async () => {
     text = "";
-    targets = [];
+    checkedTargets = [];
     schedule = formatISO(new Date());
     pop();
   };
@@ -65,23 +66,27 @@
   const onSave = async () => {
     active = true;
     text = text.trim();
+    const files =
+      selectedImages && selectedImages[0]
+        ? [`1.${selectedImages[0].name.split(".").pop()}`]
+        : [];
+    const targets = checkedTargets
+      .filter(
+        (target) => files.length || !imageRequiredTargets.includes(target),
+      )
+      .reduce(
+        (acc, cur) => ({
+          ...acc,
+          [cur]: { status, createdAt: new Date() },
+        }),
+        {},
+      );
+    const scheduledFor = new Date(schedule);
     const status = "requested";
 
     result = await createDocument(
       "posts",
-      {
-        text,
-        files:
-          selectedImages && selectedImages[0]
-            ? [`1.${selectedImages[0].name.split(".").pop()}`]
-            : [],
-        targets: targets.reduce(
-          (acc, cur) => ({ ...acc, [cur]: { status, createdAt: new Date() } }),
-          {},
-        ),
-        scheduledFor: new Date(schedule),
-        status,
-      },
+      { text, files, targets, scheduledFor, status },
       true,
     );
 
@@ -173,9 +178,16 @@
               <GroupedCheckBox
                 id="targets"
                 items={targetItems}
-                bind:value={targets}
+                bind:value={checkedTargets}
               />
             </Wrap>
+          </Fields>
+          <Fields>
+            {#if !selectedImages?.length && imageRequiredTargets.some( (target) => checkedTargets.includes(target), )}
+              <p class="text-lightPrimary dark:text-darkPrimary">
+                {t().skipPostingWithoutImage(imageRequiredTargets)}
+              </p>
+            {/if}
           </Fields>
         </div>
         <Fields>
