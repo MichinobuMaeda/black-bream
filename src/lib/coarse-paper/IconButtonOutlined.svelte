@@ -27,16 +27,16 @@
   type="button"
   class={"flex border rounded-full text-base justify-center items-center" +
     (dense ? " size-8" : " size-10") +
-    " bg-lightForm dark:bg-darkForm" +
+    " bg-light-form dark:bg-dark-form" +
     (disabled
-      ? " border-lightOutline dark:border-darkOutline" +
-        " text-lightOnSurface dark:text-darkOnSurface" +
+      ? " border-light-outline dark:border-dark-outline" +
+        " text-light-on-surface dark:text-dark-on-surface" +
         " opacity-30"
       : danger
-        ? " border-lightError dark:border-darkError" +
-          " text-lightError dark:text-darkError"
-        : " border-lightOutline dark:border-darkOutline" +
-          " text-lightPrimary dark:text-darkPrimary")}
+        ? " border-light-error dark:border-dark-error" +
+          " text-light-error dark:text-dark-error"
+        : " border-light-outline dark:border-dark-outline" +
+          " text-light-primary dark:text-dark-primary")}
   onclick={disabled ? () => {} : () => onClick()}
 >
   <span class="flex size-6"><SvgIcon /></span>

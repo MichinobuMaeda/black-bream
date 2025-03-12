@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import {
   argbFromHex,
   DynamicScheme,
@@ -6,25 +7,24 @@ import {
   TonalPalette,
   sanitizeDegreesDouble,
 } from "@material/material-color-utilities";
-
-export const contrast = { standard: 0, medium: 0.3, high: 0.9 };
+import materialThemeConfig from "./material-theme.config.js";
 
 /**
  * Generate a color scheme based on a seed color
- * @param {string} seedColor
- * @param {number} contrast
- * @returns {object}
+ *
+ * @param {object} config
+ * @returns {Promise<void>}
  */
-export const generateScheme = (seedColor, contrast) => {
-  const sourceColorHct = Hct.fromInt(argbFromHex(seedColor));
-  // const hue = sourceColorHct.hue;
-  // const chroma = sourceColorHct.chroma;
+const generateScheme = async ({ out, seedColor, link, form, contrast }) => {
+  let css = "@theme {\n";
 
-  const scheme = {};
+  const sourceColorHct = Hct.fromInt(argbFromHex(seedColor));
+
   const brightnessSet = [
     { key: "light", value: false },
     { key: "dark", value: true },
   ];
+
   brightnessSet.forEach((brightness) => {
     const ds = new DynamicScheme({
       sourceColorHct,
@@ -43,7 +43,6 @@ export const generateScheme = (seedColor, contrast) => {
         8.0,
       ),
     });
-    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
     [
       "primary",
       "surfaceTint",
@@ -95,9 +94,24 @@ export const generateScheme = (seedColor, contrast) => {
       "surfaceContainerHigh",
       "surfaceContainerHighest",
     ].forEach((key) => {
-      scheme[`${brightness.key}${capitalize(key)}`] = hexFromArgb(ds[key]);
+      css += `  --color-${brightness.key}-${key.replace(/[A-Z]+(?![a-z])|[A-Z]/g, ($, ofs) => (ofs ? "-" : "") + $.toLowerCase())}: ${hexFromArgb(ds[key])};\n`;
     });
   });
 
-  return scheme;
+  css += `  --color-light-link: var(${link.light});\n`;
+  css += `  --color-dark-link: var(${link.dark});\n`;
+  css += `  --color-light-form: var(${form.bg.light});\n`;
+  css += `  --color-light-on-form: var(${form.bg.dark});\n`;
+  css += `  --color-dark-form: var(${form.text.light});\n`;
+  css += `  --color-dark-on-form: var(${form.text.dark});\n`;
+
+  css += "}\n";
+
+  try {
+    await fs.writeFile(out, css);
+  } catch (err) {
+    console.error(err);
+  }
 };
+
+await generateScheme(materialThemeConfig);

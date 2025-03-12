@@ -112,7 +112,7 @@
       onClick={() => (edit = true)}
     />
     <div class="flex flex-row gap-2">
-      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+      <span class="text-light-primary dark:text-dark-primary w-12">
         {t().dayOfWeek()}
       </span>
       <span class="font-mono">
@@ -120,13 +120,13 @@
       </span>
     </div>
     <div class="flex flex-row gap-2">
-      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+      <span class="text-light-primary dark:text-dark-primary w-12">
         {t().hour()}
       </span>
       <span class="font-mono">{h.join(", ")}</span>
     </div>
     <div class="flex flex-row gap-2">
-      <span class="text-lightPrimary dark:text-darkPrimary w-12">
+      <span class="text-light-primary dark:text-dark-primary w-12">
         {t().minute()}
       </span>
       <span class="font-mono">{m.join(", ")}</span>

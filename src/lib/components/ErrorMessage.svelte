@@ -2,6 +2,6 @@
   let { children } = $props();
 </script>
 
-<div class="text-lightError dark:text-darkError">
+<div class="text-light-error dark:text-dark-error">
   {@render children()}
 </div>

@@ -19,10 +19,10 @@
   type="button"
   class={"text-base" +
     (disabled
-      ? " text-lightOnSurface dark:text-darkOnSurface opacity-30"
+      ? " text-light-on-surface dark:text-dark-on-surface opacity-30"
       : danger
-        ? " text-lightError dark:text-darkError"
-        : " text-lightPrimary dark:text-darkPrimary")}
+        ? " text-light-error dark:text-dark-error"
+        : " text-light-primary dark:text-dark-primary")}
   onclick={disabled ? () => {} : () => onClick()}
 >
   <span class="flex size-6"><SvgIcon /></span>

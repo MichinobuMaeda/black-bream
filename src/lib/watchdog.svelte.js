@@ -29,7 +29,7 @@ const stopWatchdog = () => {
   }
 };
 
-window.addEventListener("blur", startWatchDog);
+window.addEventListener("blur-sm", startWatchDog);
 window.addEventListener("focus", stopWatchdog);
 
 /**

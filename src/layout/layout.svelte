@@ -11,7 +11,7 @@
 <PWABadge />
 <div
   class="flex flex-col-reverse sm:flex-row
-    bg-lightSurfaceDim dark:bg-darkSurfaceDim"
+    bg-light-surface-dim dark:bg-dark-surface-dim"
 >
   {#if store.authUser === undefined || store.conf === undefined}
     <Loading />
@@ -19,8 +19,8 @@
     <MainMenu />
     <div
       class="min-h-screen w-full lg:w-[1048px]
-      bg-lightSurfaceContainerLowest dark:bg-darkSurfaceContainerLowest
-      text-lightOnSurface dark:text-darkOnSurface"
+      bg-light-surface-container-lowest dark:bg-dark-surface-container-lowest
+      text-light-on-surface dark:text-dark-on-surface"
     >
       <main class="flex flex-col mb-auto pb-4">
         <Header />

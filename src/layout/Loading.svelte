@@ -4,8 +4,8 @@
 
 <div
   class="flex flex-col min-h-screen w-full justify-center items-center gap-4
-  bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow
-  text-lightTertiary dark:text-darkTertiary"
+  bg-light-surface-container-low dark:bg-dark-surface-container-low
+  text-light-tertiary dark:text-dark-tertiary"
 >
   <img src="/favicon.svg" alt={t().appTitle()} class="size-24" />
   <div class="text-xl">{t().appTitle()}</div>

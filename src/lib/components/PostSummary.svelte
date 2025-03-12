@@ -28,7 +28,7 @@
     <span class="flex flex-row gap-1">
       {#each targets as target (target)}
         {#if Object.keys(post.targets ?? {}).includes(target)}
-          <span class="size-5 text-lightPrimary dark:text-darkPrimary">
+          <span class="size-5 text-light-primary dark:text-dark-primary">
             <TargetIcon {target} />
           </span>
         {:else}

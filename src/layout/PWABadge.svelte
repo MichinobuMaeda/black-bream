@@ -51,7 +51,7 @@
 {#if $needRefresh}
   <div
     class="flex justify-center py-0.5 sticky top-0 z-50
-      bg-lightErrorContainer dark:bg-darkErrorContainer"
+      bg-light-error-container dark:bg-dark-error-container"
   >
     <ButtonFilled
       id="updateApp"

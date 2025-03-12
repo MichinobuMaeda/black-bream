@@ -18,6 +18,8 @@
     disabled = false,
     danger = false,
   } = $props();
+
+  const SvgIcon = $derived(icon);
 </script>
 
 <button
@@ -25,15 +27,14 @@
   type="button"
   class={"px-1 text-base" +
     (disabled
-      ? " text-lightOnSurface dark:text-darkOnSurface" + " opacity-30"
+      ? " text-light-on-surface dark:text-dark-on-surface" + " opacity-30"
       : danger
-        ? " text-lightError dark:text-darkError"
-        : " text-lightPrimary dark:text-darkPrimary")}
+        ? " text-light-error dark:text-dark-error"
+        : " text-light-primary dark:text-dark-primary")}
   onclick={disabled ? () => {} : () => onClick()}
 >
   <span class="flex flex-row gap-0.5">
     {#if icon !== null}
-      {@const SvgIcon = icon}
       <span class="w-6 h-6"><SvgIcon /></span>
     {/if}
     {label}

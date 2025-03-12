@@ -139,7 +139,7 @@
           }}
         />
         {#if item.deletedAt}
-          <span class="line-through text-lightError dark:text-darkError">
+          <span class="line-through text-light-error dark:text-dark-error">
             {item.text.split("\n").join(" / ")}
           </span>
         {:else}

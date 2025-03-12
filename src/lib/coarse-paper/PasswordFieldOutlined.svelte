@@ -28,27 +28,27 @@
 </script>
 
 <div class="flex flex-col grow h-[68px]">
-  <label
-    for={id}
-    class={"mt-2 py-2 px-2 relative block rounded-md border" +
-      " focus-within:border-2" +
-      " bg-lightForm dark:bg-darkForm" +
-      " text-lightOnSurface dark:text-darkOnSurface" +
-      (error
-        ? " border-lightError dark:border-darkError"
-        : " border-lightOutline dark:border-darkOutline" +
-          " focus-within:border-lightPrimary focus-within:dark:border-darkPrimary")}
-  >
-    <div class="flex flex-row">
+  <div class="flex flex-row items-center">
+    <label
+      for={id}
+      class={"mt-2 py-2 px-2 grow relative block rounded-md border" +
+        " focus-within:border-2" +
+        " bg-light-form dark:bg-dark-form" +
+        " text-light-on-surface dark:text-dark-on-surface" +
+        (error
+          ? " border-light-error dark:border-dark-error"
+          : " border-light-outline dark:border-dark-outline" +
+            " focus-within:border-light-primary dark:focus-within:border-dark-primary")}
+    >
       <input
         {id}
         type={visible ? "text" : "password"}
         bind:value
         class={"peer border-none w-full text-base" +
-          " focus:border-none focus:outline-none focus:ring-0" +
+          " focus:border-none focus:outline-hidden focus:ring-0" +
           " placeholder-transparent dark:placeholder-transparent" +
-          " bg-lightForm dark:bg-darkForm" +
-          " text-lightOnSurface dark:text-darkOnSurface" +
+          " bg-light-form dark:bg-dark-form" +
+          " text-light-on-surface dark:text-dark-on-surface" +
           " font-mono"}
         placeholder={label}
         {readonly}
@@ -58,49 +58,46 @@
         class={"peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm" +
           " peer-focus:top-0 peer-focus:text-xs pointer-events-none" +
           " absolute start-2 top-0 -translate-y-1/2 p-0.5 text-xs transition-all" +
-          " bg-lightForm dark:bg-darkForm" +
+          " bg-light-form dark:bg-dark-form" +
           (error
-            ? " text-lightError dark:text-darkError"
-            : " text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant" +
-              " peer-focus:text-lightPrimary dark:peer-focus:text-darkPrimary")}
+            ? " text-light-error dark:text-dark-error"
+            : " text-light-on-surface-variant dark:text-dark-on-surface-variant" +
+              " peer-focus:text-light-primary dark:peer-focus:text-dark-primary")}
       >
         {label}
       </span>
-      <button
-        id={`${id}-visible`}
-        type="button"
-        class={"text-base" +
-          (disabled
-            ? " text-lightOutline dark:text-darkOutline" + " opacity-50"
-            : error
-              ? " text-lightError dark:text-darkError"
-              : " text-lightOutline dark:text-darkOutline" +
-                " peer-focus:text-lightPrimary dark:peer-focus:text-darkPrimary")}
-        onclick={() => {
-          visible = !visible;
-        }}
-      >
-        <span class="absolute end-2 top-2 w-6 h-6">
-          {#if visible}
-            <SvgVisibilityOn />
-          {:else}
-            <SvgVisibilityOff />
-          {/if}
-        </span>
-      </button>
-    </div>
-  </label>
+    </label>
+    <button
+      id={`${id}-visible`}
+      type="button"
+      class={"text-base w-6 h-6 mx-2 pt-1" +
+        (disabled
+          ? " text-light-outline dark:text-dark-outline" + " opacity-50"
+          : error
+            ? " text-light-error dark:text-dark-error"
+            : " text-light-outline dark:text-dark-outline")}
+      onclick={() => {
+        visible = !visible;
+      }}
+    >
+      {#if visible}
+        <SvgVisibilityOn />
+      {:else}
+        <SvgVisibilityOff />
+      {/if}
+    </button>
+  </div>
   {#if !error}
     <div
       class="text-sm pl-2 line-clamp-1 text-ellipsis
-        text-lightOnSurface dark:text-darkOnSurface"
+        text-light-on-surface dark:text-dark-on-surface"
     >
       {message}
     </div>
   {:else}
     <div
       class="text-sm pl-2 line-clamp-1 text-ellipsis
-        text-lightError dark:text-darkError"
+        text-light-error dark:text-dark-error"
     >
       {error}
     </div>

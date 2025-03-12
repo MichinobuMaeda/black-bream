@@ -184,7 +184,7 @@
           </Fields>
           <Fields>
             {#if !selectedImages?.length && imageRequiredTargets.some( (target) => checkedTargets.includes(target), )}
-              <p class="text-lightPrimary dark:text-darkPrimary">
+              <p class="text-light-primary dark:text-dark-primary">
                 {t().skipPostingWithoutImage(imageRequiredTargets)}
               </p>
             {/if}

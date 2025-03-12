@@ -37,8 +37,8 @@
 
 <div
   class="flex flex-row mb-0.5 px-2 sm:px-4 py-1 sm:py-1.5 gap-6 justify-end
-    bg-lightSurfaceContainerHigh dark:bg-darkSurfaceContainerHigh
-    text-lightOnSurfaceVariant dark:text-darkOnSurfaceVariant"
+    bg-light-surface-container-high dark:bg-dark-surface-container-high
+    text-light-on-surface-variant dark:text-dark-on-surface-variant"
 >
   <div class="flex gap-2">
     {#each locales as locale (locale.value)}

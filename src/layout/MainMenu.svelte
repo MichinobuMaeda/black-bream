@@ -10,10 +10,10 @@
 
   const linkColor = (location, path) =>
     location === path
-      ? " bg-lightPrimaryContainer dark:bg-darkPrimaryContainer" +
-        " text-lightOnPrimaryContainer dark:text-darkOnPrimaryContainer"
-      : " bg-lightSecondaryContainer dark:bg-darkSecondaryContainer" +
-        " text-lightOnSecondaryContainer dark:text-darkOnSecondaryContainer";
+      ? " bg-light-primary-container dark:bg-dark-primary-container" +
+        " text-light-on-primary-container dark:text-dark-on-primary-container"
+      : " bg-light-secondary-container dark:bg-dark-secondary-container" +
+        " text-light-on-secondary-container dark:text-dark-on-secondary-container";
 </script>
 
 {#snippet navItem(
@@ -49,10 +49,10 @@
 <header
   class="flex flex-row sm:flex-col gap-4 xl:gap-4 p-2 z-50
     sm:h-screen sticky bottom-0 sm:top-0 items-center xl:items-start
-    bg-lightSurfaceContainerLow dark:bg-darkSurfaceContainerLow
-    text-lightOnSurface dark:text-darkOnSurface"
+    bg-light-surface-container-low dark:bg-dark-surface-container-low
+    text-light-on-surface dark:text-dark-on-surface"
 >
-  <div class="flex flex-auto sm:flex-grow-0 gap-2 xl:items-start items-center">
+  <div class="flex flex-auto sm:grow-0 gap-2 xl:items-start items-center">
     {#if $location === "/"}
       <button on:click={() => pop()}
         ><img src="/favicon.svg" alt={t().appTitle()} class="size-10" /></button

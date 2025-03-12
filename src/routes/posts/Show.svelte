@@ -50,11 +50,11 @@
       <div class="flex flex-wrap gap-3">
         {#each targets as target (target)}
           <span class="flex gap-1">
-            <span class="size-6 text-lightPrimary dark:text-darkPrimary">
+            <span class="size-6 text-light-primary dark:text-dark-primary">
               <TargetIcon {target} />
             </span>
             <span
-              class="size-6 text-lightOnBackground dark:text-darkOnBackground"
+              class="size-6 text-light-on-background dark:text-dark-on-background"
             >
               <StatusIcon status={post.targets[target]?.status} />
             </span>
