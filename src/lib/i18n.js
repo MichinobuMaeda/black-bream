@@ -1,4 +1,4 @@
-import { appName } from "../../theme.js";
+import config from "../../theme.js";
 
 /**
  * An array of locale objects, each containing a value and a label.
@@ -26,7 +26,7 @@ export class I18n {
     this.locale = locale;
   }
 
-  appTitle = () => (this.locale === "ja" ? appName : appName);
+  appTitle = () => (this.locale === "ja" ? config.appName : config.appName);
   send = () => (this.locale === "ja" ? "送信" : "Send");
   login = () => (this.locale === "ja" ? "ログイン" : "Login");
   logout = () => (this.locale === "ja" ? "ログアウト" : "Logout");

@@ -7,7 +7,42 @@ import {
   TonalPalette,
   sanitizeDegreesDouble,
 } from "@material/material-color-utilities";
-import materialThemeConfig from "./material-theme.config.js";
+import config from "./theme.js";
+
+/**
+ * Generate a dynamic color scheme based on a seed color
+ *
+ * @param {object} config
+ * @param {boolean} isDark
+ * @returns {DynamicScheme}
+ */
+export const generateDynamicScheme = (config, isDark) => {
+  const { seedColor, contrastLevel } = config;
+  const sourceColorHct = Hct.fromInt(argbFromHex(seedColor));
+  return new DynamicScheme({
+    sourceColorHct,
+    variant: "variant",
+    contrastLevel,
+    isDark,
+    primaryPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 36.0),
+    secondaryPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 16.0),
+    tertiaryPalette: TonalPalette.fromHueAndChroma(
+      sanitizeDegreesDouble(sourceColorHct.hue + 60.0),
+      24.0,
+    ),
+    neutralPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 6.0),
+    neutralVariantPalette: TonalPalette.fromHueAndChroma(
+      sourceColorHct.hue,
+      8.0,
+    ),
+  });
+};
+
+const toKebabuCase = (str) =>
+  str.replace(
+    /[A-Z]+(?![a-z])|[A-Z]/g,
+    ($, ofs) => (ofs ? "-" : "") + $.toLowerCase(),
+  );
 
 /**
  * Generate a color scheme based on a seed color
@@ -15,34 +50,13 @@ import materialThemeConfig from "./material-theme.config.js";
  * @param {object} config
  * @returns {Promise<void>}
  */
-const generateScheme = async ({ out, seedColor, link, form, contrast }) => {
+const generateThemeCss = async (config) => {
+  const { out, link, form } = config;
   let css = "@theme {\n";
 
-  const sourceColorHct = Hct.fromInt(argbFromHex(seedColor));
+  [false, true].forEach((isDark) => {
+    const ds = generateDynamicScheme(config, isDark);
 
-  const brightnessSet = [
-    { key: "light", value: false },
-    { key: "dark", value: true },
-  ];
-
-  brightnessSet.forEach((brightness) => {
-    const ds = new DynamicScheme({
-      sourceColorHct,
-      variant: "variant",
-      contrastLevel: contrast,
-      isDark: brightness.value,
-      primaryPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 36.0),
-      secondaryPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 16.0),
-      tertiaryPalette: TonalPalette.fromHueAndChroma(
-        sanitizeDegreesDouble(sourceColorHct.hue + 60.0),
-        24.0,
-      ),
-      neutralPalette: TonalPalette.fromHueAndChroma(sourceColorHct.hue, 6.0),
-      neutralVariantPalette: TonalPalette.fromHueAndChroma(
-        sourceColorHct.hue,
-        8.0,
-      ),
-    });
     [
       "primary",
       "surfaceTint",
@@ -94,7 +108,7 @@ const generateScheme = async ({ out, seedColor, link, form, contrast }) => {
       "surfaceContainerHigh",
       "surfaceContainerHighest",
     ].forEach((key) => {
-      css += `  --color-${brightness.key}-${key.replace(/[A-Z]+(?![a-z])|[A-Z]/g, ($, ofs) => (ofs ? "-" : "") + $.toLowerCase())}: ${hexFromArgb(ds[key])};\n`;
+      css += `  --color-${isDark ? "dark" : "light"}-${toKebabuCase(key)}: ${hexFromArgb(ds[key])};\n`;
     });
   });
 
@@ -114,4 +128,4 @@ const generateScheme = async ({ out, seedColor, link, form, contrast }) => {
   }
 };
 
-await generateScheme(materialThemeConfig);
+await generateThemeCss(config);

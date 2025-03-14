@@ -1,7 +1,11 @@
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { appName, themeColor } from "./theme.js";
+import { hexFromArgb } from "@material/material-color-utilities";
+import config from "./theme.js";
+import { generateDynamicScheme } from "./material-theme.js";
+
+const ds = generateDynamicScheme(config, false);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,11 +24,11 @@ export default defineConfig({
       },
 
       manifest: {
-        name: appName,
-        short_name: appName,
-        description: appName,
-        theme_color: themeColor,
-        background_color: themeColor,
+        name: config.appName,
+        short_name: config.appName,
+        description: config.appName,
+        theme_color: hexFromArgb(ds.primary),
+        background_color: hexFromArgb(ds.surfaceContainer),
         lang: "ja",
       },
 
