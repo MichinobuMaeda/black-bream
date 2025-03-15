@@ -1,5 +1,9 @@
 const { logger } = require("firebase-functions/v2");
-const { getMediaAsUint8Array, reduceImageSize } = require("./utils.js");
+const {
+  getMediaAsUint8Array,
+  reduceImageSize,
+  getMimeTypes,
+} = require("./utils.js");
 
 /**
  * Post to Misskey
@@ -21,11 +25,11 @@ const post = async (bucket, params, id, { text, files }) => {
       }
 
       const form = new FormData();
-      form.append(
-        "file",
-        await reduceImageSize(new Uint8Array(result.data), 1000 * 1000),
-        files[0],
+      const image = new Blob(
+        [await reduceImageSize(new Uint8Array(result.data), 1000 * 1000)],
+        { type: getMimeTypes(files[0]) },
       );
+      form.append("file", image, files[0]);
       form.append("name", files[0]);
       form.append("isSensitive", false);
 

@@ -184,7 +184,7 @@ const getMediaAsBlob = async (bucket, id, file) => {
  *
  * @param {Uint8Array} image
  * @param {number} byte
- * @returns {Uint8Array}
+ * @returns {Promise<Uint8Array>}
  */
 const reduceImageSize = async (image, byte) => {
   const { width, height, size } = await sharp(image).metadata();

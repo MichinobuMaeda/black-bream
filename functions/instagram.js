@@ -36,7 +36,9 @@ const post = async (bucket, params, id, { text, files }) => {
       return { err };
     }
 
-    logger.info(`Created container: ${response.data.id}`);
+    const media = await response.json();
+
+    logger.info(`Created container: ${media.id}`);
 
     const { status, statusText } = await fetch(
       `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
@@ -46,7 +48,7 @@ const post = async (bucket, params, id, { text, files }) => {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ creation_id: response.data.id }),
+        body: JSON.stringify({ creation_id: media.id }),
       },
     );
 
