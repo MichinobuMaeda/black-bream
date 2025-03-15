@@ -18,38 +18,37 @@ const post = async (bucket, params, id, { text, files }) => {
   try {
     const mediaIds = [];
     if (files?.length) {
-      const result = await getMediaAsUint8Array(bucket, id, files[0]);
+      const mediaResult = await getMediaAsUint8Array(bucket, id, files[0]);
 
-      if (result.err) {
-        return { err: result.err, data: undefined };
+      if (mediaResult.err) {
+        return { err: mediaResult.err, data: undefined };
       }
 
       const form = new FormData();
       const image = new Blob(
-        [await reduceImageSize(new Uint8Array(result.data), 1000 * 1000)],
+        [await reduceImageSize(new Uint8Array(mediaResult.data), 1000 * 1000)],
         { type: getMimeTypes(files[0]) },
       );
       form.append("file", image, files[0]);
       form.append("name", files[0]);
       form.append("isSensitive", false);
 
-      const { status, statusText, data } = await fetch(
-        `${params.url}/drive/files/create`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${params.token}`,
-          },
-          body: form,
+      const postResult = await fetch(`${params.url}/drive/files/create`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${params.token}`,
         },
-      );
-      logger.info(`misskey post media: ${status} ${JSON.stringify(data)}`);
+        body: form,
+      });
 
-      mediaIds.push(data.id);
-
+      const { status } = postResult;
       if (status !== 200) {
-        return { err: `${status} ${statusText}` };
+        return { err: `${status}` };
       }
+
+      const data = await postResult.json();
+      logger.info(`misskey post media: ${status} ${JSON.stringify(data)}`);
+      mediaIds.push(data.id);
     }
 
     const visibility = "public";
