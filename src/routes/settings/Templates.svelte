@@ -125,27 +125,31 @@
       }}
     />
     {#each templates as item (item.id)}
-      <div class="flex flex-row gap-4">
-        <ButtonText
-          id={item.id}
-          icon={SvgEdit}
-          label={item.name}
-          onClick={() => {
-            template = item;
-            id = item.id;
-            name = item.name;
-            text = item.text;
-            deleted = !!item.deletedAt;
-          }}
-        />
-        {#if item.deletedAt}
-          <span class="line-through text-light-error dark:text-dark-error">
+      <Wrap>
+        <Fields>
+          <ButtonText
+            id={item.id}
+            icon={SvgEdit}
+            label={item.name}
+            onClick={() => {
+              template = item;
+              id = item.id;
+              name = item.name;
+              text = item.text;
+              deleted = !!item.deletedAt;
+            }}
+          />
+        </Fields>
+        <Fields>
+          {#if item.deletedAt}
+            <span class="line-through text-light-error dark:text-dark-error">
+              {item.text.split("\n").join(" / ")}
+            </span>
+          {:else}
             {item.text.split("\n").join(" / ")}
-          </span>
-        {:else}
-          {item.text.split("\n").join(" / ")}
-        {/if}
-      </div>
+          {/if}
+        </Fields>
+      </Wrap>
     {/each}
   </Content>
 {/if}
