@@ -172,6 +172,12 @@ const post = async (db, bucket, { id, target }) => {
       return statusError(`Invalid status: ${target} is deleted`);
     }
 
+    await postRef.update({
+      status: "posting",
+      [`targets.${target}`]: { status: "posting", updatedAt: new Date() },
+      updatedAt: new Date(),
+    });
+
     const auth = await db.collection("service").doc("auth").get();
 
     if (!auth.exists) {

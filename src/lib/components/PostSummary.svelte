@@ -28,9 +28,15 @@
     <span class="flex flex-row gap-1">
       {#each targets as target (target)}
         {#if Object.keys(post.targets ?? {}).includes(target)}
-          <span class="size-5 text-light-primary dark:text-dark-primary">
-            <TargetIcon {target} />
-          </span>
+          {#if post.targets[target].status === "failed"}
+            <span class="size-5 text-light-error dark:text-dark-error">
+              <TargetIcon {target} />
+            </span>
+          {:else}
+            <span class="size-5 text-light-primary dark:text-dark-primary">
+              <TargetIcon {target} />
+            </span>
+          {/if}
         {:else}
           <span class="size-5 opacity-20">
             <TargetIcon {target} />

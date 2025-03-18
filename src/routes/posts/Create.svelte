@@ -91,7 +91,7 @@
     );
 
     if (!result.err && result.data.id && selectedImages && selectedImages[0]) {
-      result = await savePostImage(result.data.id, selectedImages[0]);
+      result = await savePostImage(result.data.id, selectedImages[0], document);
     }
 
     active = false;
@@ -116,8 +116,10 @@
             showTemplates = false;
           }}
         />
-        {#each templates as template (template.id)}
-          <div class="flex flex-row gap-4">
+      </Fields>
+      {#each templates as template (template.id)}
+        <Wrap>
+          <Fields>
             <ButtonText
               id={template.id}
               label={template.name}
@@ -126,10 +128,12 @@
                 text = template.text;
               }}
             />
+          </Fields>
+          <Fields>
             {template.text.split("\n").join(" / ")}
-          </div>
-        {/each}
-      </Fields>
+          </Fields>
+        </Wrap>
+      {/each}
     {:else}
       <Wrap>
         <div class="flex flex-col gap-4">

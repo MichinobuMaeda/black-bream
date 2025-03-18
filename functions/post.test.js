@@ -483,6 +483,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.mastodon": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
             status: "failed",
             err: "Not found: service/auth",
             updatedAt: expect.any(Date),
@@ -517,6 +527,16 @@ describe("post", () => {
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
     expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
       [
         {
           status: "posting",
@@ -634,6 +654,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.target1": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.target1": {
             status: "failed",
             err: "Not found: target1 in service/auth",
             updatedAt: expect.any(Date),
@@ -676,6 +706,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.target1": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.target1": {
             status: "failed",
             err: "Deleted: target1 in service/auth",
             updatedAt: expect.any(Date),
@@ -706,6 +746,16 @@ describe("post", () => {
     expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
     expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.dummy": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
       [
         {
           status: "posting",
@@ -750,6 +800,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.mastodon": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
             status: "completed",
             updatedAt: expect.any(Date),
           },
@@ -785,6 +845,16 @@ describe("post", () => {
     ]);
     expect(postRef.get.mock.calls).toEqual([[]]);
     expect(postRef.update.mock.calls).toEqual([
+      [
+        {
+          status: "posting",
+          "targets.bluesky": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
       [
         {
           status: "posting",
@@ -828,6 +898,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.threads": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.threads": {
             status: "completed",
             updatedAt: expect.any(Date),
           },
@@ -867,6 +947,16 @@ describe("post", () => {
         {
           status: "posting",
           "targets.mastodon": {
+            status: "posting",
+            updatedAt: expect.any(Date),
+          },
+          updatedAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          status: "posting",
+          "targets.mastodon": {
             status: "failed",
             err: "mastodon: error",
             updatedAt: expect.any(Date),
@@ -899,15 +989,15 @@ describe("post", () => {
 
     // Verify
     expect(result).toEqual({ err: "error", data: undefined });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
+    expect(db.collection.mock.calls).toEqual([["posts"]]);
+    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
     expect(postRef.get.mock.calls).toEqual([[]]);
     expect(postRef.update.mock.calls).toEqual([
       [
         {
           status: "posting",
           "targets.mastodon": {
-            status: "completed",
+            status: "posting",
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
@@ -925,8 +1015,8 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
+    expect(authRef.get.mock.calls).toEqual([]);
+    expect(authSnap.get.mock.calls).toEqual([]);
   });
 });
 

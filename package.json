@@ -1,7 +1,7 @@
 {
   "name": "black-bream",
   "private": true,
-  "version": "0.7.9",
+  "version": "0.8.0",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -26,6 +26,7 @@
     "test": "npm run test:functions && npm run test:ui && npm run test:merge-coverage",
     "prettier:check": "npx prettier -c src functions",
     "prettier:fix": "npx prettier -w src functions",
+    "actions:list": "gh run list --limit 5",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -152,7 +152,7 @@
     }
 
     if (!result.err && selectedImages && selectedImages[0]) {
-      result = await savePostImage(post.id, selectedImages[0]);
+      result = await savePostImage(post.id, selectedImages[0], document);
     }
 
     active = false;

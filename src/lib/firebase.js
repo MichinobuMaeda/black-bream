@@ -407,18 +407,50 @@ export const getSavedImageUrl = async (id, name) =>
  *
  * @param {string} id
  * @param {File} file
+ * @param {Document} document
  */
-export const savePostImage = async (id, file) => {
-  try {
-    const ext = file.name.split(".").pop();
-    const mimeType = mimeTypeList["." + ext] ?? "application/octet-stream";
-    const metadata = {
-      contentType: mimeType,
-    };
-    const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
-    console.log(`saveImage: ${imageRef.fullPath}`);
+export const savePostImage = async (id, file, document) => {
+  console.log(`savePostImage: ${file.name} ${file.size}`);
+  const ext = file.name.split(".").pop();
+  const mimeType = mimeTypeList["." + ext] ?? "application/octet-stream";
+  const metadata = { contentType: mimeType };
+  const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
 
-    await uploadBytes(imageRef, file, metadata);
+  try {
+    if (file.size > 1000 * 1000) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const { width, height } =
+            img.width > img.height
+              ? {
+                  width: 1024,
+                  height: Math.floor(img.height * (1024 / img.width)),
+                }
+              : {
+                  width: Math.floor(img.width * (1024 / img.height)),
+                  height: 1024,
+                };
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          console.log(`saveImage: ${width}x${height} ${imageRef.fullPath}`);
+          ctx.canvas.toBlob(
+            (blob) => uploadBytes(imageRef, blob, metadata),
+            mimeType,
+            0.8,
+          );
+        };
+      };
+    } else {
+      console.log(`saveImage: ${imageRef.fullPath}`);
+      await uploadBytes(imageRef, file, metadata);
+    }
 
     return { err: undefined };
   } catch (e) {

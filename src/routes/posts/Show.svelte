@@ -53,11 +53,17 @@
             <span class="size-6 text-light-primary dark:text-dark-primary">
               <TargetIcon {target} />
             </span>
-            <span
-              class="size-6 text-light-on-background dark:text-dark-on-background"
-            >
-              <StatusIcon status={post.targets[target]?.status} />
-            </span>
+            {#if post.targets[target]?.status === "failed"}
+              <span class="size-6 text-light-error dark:text-dark-error">
+                <StatusIcon status={post.targets[target]?.status} />
+              </span>
+            {:else}
+              <span
+                class="size-6 text-light-on-background dark:text-dark-on-background"
+              >
+                <StatusIcon status={post.targets[target]?.status} />
+              </span>
+            {/if}
           </span>
         {/each}
       </div>
