@@ -647,7 +647,7 @@ export const callFunction = async (name, param) => {
     const { data } = await f(param);
     return data;
   } catch (e) {
-    console.error(`{name}: ${e}`);
+    console.error(`${name}: ${e}`);
     return { err: "error", data: undefined };
   }
 };

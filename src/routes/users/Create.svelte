@@ -56,7 +56,7 @@
     name = name.trim();
 
     result = await createDocument("users", { name, auth: false });
-    const uid = result?.data;
+    const uid = result.data?.id;
 
     if (!result.err && email) {
       result = await callFunction("addAuthUser", { uid, email });
