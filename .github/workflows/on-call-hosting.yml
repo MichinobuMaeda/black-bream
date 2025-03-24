@@ -43,3 +43,9 @@ jobs:
           firebaseServiceAccount: ${{ secrets.firebase_service_account }}
           channelId: live
           projectId: ${{ inputs.site-id }}
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage.json
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: MichinobuMaeda/black-bream

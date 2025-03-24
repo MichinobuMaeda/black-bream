@@ -1,84 +1,154 @@
 const { logger } = require("firebase-functions/v2");
+const { httpRequest, getPublicMediaUrl } = require("./utils.js");
+const { Provider } = require("./provider.js");
 
-/**
- * Post to Threads
- *
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (bucket, params, id, { text, files }) => {
-  try {
-    const { userId, accessToken } = params;
-    let retContainer = null;
+class Threads extends Provider {
+  /**
+   * Threads constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "threads";
+  }
 
-    let url = null;
-    if (files?.length) {
-      const mediaUrl = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
-      url =
-        `https://graph.threads.net/v1.0/${userId}/threads` +
+  /**
+   * Post container
+   *
+   * @param {{ clientId:string, accessToken:string }} params
+   * @param {string} id
+   * @param {{ userId, accessToken }} data
+   * @returns {Promise<{err: undefined|string, data: object|undefined}>}
+   */
+  async createContainer({ userId, accessToken }, id, { text, files }) {
+    text = text.trim();
+    const url = files?.length
+      ? `https://graph.threads.net/v1.0/${userId}/threads` +
         "?media_type=IMAGE" +
         `&text=${encodeURIComponent(text)}` +
-        `&image_url=${mediaUrl}` +
-        `&access_token=${accessToken}`;
-    } else {
-      url =
-        `https://graph.threads.net/v1.0/${userId}/threads` +
+        `&image_url=${getPublicMediaUrl(id, files[0])}` +
+        `&access_token=${accessToken}`
+      : `https://graph.threads.net/v1.0/${userId}/threads` +
         "?media_type=TEXT" +
         `&text=${encodeURIComponent(text)}` +
         `&access_token=${accessToken}`;
-    }
-
     logger.info(url);
-    retContainer = await fetch(url, { method: "POST" });
 
-    if (retContainer.status !== 200) {
-      return {
-        err:
-          "Failed to create container:" +
-          ` ${retContainer.status} ${retContainer.statusText}`,
-      };
+    const { err, data } = await httpRequest(url, { method: "POST" });
+
+    if (err) {
+      return { err: `Failed to create container: ${err}` };
     }
-    const json = await retContainer.json();
 
-    const retPublish = await fetch(
+    const json = await data.json();
+
+    return { err: undefined, data: json };
+  }
+
+  /**
+   * post
+   *
+   * @param {string} id
+   * @param {{ text, files }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, data) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { userId, accessToken } = params.data;
+
+    let container = await this.createContainer(params.data, id, data);
+
+    if (container.err) {
+      return container;
+    }
+
+    const retPublish = await httpRequest(
       `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-        `?creation_id=${json.id}` +
+        `?creation_id=${container.data.id}` +
         `&access_token=${accessToken}`,
       { method: "POST" },
     );
 
-    if (retPublish.status !== 200) {
-      return {
-        err:
-          "Failed to publish:" +
-          ` ${retPublish.status} ${retPublish.statusText}`,
-      };
+    return { err: retPublish.err };
+  }
+
+  /**
+   * Refresh access token
+   *
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async refreshAccessToken() {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
     }
 
+    const { accessToken, expiredAt } = params.data;
+
+    if (
+      accessToken &&
+      expiredAt &&
+      expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
+    ) {
+      const resp = await httpRequest(
+        "https://https://graph.threads.net/refresh_access_token" +
+          "?grant_type=th_refresh_token" +
+          `&access_token=${accessToken}`,
+      );
+
+      if (resp.err) {
+        logger.error(resp.err);
+        return { err: `Failed to refresh Threads access token: ${resp.err}` };
+      }
+
+      const json = await resp.data.json();
+      logger.info("Threads access token refreshed");
+
+      const updated = await this.updateParams({
+        accessToken: json.access_token,
+        expiredAt: new Date(new Date().getTime() + json.expires_in * 1000),
+      });
+
+      if (updated.err) {
+        logger.error(updated.err);
+        return updated;
+      }
+    }
     return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
   }
-};
 
-/**
- * Set long access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {object} data
- * @returns {Promise<object>}
- */
-const setThreadsLongAccessToken = async (db, { code }) => {
-  try {
-    console.log(`setThreadsLongAccessToken(${code})`);
+  /**
+   * Set access token
+   *
+   * @param {{code:string}} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
 
-    const authRef = db.collection("service").doc("auth");
-    const auth = await authRef.get();
-    const { clientId, clientSecret, callBackUrl } = auth.get("threads");
+  async setAccessToken({ code }) {
+    if (!code) {
+      return { err: "No code" };
+    }
+
+    logger.log(`setAccessToken(${code})`);
+
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { clientId, clientSecret, callBackUrl } = params.data;
 
     const formData = new FormData();
     formData.append("client_id", clientId);
@@ -87,126 +157,68 @@ const setThreadsLongAccessToken = async (db, { code }) => {
     formData.append("redirect_uri", callBackUrl);
     formData.append("code", code);
 
-    let oauthResp = await fetch(
+    let oauthResp = await httpRequest(
       "https://graph.threads.net/oauth/access_token",
       {
         method: "POST",
         body: formData,
       },
     );
-    if (oauthResp.status !== 200) {
-      const err = `/oauth/access_token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
+
+    if (oauthResp.err) {
+      const err = `POST /oauth/access_token: ${oauthResp.err}`;
+      logger.error(err);
       return { err };
     }
-    const oauthData = await oauthResp.json();
+
+    const oauthData = await oauthResp.data.json();
+
     if (!oauthData.access_token) {
-      const err = "/oauth/access_token: failed to get access token";
-      console.error(err);
+      const err = "POST /oauth/access_token: failed to get access token";
+      logger.error(err);
       return { err };
     }
-    console.log(
+
+    logger.log(
       `setThreadsLongAccessToken() accessToken: ${oauthData.access_token}`,
     );
 
-    const exchangeResp = await fetch(
+    const tokenResp = await httpRequest(
       "https://graph.threads.net/access_token" +
         "?grant_type=th_exchange_token" +
         `&client_secret=${clientSecret}` +
         `&access_token=${oauthData.access_token}`,
     );
-    if (exchangeResp.status !== 200) {
-      const err = `/access_token: ${exchangeResp.status} ${exchangeResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-    const exchangeData = await exchangeResp.json();
-    if (!exchangeData.access_token) {
-      const err = `/access_token: failed to get access token`;
-      console.error(err);
+
+    if (tokenResp.err) {
+      const err = `GET /access_token: ${tokenResp.err}`;
+      logger.error(err);
       return { err };
     }
 
-    await authRef.update({
-      "threads.accessToken": exchangeData.access_token,
-      "threads.userId": oauthData.user_id,
-      "threads.expiredAt": new Date(
-        new Date().getTime() + exchangeData.expires_in * 1000,
+    const newTokenResp = await tokenResp.data.json();
+
+    if (!newTokenResp.access_token) {
+      const err = `GET /access_token: failed to get access token`;
+      logger.error(err);
+      return { err };
+    }
+
+    const updated = await this.updateParams({
+      accessToken: newTokenResp.access_token,
+      userId: oauthData.user_id,
+      expiredAt: new Date(
+        new Date().getTime() + newTokenResp.expires_in * 1000,
       ),
-      updatedAt: new Date(),
     });
 
-    return { err: undefined };
-  } catch (e) {
-    return { err: e };
-  }
-};
-
-/**
- * Refresh Threads access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @returns
- */
-const refreshThreadsAccessToken = async (db) => {
-  try {
-    const authRef = db.collection("service").doc("auth");
-    const doc = await authRef.get();
-
-    if (!doc.exists) {
-      return { err: "Not found: service/auth" };
-    }
-
-    if (doc.get("deletedAt")) {
-      return { err: "Deleted: service/auth" };
-    }
-
-    const threads = doc.get("threads");
-
-    if (!threads) {
-      return { err: "Not found: service/auth/threads" };
-    }
-
-    const { accessToken, expiredAt, deletedAt } = threads;
-
-    if (deletedAt) {
-      return { err: "Deleted: service/auth/threads" };
-    }
-
-    if (
-      accessToken &&
-      expiredAt &&
-      expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
-    ) {
-      const result = await fetch(
-        "https://https://graph.threads.net/refresh_access_token" +
-          "?grant_type=th_refresh_token" +
-          `&access_token=${accessToken}`,
-      );
-
-      if (result.status === 200) {
-        const json = await result.json();
-        logger.info("Threads access token refreshed");
-        await authRef.update({
-          "threads.accessToken": json.access_token,
-          "threads.expiredAt": new Date(
-            new Date().getTime() + json.expires_in * 1000,
-          ),
-        });
-      } else {
-        const err =
-          "Failed to refresh Threads access token:" +
-          ` ${result.status} ${result.statusText}`;
-        logger.error(err);
-        return { err };
-      }
+    if (updated.err) {
+      logger.error(updated.err);
+      return updated;
     }
 
     return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.code ?? e.toString() };
   }
-};
+}
 
-module.exports = { post, setThreadsLongAccessToken, refreshThreadsAccessToken };
+module.exports = { Threads };

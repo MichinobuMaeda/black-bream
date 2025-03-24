@@ -1,101 +1,193 @@
 const { logger } = require("firebase-functions/v2");
 const { BskyAgent } = require("@atproto/api");
-
+const { Provider } = require("./provider.js");
 const {
   generateLinkCard,
   getMimeTypes,
-  getMediaAsUint8Array,
+  getMediaAsBlob,
   reduceImageSize,
+  httpRequest,
 } = require("./utils");
 
-/**
- * Post to Bluesky
- *
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (bucket, params, id, { text, files }) => {
-  try {
-    const { service, identifier, password } = params;
-    const agent = new BskyAgent({ service });
-    await agent.login({ identifier, password });
+const langs = ["ja"];
 
-    let image = null;
-    let external = undefined;
+class Bluesky extends Provider {
+  /**
+   * Bluesky constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "bluesky";
+  }
+
+  /**
+   * Login
+   *
+   * @param {BskyAgent} agent
+   * @param {string} identifier
+   * @param {string} password
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async login(agent, identifier, password) {
+    return agent
+      .login({ identifier, password })
+      .then(() => ({ err: undefined }))
+      .catch((e) => ({ err: e.toString() }));
+  }
+
+  /**
+   * Upload image
+   *
+   * @param {BskyAgent} agent
+   * @param {string} id
+   * @param {string} text
+   * @param {string} file
+   * @returns
+   */
+  async uploadImage(agent, id, text, file) {
+    const blob = await getMediaAsBlob(this.bucket, id, file);
+
+    if (blob.err) {
+      return blob;
+    }
+
+    return agent
+      .uploadBlob(blob.data, { encoding: getMimeTypes(file) })
+      .then(({ data }) => ({ data: data.blob }))
+      .catch((e) => ({ err: e.toString() }));
+  }
+
+  /**
+   * Upload thumb image
+   *
+   * @param {BskyAgent} agent
+   * @param {string} thumbUrl
+   * @returns {Promise<{data: Buffer|undefined}>}
+   */
+  async uploadThumb(agent, thumbUrl) {
+    const image = await httpRequest(thumbUrl);
+
+    if (image.err) {
+      logger.warn(`bluesky: uploadThumb httpRequest ${image.err}`);
+      return {};
+    }
+
+    const reduced = await reduceImageSize(await image.data.bytes());
+
+    if (reduced.err) {
+      logger.warn(`bluesky: uploadThumb reduceImageSize ${reduced.err}`);
+      return {};
+    }
+
+    return agent
+      .uploadBlob(reduced.data, {
+        encoding: getMimeTypes(thumbUrl, image.data.headers),
+      })
+      .then(({ data }) => ({ data: data.blob }))
+      .catch((e) => {
+        logger.warn(`bluesky: uploadThumb uploadBlob ${e.toString()}`);
+        return {};
+      });
+  }
+
+  /**
+   * Generate external
+   *
+   * @param {BskyAgent} agent
+   * @param {string} text
+   * @returns {Promise<{data: undefined|{uri:string, title:string, description:string, thumb:Buffer|undefined}}>}
+   */
+  async generateExternal(agent, text) {
+    const card = await generateLinkCard(text);
+
+    if (!card.data) {
+      return { data: undefined };
+    }
+
+    const { uri, title, description, thumbUrl } = card.data;
+
+    if (thumbUrl) {
+      const { data } = await this.uploadThumb(agent, thumbUrl);
+      return { data: { uri, title, description, thumb: data } };
+    } else {
+      return { data: { uri, title, description } };
+    }
+  }
+
+  /**
+   * Request post
+   *
+   * @param {BskyAgent} agent
+   * @param {string} text
+   * @param {object} embed
+   * @returns
+   */
+  async requestPost(agent, text, embed) {
+    return agent
+      .post({ text, langs, embed })
+      .then(() => ({ err: undefined }))
+      .catch((e) => ({ err: e.toString() }));
+  }
+
+  /**
+   * post
+   *
+   * @param {string } id
+   * @param {{ text:string, files: array|undefined }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, { text, files }) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { service, identifier, password } = params.data;
+
+    let embed = undefined;
+    const agent = new BskyAgent({ service });
+    const login = await this.login(agent, identifier, password);
+
+    if (login.err) {
+      return login;
+    }
 
     if (files?.length) {
-      const result = await getMediaAsUint8Array(bucket, id, files[0]);
+      const image = await this.uploadImage(agent, id, text, files[0]);
 
-      if (result.err) {
-        return { err: result.err, data: undefined };
+      if (image.err) {
+        return image;
       }
-      const encoding = getMimeTypes(files[0]);
 
-      const { data } = await agent.uploadBlob(
-        await reduceImageSize(new Uint8Array(result.data), 1000 * 1000),
-        { encoding },
-      );
+      embed = {
+        $type: "app.bsky.embed.images",
+        images: [
+          {
+            alt: text.substring(0, 100),
+            image: image.data,
+          },
+        ],
+      };
+    }
 
-      image = data.blob;
-    } else {
-      const result = await generateLinkCard(text);
+    if (!embed) {
+      const external = await this.generateExternal(agent, text);
 
-      if (result.data) {
-        const { uri, title, description, thumbUrl } = result.data;
-        logger.info(uri, title, description, thumbUrl);
-        let thumb = undefined;
-
-        if (thumbUrl) {
-          const response = await fetch(thumbUrl);
-          const encoding = getMimeTypes(thumbUrl, response.headers);
-
-          if (response.status === 200) {
-            const { data } = await agent.uploadBlob(
-              await reduceImageSize(await response.bytes(), 1000 * 1000),
-              { encoding },
-            );
-            thumb = data.blob;
-          }
-        }
-        external = { uri, title, description, thumb };
+      if (external.data) {
+        embed = {
+          $type: "app.bsky.embed.external",
+          external: external.data,
+        };
       }
     }
 
-    await agent.post(
-      image
-        ? {
-            text,
-            langs: ["ja"],
-            embed: {
-              $type: "app.bsky.embed.images",
-              images: [
-                {
-                  alt: text.substring(0, 100),
-                  image,
-                },
-              ],
-            },
-          }
-        : external
-          ? {
-              text,
-              langs: ["ja"],
-              embed: {
-                $type: "app.bsky.embed.external",
-                external,
-              },
-            }
-          : { text, langs: ["ja"] },
-    );
-
-    return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
+    return this.requestPost(agent, text, embed);
   }
-};
+}
 
-module.exports = { post };
+module.exports = { Bluesky };

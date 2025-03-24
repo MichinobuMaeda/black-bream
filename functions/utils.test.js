@@ -1,25 +1,46 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
+const {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+} = require("@jest/globals");
 const Readable = require("stream").Readable;
 const { getDownloadURL } = require("firebase-admin/storage");
 const { BskyAgent } = require("@atproto/api");
+const sharp = require("sharp");
 
 const {
   generateLinkCard,
   getMimeTypes,
   getMediaDownloadUrl,
   getMediaAsUint8Array,
+  reduceImageSize,
   getMediaAsBlob,
+  httpRequest,
+  getPublicMediaUrl,
+  sleep,
+  getDoc,
+  updateDoc,
 } = require("./utils.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("firebase-admin/storage");
 jest.mock("@atproto/api");
+jest.mock("sharp");
 BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
 global.fetch = jest.fn();
 
+const orgPublicPostMediaUrl = process.env.PUBLIC_POST_MEDIA_URL;
+
+beforeEach(() => {
+  process.env.PUBLIC_POST_MEDIA_URL = "https://example.com";
+});
+
 afterEach(() => {
   jest.clearAllMocks();
+  process.env.PUBLIC_POST_MEDIA_URL = orgPublicPostMediaUrl;
 });
 
 describe("generateLinkCard", () => {
@@ -294,7 +315,8 @@ describe("getMimeTypes", () => {
 describe("getMediaDownloadUrl", () => {
   it("should returns download URL based on given id and file name.", async () => {
     // Prepare
-    const fileRef = { data: "fileRef" };
+    const contents = [new ArrayBuffer(8)];
+    const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
     const bucket = { file: jest.fn(() => fileRef) };
     const id = "test-id";
     const filename = "test-filename";
@@ -315,9 +337,7 @@ describe("getMediaDownloadUrl", () => {
 
 describe("getMediaAsUint8Array", () => {
   const contents = [new ArrayBuffer(8)];
-  const fileRef = {
-    download: jest.fn(() => Promise.resolve(contents)),
-  };
+  const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
   const bucket = { file: jest.fn(() => fileRef) };
   const id = "test-id";
   const filename = "1.jpg";
@@ -353,17 +373,89 @@ describe("getMediaAsUint8Array", () => {
   });
 });
 
+describe("reduceImageSize", () => {
+  it(
+    "should returns the original image data," +
+      " if the size is less than maxSize.",
+    async () => {
+      // Prepare
+      const image = new Uint8Array(8);
+      const maxSize = 16;
+      sharp.mockReturnValue({ metadata: () => Promise.resolve({ size: 8 }) });
+
+      // Execute
+      const ret = await reduceImageSize(image, maxSize);
+
+      // Verify
+      expect(ret).toEqual({ data: image });
+      expect(sharp.mock.calls).toEqual([[image]]);
+    },
+  );
+
+  it(
+    "should returns the original image data," +
+      " if the size is less than default maxSize.",
+    async () => {
+      // Prepare
+      const image = new Uint8Array(8);
+      sharp.mockReturnValue({ metadata: () => Promise.resolve({ size: 999 }) });
+
+      // Execute
+      const ret = await reduceImageSize(image);
+
+      // Verify
+      expect(ret).toEqual({ data: image });
+      expect(sharp.mock.calls).toEqual([[image]]);
+    },
+  );
+
+  it(
+    "should returns the reduced image data," +
+      " if the size is greater than maxSize.",
+    async () => {
+      // Prepare
+      const image = new Uint8Array(8);
+      const maxSize = 4;
+      sharp.mockReturnValue({
+        metadata: () => Promise.resolve({ size: 8 }),
+        resize: jest.fn().mockReturnThis(),
+        toBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(4))),
+      });
+
+      // Execute
+      const ret = await reduceImageSize(image, maxSize);
+
+      // Verify
+      expect(ret).toEqual({ data: new Uint8Array(4) });
+      expect(sharp.mock.calls).toEqual([[image]]);
+    },
+  );
+
+  it("should returns error, if sharp() raises an exception.", async () => {
+    // Prepare
+    const image = new Uint8Array(8);
+    const maxSize = 4;
+    sharp.mockReturnValue({ metadata: () => Promise.reject("Error") });
+
+    // Execute
+    const ret = await reduceImageSize(image, maxSize);
+
+    // Verify
+    expect(ret).toEqual({ err: "Error" });
+    expect(sharp.mock.calls).toEqual([[image]]);
+  });
+});
+
 describe("getMediaAsBlob", () => {
   const contents = [new ArrayBuffer(8)];
-  const fileRef = {
-    download: jest.fn(() => Promise.resolve(contents)),
-  };
+  const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
   const bucket = { file: jest.fn(() => fileRef) };
   const id = "test-id";
   const filename = "1.jpg";
 
   it("should returns blob data of the media file.", async () => {
     // Prepare
+    sharp.mockReturnValue({ metadata: () => Promise.resolve({ size: 4 }) });
 
     // Execute
     const ret = await getMediaAsBlob(bucket, id, filename);
@@ -371,7 +463,7 @@ describe("getMediaAsBlob", () => {
     // Verify
     expect(ret).toEqual({
       err: undefined,
-      data: new Blob([new Uint8Array(contents[0])], { type: "image/jpeg" }),
+      data: new Blob(contents, { type: "image/jpeg" }),
     });
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
@@ -390,5 +482,161 @@ describe("getMediaAsBlob", () => {
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
     ]);
+  });
+
+  it("should returns error, if sharp() raises an exception.", async () => {
+    // Prepare
+    fileRef.download.mockResolvedValue(contents);
+    sharp.mockReturnValue({ metadata: () => Promise.reject("Error") });
+
+    // Execute
+    const ret = await getMediaAsBlob(bucket, id, filename);
+
+    // Verify
+    expect(ret).toEqual({ err: "Error", data: undefined });
+    expect(bucket.file.mock.calls).toEqual([
+      [`public/posts/${id}/${filename}`],
+    ]);
+  });
+});
+
+describe("httpRequest", () => {
+  it("should returns response data.", async () => {
+    // Prepare
+    const url = "https://example.com";
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ test: "test" }),
+    };
+    const resp = { status: 200, json: () => Promise.resolve({ test: "data" }) };
+    global.fetch.mockResolvedValue(resp);
+
+    // Execute
+    const ret = await httpRequest(url, options);
+
+    // Verify
+    expect(ret).toEqual({ err: undefined, data: resp });
+    expect(global.fetch.mock.calls).toEqual([[url, options]]);
+  });
+
+  it("should returns error, if fetch() raises an exception.", async () => {
+    // Prepare
+    const url = "https://example.com";
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ test: "test" }),
+    };
+    global.fetch.mockRejectedValue("Error");
+
+    // Execute
+    const ret = await httpRequest(url, options);
+
+    // Verify
+    expect(ret).toEqual({ err: "Error", data: undefined });
+    expect(global.fetch.mock.calls).toEqual([[url, options]]);
+  });
+
+  it("should returns error, if response status is not 200.", async () => {
+    // Prepare
+    const url = "https://example.com";
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ test: "test" }),
+    };
+    const resp = { status: 404, statusText: "Not found" };
+    global.fetch.mockResolvedValue(resp);
+
+    // Execute
+    const ret = await httpRequest(url, options);
+
+    // Verify
+    expect(ret).toEqual({ err: "404 Not found", data: undefined });
+    expect(global.fetch.mock.calls).toEqual([[url, options]]);
+  });
+});
+
+describe("getPublicMediaUrl", () => {
+  it("should returns public media URL.", () => {
+    // Prepare
+    const id = "test-id";
+    const file = "test.jpg";
+
+    // Execute
+    const ret = getPublicMediaUrl(id, file);
+
+    // Verify
+    expect(ret).toEqual(`https://example.com/public/posts/${id}/${file}`);
+  });
+});
+
+describe("sleep", () => {
+  global.setTimeout = jest.fn((r, ms) => r());
+
+  it("should sleep for the specified time.", async () => {
+    // Prepare
+
+    // Execute
+    await sleep(0.1);
+
+    // Verify
+    expect(global.setTimeout.mock.calls).toEqual([[expect.any(Function), 100]]);
+  });
+});
+
+describe("getDoc", () => {
+  it("should returns document data.", async () => {
+    // Prepare
+    const doc = { data: () => ({ test: "data" }) };
+    const ref = { get: jest.fn(() => Promise.resolve(doc)) };
+
+    // Execute
+    const ret = await getDoc(ref);
+
+    // Verify
+    expect(ref.get.mock.calls).toEqual([[]]);
+    expect(ret).toEqual({ err: undefined, data: doc });
+  });
+
+  it("should returns error, if get() raises an exception.", async () => {
+    // Prepare
+    const ref = { get: jest.fn(() => Promise.reject("Error")) };
+
+    // Execute
+    const ret = await getDoc(ref);
+
+    // Verify
+    expect(ref.get.mock.calls).toEqual([[]]);
+    expect(ret).toEqual({ err: "Error", data: undefined });
+  });
+});
+
+describe("updateDoc", () => {
+  it("should update document data.", async () => {
+    // Prepare
+    const ref = { update: jest.fn(() => Promise.resolve({})) };
+    const data = { test: "data" };
+
+    // Execute
+    const ret = await updateDoc(ref, data);
+
+    // Verify
+    expect(ref.update.mock.calls).toEqual([[data]]);
+    expect(ret).toEqual({ err: undefined });
+  });
+
+  it("should returns error, if update() raises an exception.", async () => {
+    // Prepare
+    const ref = { update: jest.fn(() => Promise.reject("Error")) };
+    const data = { test: "data" };
+
+    // Execute
+    const ret = await updateDoc(ref, data);
+
+    // Verify
+    expect(ref.update.mock.calls).toEqual([[data]]);
+    expect(ret).toEqual({ err: "Error" });
   });
 });

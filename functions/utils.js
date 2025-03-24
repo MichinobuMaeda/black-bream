@@ -3,6 +3,8 @@ const sharp = require("sharp");
 const { WritableStream } = require("htmlparser2/WritableStream");
 const { getDownloadURL } = require("firebase-admin/storage");
 
+const mediaSizeLimit = 1000 * 1000;
+
 /**
  * Generate a card object from a link
  *
@@ -135,7 +137,7 @@ const getMimeTypes = (url, headers = {}) =>
 /**
  * Get download URL of a media file
  *
- * @param {Bucket} bucket
+ * @param {import("@google-cloud/storage").Bucket} bucket
  * @param {string} id
  * @param {string} file
  * @returns {Promise<string>}
@@ -146,7 +148,7 @@ const getMediaDownloadUrl = (bucket, id, file) =>
 /**
  * Get media file as a Uint8Array
  *
- * @param {Bucket} bucket
+ * @param {import("@google-cloud/storage").Bucket} bucket
  * @param {string} id
  * @param {string} file
  * @returns {Promise<{err: string|undefined, data: Uint8Array|undefined}>}
@@ -162,52 +164,116 @@ const getMediaAsUint8Array = async (bucket, id, file) => {
 };
 
 /**
- * Get media file as a Blob
+ * Reduce image file size
  *
- * @param {Bucket} bucket
- * @param {string} id
- * @param {string} file
- * @returns {Promise<{err: string|undefined, data: Blob|undefined}>}
+ * @param {Uint8Array} bin
+ * @param {number} [maxSize]
+ * @returns {Promise<{err: undefined|string, data: Uint8Array|undefined}>}
  */
-const getMediaAsBlob = async (bucket, id, file) => {
-  const { err, data } = await getMediaAsUint8Array(bucket, id, file);
-  return err
-    ? { err, data: undefined }
-    : {
-        err: undefined,
-        data: new Blob([data], { type: getMimeTypes(file) }),
-      };
+const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
+  try {
+    const image = sharp(bin);
+    const { width, height, size } = await image.metadata();
+
+    if (size <= maxSize) {
+      return { data: bin };
+    }
+
+    const data = new Uint8Array(
+      await image
+        .resize(
+          Math.min(1024, Math.floor((width / size) * maxSize)),
+          Math.min(1024, Math.floor((height / size) * maxSize)),
+          { fit: "inside" },
+        )
+        .toBuffer(),
+    );
+
+    logger.info(`Image size reduced from ${size} to ${data.length}`);
+
+    return { data };
+  } catch (e) {
+    logger.error(e);
+    return { err: e.toString() };
+  }
 };
 
 /**
- * Reduce image file size
+ * Get media file as a reduced-size Blob data
  *
- * @param {Uint8Array} image
- * @param {number} byte
- * @returns {Promise<Uint8Array>}
+ * @param {import("@google-cloud/storage").Bucket} bucket
+ * @param {string} id
+ * @param {string} file
+ * @param {number} [maxSize]
+ * @returns {Promise<{err: undefined|string, data: Blob|undefined}>}
  */
-const reduceImageSize = async (image, byte) => {
-  const { width, height, size } = await sharp(image).metadata();
-
-  if (size <= byte) {
+const getMediaAsBlob = async (bucket, id, file, maxSize = mediaSizeLimit) => {
+  const image = await getMediaAsUint8Array(bucket, id, file);
+  if (image.err) {
     return image;
   }
-
-  logger.info(JSON.stringify({ width, height, size, byte }));
-  const buffer = Buffer.from(image.buffer);
-
-  const ret = new Uint8Array(
-    await sharp(buffer)
-      .resize(
-        Math.min(1024, Math.floor((width / size) * byte)),
-        Math.min(1024, Math.floor((height / size) * byte)),
-        { fit: "inside" },
-      )
-      .toBuffer(),
-  );
-  logger.info(`Image size reduced from ${size} to ${ret.length}`);
-  return ret;
+  const reduced = await reduceImageSize(image.data, maxSize);
+  if (reduced.err) {
+    return reduced;
+  }
+  return {
+    err: undefined,
+    data: new Blob([reduced.data], { type: getMimeTypes(file) }),
+  };
 };
+
+/**
+ * HTTP request
+ *
+ * @param {string} url
+ * @param {object} options
+ * @returns {Promise<{err: undefined|string, data: any}>}
+ */
+const httpRequest = async (url, options) =>
+  fetch(url, options)
+    .then((res) =>
+      200 <= res.status && res.status < 300
+        ? { err: undefined, data: res }
+        : { err: `${res.status} ${res.statusText}`, data: undefined },
+    )
+    .catch((e) => ({ err: e.toString(), data: undefined }));
+
+/**
+ * Get public media URL
+ *
+ * @param {string} id
+ * @param {string} file
+ * @returns {string}
+ */
+const getPublicMediaUrl = (id, file) =>
+  `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${file}`;
+
+/**
+ * Sleep
+ *
+ * @param {number} sec
+ * @returns {Promise<void>}
+ */
+const sleep = (sec) =>
+  new Promise((resolve) => setTimeout(resolve, sec * 1000));
+
+/**
+ * Get Firestore document
+ *
+ * @param {FirebaseFirestore.DocumentReference} ref
+ * @returns
+ */
+const getDoc = async (ref) =>
+  ref
+    .get()
+    .then((doc) => ({ data: doc }))
+    .catch((e) => ({ err: e.toString() }));
+
+const updateDoc = async (ref, data) =>
+  ref
+    .update(data)
+    .then(() => ({}))
+    .catch((e) => ({ err: e.toString() }));
 
 module.exports = {
   generateLinkCard,
@@ -216,4 +282,9 @@ module.exports = {
   getMediaAsUint8Array,
   getMediaAsBlob,
   reduceImageSize,
+  httpRequest,
+  getPublicMediaUrl,
+  sleep,
+  getDoc,
+  updateDoc,
 };

@@ -1,18 +1,36 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
 const { BskyAgent } = require("@atproto/api");
 
-let { generateLinkCard, getMediaAsUint8Array } = require("./utils.js");
-const { post } = require("./bluesky.js");
+let {
+  generateLinkCard,
+  reduceImageSize,
+  getMediaAsBlob,
+  httpRequest,
+  getMimeTypes,
+} = require("./utils.js");
+const { Bluesky } = require("./bluesky.js");
 
 jest.mock("firebase-functions/logger");
 jest.mock("@atproto/api");
-BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
+BskyAgent.prototype.login = jest.fn(() => Promise.resolve({}));
 BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
 BskyAgent.prototype.uploadBlob = jest.fn(() =>
   Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
 jest.mock("./utils.js");
-global.fetch = jest.fn();
+
+const db = {};
+const contents = [new ArrayBuffer(8)];
+const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
+const bucket = { file: jest.fn(() => fileRef) };
+const bluesky = new Bluesky(db, bucket);
+
+const thumbUrl = "https://example.com/thumb.jpg";
+const service = "https://bluesky.example.com";
+const identifier = "bluesky-identifier";
+const password = "bluesky-password";
+const params = { service, identifier, password };
+const agent = new BskyAgent(service);
 
 FormData.prototype.append = jest.fn();
 
@@ -20,272 +38,480 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe("post", () => {
-  const contents = [new Uint8Array(8)];
-  const fileRef = { download: jest.fn(() => Promise.resolve(contents[0])) };
-  const bucket = { file: jest.fn(() => fileRef) };
-  const params = {
-    service: "https://bluesky.example.com",
-    identifier: "bluesky-identifier",
-    password: "bluesky-password",
-  };
-  const id = "post-id";
-  const dataText = { text: "Text" };
-  const dataLink = { text: "Text https://example.com" };
-  const dataImage = {
-    text: "Text",
-    files: ["1.jpg"],
-  };
-
-  it("should post to Bluesky.", async () => {
+describe("login", () => {
+  it("should login to Bluesky.", async () => {
     // Prepare
-    generateLinkCard.mockImplementationOnce(() => ({
+    BskyAgent.prototype.login.mockResolvedValueOnce({});
+
+    // Execute
+    const result = await bluesky.login(agent, identifier, password);
+
+    // Verify
+    expect(result).toEqual({ err: undefined });
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier, password }],
+    ]);
+  });
+
+  it("should return error, if Bluesky.login raises an exception.", async () => {
+    // Prepare
+    BskyAgent.prototype.login.mockRejectedValueOnce("error");
+
+    // Execute
+    const result = await bluesky.login(agent, identifier, password);
+
+    // Verify
+    expect(result).toEqual({ err: "error" });
+    expect(BskyAgent.prototype.login.mock.calls).toEqual([
+      [{ identifier, password }],
+    ]);
+  });
+});
+
+describe("uploadImage", () => {
+  const id = "upload-id";
+  const text = "Text";
+  const file = "1.jpg";
+  const blob = new Blob(contents, { type: "image/jpeg" });
+
+  it("should upload image to Bluesky.", async () => {
+    // Prepare
+    getMediaAsBlob.mockResolvedValueOnce({ err: undefined, data: blob });
+    getMimeTypes.mockImplementationOnce(() => "image/jpeg");
+
+    // Execute
+    const result = await bluesky.uploadImage(agent, id, text, file);
+
+    // Verify
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
+    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+      [blob, { encoding: "image/jpeg" }],
+    ]);
+    expect(result).toEqual({ data: new Uint8Array(10) });
+  });
+
+  it("should return error, if getMediaAsBlob returns err.", async () => {
+    // Prepare
+    getMediaAsBlob.mockResolvedValueOnce({ err: "error", data: undefined });
+
+    // Execute
+    const result = await bluesky.uploadImage(agent, id, text, file);
+
+    // Verify
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
+    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: "error" });
+  });
+
+  it("should return error, if Bluesky.uploadBlob raises an exception.", async () => {
+    // Prepare
+    getMediaAsBlob.mockResolvedValueOnce({ err: undefined, data: blob });
+    getMimeTypes.mockImplementationOnce(() => "image/jpeg");
+    BskyAgent.prototype.uploadBlob.mockRejectedValueOnce("error");
+
+    // Execute
+    const result = await bluesky.uploadImage(agent, id, text, file);
+
+    // Verify
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
+    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+      [blob, { encoding: "image/jpeg" }],
+    ]);
+    expect(result).toEqual({ err: "error" });
+  });
+});
+
+describe("uploadThumb", () => {
+  it("should upload thumb image to Bluesky.", async () => {
+    // Prepare
+    httpRequest.mockResolvedValueOnce({
+      data: { status: 200, bytes: () => new Uint8Array(10) },
+    });
+    reduceImageSize.mockResolvedValueOnce({
       err: undefined,
-      data: null,
-    }));
+      data: new Uint8Array(10),
+    });
+    BskyAgent.prototype.uploadBlob.mockResolvedValueOnce({
+      data: { blob: new Uint8Array(10) },
+    });
+    getMimeTypes.mockImplementationOnce(() => "image/jpeg");
 
     // Execute
-    const result = await post(bucket, params, id, dataText);
+    const result = await bluesky.uploadThumb(agent, thumbUrl);
 
     // Verify
-    expect(result).toEqual({ err: undefined });
-    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
+    expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
+    expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
+    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+      [new Uint8Array(10), { encoding: "image/jpeg" }],
+    ]);
+    expect(result).toEqual({ data: new Uint8Array(10) });
+  });
+
+  it("should return error, if httpRequest returns err.", async () => {
+    // Prepare
+    httpRequest.mockResolvedValueOnce({ err: "404 not found" });
+
+    // Execute
+    const result = await bluesky.uploadThumb(agent, thumbUrl);
+
+    // Verify
+    expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
+    expect(reduceImageSize).not.toHaveBeenCalled();
+    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(result).toEqual({});
+  });
+
+  it("should return error, if reduceImageSize returns err.", async () => {
+    // Prepare
+    httpRequest.mockResolvedValueOnce({
+      data: { status: 200, bytes: () => new Uint8Array(10) },
+    });
+    reduceImageSize.mockResolvedValueOnce({ err: "error", data: undefined });
+
+    // Execute
+    const result = await bluesky.uploadThumb(agent, thumbUrl);
+
+    // Verify
+    expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
+    expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
+    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(result).toEqual({});
+  });
+
+  it("should return error, if Bluesky.uploadBlob raises an exception.", async () => {
+    // Prepare
+    httpRequest.mockResolvedValueOnce({
+      data: { status: 200, bytes: () => new Uint8Array(10) },
+    });
+    reduceImageSize.mockResolvedValueOnce({
+      err: undefined,
+      data: new Uint8Array(10),
+    });
+    BskyAgent.prototype.uploadBlob.mockRejectedValueOnce("error");
+    getMimeTypes.mockImplementationOnce(() => "image/jpeg");
+
+    // Execute
+    const result = await bluesky.uploadThumb(agent, thumbUrl);
+
+    // Verify
+    expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
+    expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
+    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+      [new Uint8Array(10), { encoding: "image/jpeg" }],
+    ]);
+    expect(result).toEqual({});
+  });
+});
+
+describe("generateExternal", () => {
+  const text = "Text";
+  const mockUploadThumb = jest.spyOn(bluesky, "uploadThumb");
+
+  it("should not generate external without card.", async () => {
+    // Prepare
+    generateLinkCard.mockResolvedValueOnce({ err: undefined, data: null });
+
+    // Execute
+    const result = await bluesky.generateExternal(agent, text);
+
+    // Verify
     expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
-    ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
-      [{ text: "Text", langs: ["ja"] }],
-    ]);
+    expect(bluesky.uploadThumb).not.toHaveBeenCalled();
+    expect(result).toEqual({ data: undefined });
   });
 
-  it("should post with image to Bluesky.", async () => {
+  it("should generate external.", async () => {
     // Prepare
-    getMediaAsUint8Array.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined, data: contents }),
-    );
+    generateLinkCard.mockResolvedValueOnce({
+      err: undefined,
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+        thumbUrl,
+      },
+    });
+    mockUploadThumb.mockResolvedValueOnce({ data: new Uint8Array(10) });
 
     // Execute
-    const result = await post(bucket, params, id, dataImage);
+    const result = await bluesky.generateExternal(agent, text);
 
     // Verify
+    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(bluesky.uploadThumb.mock.calls).toEqual([
+      [agent, "https://example.com/thumb.jpg"],
+    ]);
+    expect(result).toEqual({
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+        thumb: new Uint8Array(10),
+      },
+    });
+  });
+
+  it("should generate external without thumb.", async () => {
+    // Prepare
+    generateLinkCard.mockResolvedValueOnce({
+      err: undefined,
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+        thumbUrl: null,
+      },
+    });
+
+    // Execute
+    const result = await bluesky.generateExternal(agent, text);
+
+    // Verify
+    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(bluesky.uploadThumb).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+      },
+    });
+  });
+});
+
+describe("requestPost", () => {
+  const langs = ["ja"];
+  const text = "Text";
+  const embed = { uri: "https://example.com" };
+
+  it("should request post.", async () => {
+    // Prepare
+    BskyAgent.prototype.post.mockResolvedValueOnce({ data: {} });
+
+    // Execute
+    const result = await bluesky.requestPost(agent, text, embed);
+
+    // Verify
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [{ text, langs, embed }],
+    ]);
     expect(result).toEqual({ err: undefined });
-    expect(getMediaAsUint8Array.mock.calls).toEqual([
-      [bucket, "post-id", "1.jpg"],
-    ]);
-    expect(generateLinkCard).not.toHaveBeenCalled();
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
-    ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
-      [
-        {
-          text: "Text",
-          langs: ["ja"],
-          embed: {
-            $type: "app.bsky.embed.images",
-            images: [
-              {
-                alt: dataImage.text.substring(0, 100),
-                image: new Uint8Array(10),
-              },
-            ],
-          },
-        },
-      ],
-    ]);
   });
 
-  it("should return error, if getMediaAsUint8Array returns err.", async () => {
+  it("should return error, if Bluesky.post raises an exception.", async () => {
     // Prepare
-    getMediaAsUint8Array.mockImplementationOnce(() =>
-      Promise.resolve({ err: "error", data: undefined }),
-    );
+    BskyAgent.prototype.post.mockRejectedValueOnce("error");
 
     // Execute
-    const result = await post(bucket, params, id, dataImage);
+    const result = await bluesky.requestPost(agent, text, embed);
 
     // Verify
-    expect(result).toEqual({ err: "error", data: undefined });
-    expect(getMediaAsUint8Array.mock.calls).toEqual([
-      [bucket, "post-id", "1.jpg"],
+    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+      [{ text, langs, embed }],
     ]);
-    expect(generateLinkCard).not.toHaveBeenCalled();
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
-    ]);
-    expect(BskyAgent.prototype.post).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: "error" });
+  });
+});
+
+describe("post", () => {
+  const id = "upload-id";
+  const text = "Text";
+  const file = "1.jpg";
+  const langs = ["ja"];
+  const image = new Uint8Array(10);
+
+  const mockLogin = jest.spyOn(bluesky, "login");
+  const mockUploadImage = jest.spyOn(bluesky, "uploadImage");
+  const mockGenerateExternal = jest.spyOn(bluesky, "generateExternal");
+  const mockRequestPost = jest.spyOn(bluesky, "requestPost");
+
+  const mockGetParams = jest.spyOn(bluesky, "getParams");
+  mockGetParams.mockResolvedValue({ data: params });
+
+  it("should return error. if getParams returns error.", async () => {
+    // Prepare
+    mockGetParams.mockResolvedValueOnce({ err: "error" });
+
+    // Execute
+    const result = await bluesky.post(id, { text, files: [file] });
+
+    // Verify
+    expect(mockGetParams.mock.calls).toEqual([[]]);
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).not.toHaveBeenCalled();
+    expect(mockRequestPost).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: "error" });
   });
 
-  it("should post to Bluesky with an link card, if text includes url. #1", async () => {
+  it("should post with an image.", async () => {
     // Prepare
-    generateLinkCard.mockImplementationOnce(() =>
-      Promise.resolve({
-        err: undefined,
-        data: {
-          uri: "https://example.com",
-          title: "Title",
-          description: "Description",
-          thumbUrl: "https://example.com/thumb.jpg",
-        },
-      }),
-    );
-    global.fetch.mockImplementationOnce(() =>
-      Promise.resolve({
-        status: 200,
-        bytes: () => Promise.resolve(new ArrayBuffer(10)),
-      }),
-    );
+
+    mockLogin.mockResolvedValueOnce({});
+    mockUploadImage.mockResolvedValueOnce({ data: image });
+    mockRequestPost.mockResolvedValueOnce({ err: undefined });
 
     // Execute
-    const result = await post(bucket, params, id, dataLink);
+    const result = await bluesky.post(id, { text, files: [file] });
 
     // Verify
-    expect(result).toEqual({ err: undefined });
-    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
-    expect(generateLinkCard.mock.calls).toEqual([["Text https://example.com"]]);
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
     ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+    expect(mockUploadImage.mock.calls).toEqual([
+      [expect.any(Object), id, text, file],
+    ]);
+    expect(mockGenerateExternal).not.toHaveBeenCalled();
+    expect(mockRequestPost.mock.calls).toEqual([
       [
+        expect.any(Object),
+        text,
         {
-          text: "Text https://example.com",
-          langs: ["ja"],
-          embed: {
-            $type: "app.bsky.embed.external",
-            external: {
-              uri: "https://example.com",
-              title: "Title",
-              description: "Description",
-              thumb: expect.any(Uint8Array),
+          $type: "app.bsky.embed.images",
+          images: [
+            {
+              alt: text.substring(0, 100),
+              image,
             },
-          },
+          ],
         },
       ],
     ]);
-    expect(global.fetch.mock.calls).toEqual([
-      ["https://example.com/thumb.jpg"],
-    ]);
+    expect(result).toEqual({ err: undefined });
   });
 
-  it("should post to Bluesky with an link card, if text includes url. #2", async () => {
+  it("should post with an external link.", async () => {
     // Prepare
-    generateLinkCard.mockImplementationOnce(() =>
-      Promise.resolve({
-        err: undefined,
-        data: {
-          uri: "https://example.com",
-          title: "Title",
-          description: "Description",
-          thumbUrl: null,
-        },
-      }),
-    );
+    mockLogin.mockResolvedValueOnce({});
+    mockGenerateExternal.mockResolvedValueOnce({
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+      },
+    });
+    mockRequestPost.mockResolvedValueOnce({ err: undefined });
 
     // Execute
-    const result = await post(bucket, params, id, dataLink);
+    const result = await bluesky.post(id, { text, files: [] });
 
     // Verify
-    expect(result).toEqual({ err: undefined });
-    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
     ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).toHaveBeenCalled();
+    expect(mockRequestPost.mock.calls).toEqual([
       [
+        expect.any(Object),
+        text,
         {
-          text: "Text https://example.com",
-          langs: ["ja"],
-          embed: {
-            $type: "app.bsky.embed.external",
-            external: {
-              uri: "https://example.com",
-              title: "Title",
-              description: "Description",
-              thumb: undefined,
-            },
+          $type: "app.bsky.embed.external",
+          external: {
+            uri: "https://example.com",
+            title: "Title",
+            description: "Description",
           },
         },
       ],
     ]);
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: undefined });
   });
 
-  it("should post to Bluesky with an link card, if text includes url. #3", async () => {
+  it("should return error, if login returns err.", async () => {
     // Prepare
-    generateLinkCard.mockImplementationOnce(() =>
-      Promise.resolve({
-        err: undefined,
-        data: {
-          uri: "https://example.com",
-          title: "Title",
-          description: "Description",
-          thumbUrl: "https://example.com/thumb.jpg",
-        },
-      }),
-    );
-    global.fetch.mockImplementationOnce(() =>
-      Promise.resolve({
-        status: 404,
-      }),
-    );
+    mockLogin.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(bucket, params, id, dataLink);
+    const result = await bluesky.post(id, { text, files: [file] });
 
     // Verify
-    expect(result).toEqual({ err: undefined });
-    expect(getMediaAsUint8Array).not.toHaveBeenCalled();
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
     ]);
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).not.toHaveBeenCalled();
+    expect(mockRequestPost).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: "error" });
+  });
+
+  it("should return error, if uploadImage returns err.", async () => {
+    // Prepare
+    mockLogin.mockResolvedValueOnce({});
+    mockUploadImage.mockResolvedValueOnce({ err: "error" });
+
+    // Execute
+    const result = await bluesky.post(id, { text, files: [file] });
+
+    // Verify
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
+    ]);
+    expect(mockUploadImage.mock.calls).toEqual([
+      [expect.any(Object), id, text, file],
+    ]);
+    expect(mockGenerateExternal).not.toHaveBeenCalled();
+    expect(mockRequestPost).not.toHaveBeenCalled();
+    expect(result).toEqual({ err: "error" });
+  });
+
+  it("should post without embed, if generateExternal returns empty.", async () => {
+    // Prepare
+    mockLogin.mockResolvedValueOnce({});
+    mockGenerateExternal.mockResolvedValueOnce({ data: undefined });
+    mockRequestPost.mockResolvedValueOnce({ err: undefined });
+
+    // Execute
+    const result = await bluesky.post(id, { text, files: [] });
+
+    // Verify
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
+    ]);
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).toHaveBeenCalled();
+    expect(mockRequestPost.mock.calls).toEqual([
+      [expect.any(Object), text, undefined],
+    ]);
+    expect(result).toEqual({ err: undefined });
+  });
+
+  it("should return error, if requestPost returns err.", async () => {
+    // Prepare
+    mockLogin.mockResolvedValueOnce({});
+    mockGenerateExternal.mockResolvedValueOnce({
+      data: {
+        uri: "https://example.com",
+        title: "Title",
+        description: "Description",
+      },
+    });
+    mockRequestPost.mockResolvedValueOnce({ err: "error" });
+
+    // Execute
+    const result = await bluesky.post(id, { text, files: [] });
+
+    // Verify
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
+    ]);
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).toHaveBeenCalled();
+    expect(mockRequestPost.mock.calls).toEqual([
       [
+        expect.any(Object),
+        text,
         {
-          text: "Text https://example.com",
-          langs: ["ja"],
-          embed: {
-            $type: "app.bsky.embed.external",
-            external: {
-              uri: "https://example.com",
-              title: "Title",
-              description: "Description",
-              thumb: undefined,
-            },
+          $type: "app.bsky.embed.external",
+          external: {
+            uri: "https://example.com",
+            title: "Title",
+            description: "Description",
           },
         },
       ],
     ]);
-    expect(global.fetch.mock.calls).toEqual([
-      ["https://example.com/thumb.jpg"],
-    ]);
+    expect(result).toEqual({ err: "error" });
   });
-
-  it(
-    "should return error," +
-      " if Bluesky.post raises an exception for Bluesky.",
-    async () => {
-      // Prepare
-      generateLinkCard.mockImplementationOnce(() =>
-        Promise.resolve({ err: undefined, data: null }),
-      );
-      BskyAgent.prototype.post.mockImplementationOnce(() =>
-        Promise.reject("error"),
-      );
-
-      // Execute
-      const result = await post(bucket, params, id, dataText);
-
-      // Verify
-      expect(result).toEqual({ err: "error" });
-      expect(getMediaAsUint8Array).not.toHaveBeenCalled();
-      expect(BskyAgent.prototype.login.mock.calls).toEqual([
-        [{ identifier: "bluesky-identifier", password: "bluesky-password" }],
-      ]);
-      expect(BskyAgent.prototype.post.mock.calls).toEqual([
-        [{ text: "Text", langs: ["ja"] }],
-      ]);
-    },
-  );
 });

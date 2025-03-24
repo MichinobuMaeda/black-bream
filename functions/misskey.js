@@ -1,82 +1,100 @@
 const { logger } = require("firebase-functions/v2");
-const {
-  getMediaAsUint8Array,
-  reduceImageSize,
-  getMimeTypes,
-} = require("./utils.js");
+const { getMediaAsBlob, httpRequest } = require("./utils.js");
+const { Provider } = require("./provider.js");
 
-/**
- * Post to Misskey
- *
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (bucket, params, id, { text, files }) => {
-  try {
-    const mediaIds = [];
-    if (files?.length) {
-      const mediaResult = await getMediaAsUint8Array(bucket, id, files[0]);
+class Misskey extends Provider {
+  /**
+   * Misskey constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "misskey";
+  }
 
-      if (mediaResult.err) {
-        return { err: mediaResult.err, data: undefined };
-      }
-
-      const form = new FormData();
-      const image = new Blob(
-        [await reduceImageSize(new Uint8Array(mediaResult.data), 1000 * 1000)],
-        { type: getMimeTypes(files[0]) },
-      );
-      form.append("file", image, files[0]);
-      form.append("name", files[0]);
-      form.append("isSensitive", false);
-
-      const postResult = await fetch(`${params.url}/drive/files/create`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${params.token}`,
-        },
-        body: form,
-      });
-
-      const { status } = postResult;
-      if (status !== 200) {
-        return { err: `${status}` };
-      }
-
-      const data = await postResult.json();
-      logger.info(`misskey post media: ${status} ${JSON.stringify(data)}`);
-      mediaIds.push(data.id);
+  /**
+   * Get media list
+   *
+   * @param {string} url
+   * @param {string} token
+   * @param {string} id
+   * @param {array|undefined} files
+   * @returns {Promise<{err: undefined|string, data: array|undefined}>}
+   */
+  async getMediaList(url, token, id, files) {
+    if (!files?.length) {
+      return { err: undefined, data: [] };
     }
 
+    const blob = await getMediaAsBlob(this.bucket, id, files[0]);
+
+    if (blob.err) {
+      return blob;
+    }
+
+    const form = new FormData();
+    form.append("file", blob.data, files[0]);
+    form.append("name", files[0]);
+    form.append("isSensitive", false);
+
+    const { err, data } = await httpRequest(`${url}/drive/files/create`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+
+    if (err) {
+      return { err };
+    }
+
+    const mediaId = (await data.json()).id;
+    logger.info(`misskey post media: ${mediaId}`);
+
+    return { err: undefined, data: [mediaId] };
+  }
+
+  /**
+   * post
+   *
+   * @param {string } id
+   * @param {{ text:string, files: array|undefined }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, { text, files }) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { url, token } = params.data;
+
+    const medias = await this.getMediaList(url, token, id, files);
+
+    if (medias.err) {
+      return medias;
+    }
+
+    text = text.trim();
     const visibility = "public";
-    const json = mediaIds.length
-      ? { visibility, text, mediaIds }
+    const json = medias.data.length
+      ? { visibility, text, mediaIds: medias.data }
       : { visibility, text };
 
-    const ret = await fetch(`${params.url}/notes/create`, {
+    const { err } = await httpRequest(`${url}/notes/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${params.token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(json),
     });
 
-    logger.info(
-      `misskey post media: ${ret.status} ${JSON.stringify(ret.data)}`,
-    );
-    if (ret.status !== 200) {
-      return { err: `${ret.status} ${ret.statusText}` };
-    }
-
-    return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
+    return { err };
   }
-};
+}
 
-module.exports = { post };
+module.exports = { Misskey };

@@ -1,1140 +1,838 @@
 const { describe, it, expect, afterEach } = require("@jest/globals");
-const mastodon = require("./mastodon.js");
-const bluesky = require("./bluesky.js");
-const threads = require("./threads.js");
+const { Mastodon } = require("./mastodon.js");
+const { Misskey } = require("./misskey.js");
+const { Bluesky } = require("./bluesky.js");
+const { Threads } = require("./threads.js");
+const { Instagram } = require("./instagram.js");
+const { Twitter } = require("./twitter.js");
+const { Tumblr } = require("./tumblr.js");
 
-const {
-  getQueueName,
-  createPosts,
-  deletePosts,
-  post,
-  checkCompleted,
-} = require("./post.js");
+const { getDoc, updateDoc } = require("./utils.js");
+const { Post } = require("./post.js");
+const { jsonToLex, mock } = require("@atproto/api");
+const { error } = require("firebase-functions/logger");
 
 jest.mock("firebase-functions/logger");
-jest.mock("./mastodon.js");
-mastodon.post = jest.fn();
-jest.mock("./bluesky.js");
-bluesky.post = jest.fn();
-jest.mock("./threads.js");
-threads.post = jest.fn();
+jest.mock("./utils.js");
 
-FormData.prototype.append = jest.fn();
+jest.mock("./mastodon.js");
+Mastodon.prototype.id = "mastodon";
+Mastodon.prototype.post = jest.fn(() => Promise.resolve({}));
+Mastodon.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./misskey.js");
+Misskey.prototype.id = "misskey";
+Misskey.prototype.post = jest.fn(() => Promise.resolve({}));
+Misskey.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./bluesky.js");
+Bluesky.prototype.id = "bluesky";
+Bluesky.prototype.post = jest.fn(() => Promise.resolve({}));
+Bluesky.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./threads.js");
+Threads.prototype.id = "threads";
+Threads.prototype.post = jest.fn(() => Promise.resolve({}));
+Threads.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./instagram.js");
+Instagram.prototype.id = "instagram";
+Instagram.prototype.post = jest.fn(() => Promise.resolve({}));
+Instagram.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./twitter.js");
+Twitter.prototype.id = "twitter";
+Twitter.prototype.post = jest.fn(() => Promise.resolve({}));
+Twitter.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+jest.mock("./tumblr.js");
+Tumblr.prototype.id = "tumblr";
+Tumblr.prototype.post = jest.fn(() => Promise.resolve({}));
+Tumblr.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+
+const id = "postsId";
+const ref = { id, get: jest.fn() };
+const doc = jest.fn((id) => ref);
+const collection = jest.fn(() => ({ doc }));
+const db = { collection };
+const bucket = {};
+const text = "Text";
+const files = ["1.jpg"];
+const snap = { id, ref, data: () => ({ text, files, targets }) };
+/** @type import("firebase-admin/functions").TaskQueue */
+const queue = { enqueue: jest.fn(), delete: jest.fn() };
 
 afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe("getQueueName", () => {
-  it("should return queue name", () => {
+describe("constructor", () => {
+  it("should set id, ref and data of given doc", () => {
     // Prepare
-    const project = "projectName";
-    const location = "locationName";
-    const functionName = "functionName";
+    const snap = { id, ref, data: () => ({ text, files }) };
 
     // Execute
-    const result = getQueueName(project, location, functionName);
+    const post = new Post(db, bucket, snap);
 
     // Verify
-    expect(result).toBe(
-      "projects/projectName/locations/locationName/functions/functionName",
-    );
+    expect(post.db).toEqual(db);
+    expect(post.bucket).toEqual(bucket);
+    expect(post.ref).toEqual(ref);
+    expect(post.data).toEqual({ id, text, files });
+    expect(collection).not.toHaveBeenCalled();
+    expect(doc).not.toHaveBeenCalled();
+  });
+
+  it("should set id ant target", () => {
+    // Prepare
+    const target = "mastodon";
+
+    // Execute
+    const post = new Post(db, bucket, { id, target });
+
+    // Verify
+    expect(post.db).toEqual(db);
+    expect(post.bucket).toEqual(bucket);
+    expect(post.ref).toEqual(ref);
+    expect(post.data).toEqual({ id, target });
+    expect(collection.mock.calls).toEqual([["posts"]]);
+    expect(doc.mock.calls).toEqual([[id]]);
   });
 });
 
 describe("createPosts", () => {
-  const queue = {
-    enqueue: jest.fn(),
-  };
-  const data = {
-    id: "id",
-    data: () => ({
-      targets: {
-        target1: {},
-        target2: {},
-      },
-      scheduledFor: {
-        toDate: () => new Date("2021-01-01T00:00:00Z"),
-      },
-    }),
-    ref: {
-      update: jest.fn(() => Promise.resolve()),
-    },
-  };
-
   it("should create posts.", async () => {
     // Prepare
+    const delay = 9 * 1000;
+    const mastodon = {};
+    const misskey = {};
+    const targets = { mastodon, misskey };
+    const scheduledFor = {
+      toDate: () => new Date(new Date().getTime() + 60 * 1000),
+    };
+    const postData = { text, files, targets, scheduledFor };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    updateDoc.mockResolvedValueOnce({});
 
     // Execute
-    const result = await createPosts(queue, data);
+    const ret = await post.createPosts(queue);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "enqueued" });
     expect(queue.enqueue.mock.calls).toEqual([
       [
-        { id: "id", target: "target1" },
-        { scheduleTime: expect.any(Date), id: "id-target1" },
+        { id, target: "mastodon" },
+        {
+          id: `${id}-mastodon`,
+          scheduleTime: expect.any(Date),
+        },
       ],
       [
-        { id: "id", target: "target2" },
-        { scheduleTime: expect.any(Date), id: "id-target2" },
+        { id, target: "misskey" },
+        {
+          id: `${id}-misskey`,
+          scheduleTime: expect.any(Date),
+        },
       ],
     ]);
-    expect(data.ref.update.mock.calls).toEqual([
+    expect(targets).toEqual({
+      mastodon: {
+        status: "enqueued",
+        enqueuedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+        scheduleTime: expect.any(Date),
+      },
+      misskey: {
+        status: "failed",
+        err: "error",
+        enqueuedAt: null,
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+        scheduleTime: expect.any(Date),
+      },
+    });
+    expect(scheduledFor.toDate().getTime()).toBeGreaterThan(
+      new Date().getTime(),
+    );
+    expect(targets.mastodon.scheduleTime.getTime()).toBeGreaterThan(
+      scheduledFor.toDate().getTime(),
+    );
+    expect(targets.misskey.scheduleTime.getTime()).toBeGreaterThan(
+      targets.mastodon.scheduleTime.getTime(),
+    );
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
           status: "enqueued",
-          targets: {
-            target1: {
-              status: "enqueued",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-            target2: {
-              status: "enqueued",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-          },
+          targets,
           updatedAt: expect.any(Date),
           deletedAt: null,
         },
       ],
     ]);
+    expect(ret).toEqual({ data: "enqueued" });
   });
 
-  it("should set error status, if queue.enqueue() raises exception.", async () => {
+  it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    queue.enqueue
-      .mockImplementationOnce(() => Promise.reject("error"))
-      .mockImplementationOnce(() => Promise.reject("error"));
+    const delay = 9 * 1000;
+    const mastodon = {};
+    const misskey = {};
+    const targets = { mastodon, misskey };
+    const scheduledFor = {
+      toDate: () => new Date(new Date().getTime() - 60 * 1000),
+    };
+    const postData = { text, files, targets, scheduledFor };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    updateDoc.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await createPosts(queue, data);
+    const ret = await post.createPosts(queue);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "enqueued" });
     expect(queue.enqueue.mock.calls).toEqual([
       [
-        { id: "id", target: "target1" },
-        { scheduleTime: expect.any(Date), id: "id-target1" },
+        { id, target: "mastodon" },
+        {
+          id: `${id}-mastodon`,
+          scheduleTime: expect.any(Date),
+        },
       ],
       [
-        { id: "id", target: "target2" },
-        { scheduleTime: expect.any(Date), id: "id-target2" },
+        { id, target: "misskey" },
+        {
+          id: `${id}-misskey`,
+          scheduleTime: expect.any(Date),
+        },
       ],
     ]);
-    expect(data.ref.update.mock.calls).toEqual([
+    expect(targets).toEqual({
+      mastodon: {
+        status: "enqueued",
+        enqueuedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+        scheduleTime: expect.any(Date),
+      },
+      misskey: {
+        status: "failed",
+        err: "error",
+        enqueuedAt: null,
+        updatedAt: expect.any(Date),
+        deletedAt: null,
+        scheduleTime: expect.any(Date),
+      },
+    });
+    expect(scheduledFor.toDate().getTime()).toBeLessThan(new Date().getTime());
+    expect(targets.mastodon.scheduleTime.getTime()).toBeGreaterThan(
+      scheduledFor.toDate().getTime(),
+    );
+    expect(targets.misskey.scheduleTime.getTime()).toBeGreaterThan(
+      targets.mastodon.scheduleTime.getTime(),
+    );
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
           status: "enqueued",
-          targets: {
-            target1: {
-              status: "failed",
-              err: "error",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: null,
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-            target2: {
-              status: "failed",
-              err: "error",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: null,
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-          },
+          targets,
           updatedAt: expect.any(Date),
           deletedAt: null,
         },
       ],
     ]);
-  });
-
-  it("should return error, if doc().update() exception is raised.", async () => {
-    // Prepare
-    data.ref.update.mockImplementationOnce(() => Promise.reject("error"));
-
-    // Execute
-    const result = await createPosts(queue, data);
-
-    // Verify
-    expect(result).toEqual({ err: "error", data: undefined });
-    expect(queue.enqueue.mock.calls).toEqual([
-      [
-        { id: "id", target: "target1" },
-        { scheduleTime: expect.any(Date), id: "id-target1" },
-      ],
-      [
-        { id: "id", target: "target2" },
-        { scheduleTime: expect.any(Date), id: "id-target2" },
-      ],
-    ]);
-    expect(data.ref.update.mock.calls).toEqual([
-      [
-        {
-          status: "enqueued",
-          targets: {
-            target1: {
-              status: "enqueued",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-            target2: {
-              status: "enqueued",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-          },
-          updatedAt: expect.any(Date),
-          deletedAt: null,
-        },
-      ],
-    ]);
+    expect(ret).toEqual({ err: "error" });
   });
 });
 
 describe("deletePosts", () => {
-  const queue = {
-    delete: jest.fn(),
-  };
-  const data = {
-    id: "id",
-    data: () => ({
-      targets: {
-        target1: {
-          status: "enqueued",
-          scheduleTime: expect.any(Date),
-          enqueuedAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-          deletedAt: null,
-        },
-        target2: {
-          status: "enqueued",
-          scheduleTime: expect.any(Date),
-          enqueuedAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-          deletedAt: null,
-        },
-      },
-      scheduledFor: {
-        toDate: () => new Date("2021-01-01T00:00:00Z"),
-      },
-    }),
-    ref: {
-      update: jest.fn(() => Promise.resolve()),
-    },
-  };
-
   it("should delete posts.", async () => {
     // Prepare
+    const mastodon = {
+      status: "enqueued",
+      scheduleTime: new Date("2025-01-01T00:00:00.000Z"),
+    };
+    const misskey = {
+      status: "enqueued",
+      scheduleTime: new Date("2025-01-01T00:11:11.111Z"),
+    };
+    const targets = { mastodon, misskey };
+    const snap = { id, ref, data: () => ({ text, files, targets }) };
+    const post = new Post(db, bucket, snap);
+    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    updateDoc.mockResolvedValueOnce({});
 
     // Execute
-    const result = await deletePosts(queue, data);
+    const ret = await post.deletePosts(queue);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "deleted" });
-    expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
-    expect(data.ref.update.mock.calls).toEqual([
-      [
-        {
-          status: "deleted",
-          targets: {
-            target1: {
-              status: "deleted",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: expect.any(Date),
-            },
-            target2: {
-              status: "deleted",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: expect.any(Date),
-            },
-          },
-          updatedAt: expect.any(Date),
-          deletedAt: expect.any(Date),
-        },
-      ],
+    expect(queue.delete.mock.calls).toEqual([
+      [`${id}-mastodon`],
+      [`${id}-misskey`],
     ]);
+    expect(targets).toEqual({
+      mastodon: {
+        status: "deleted",
+        deletedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        scheduleTime: mastodon.scheduleTime,
+      },
+      misskey: {
+        status: "enqueued",
+        err: "error",
+        updatedAt: expect.any(Date),
+        scheduleTime: misskey.scheduleTime,
+      },
+    });
+    expect(ret).toEqual({ data: "deleted" });
   });
 
-  it("should set error status, if queue.delete() raises exception.", async () => {
+  it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    queue.delete
-      .mockImplementationOnce(() => Promise.reject("error"))
-      .mockImplementationOnce(() => Promise.reject("error"));
+    const mastodon = {
+      status: "enqueued",
+      scheduleTime: new Date("2025-01-01T00:00:00.000Z"),
+    };
+    const misskey = {
+      status: "enqueued",
+      scheduleTime: new Date("2025-01-01T00:11:11.111Z"),
+    };
+    const targets = { mastodon, misskey };
+    const snap = { id, ref, data: () => ({ text, files, targets }) };
+    const post = new Post(db, bucket, snap);
+    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    updateDoc.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await deletePosts(queue, data);
+    const ret = await post.deletePosts(queue);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "deleted" });
-    expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
-    expect(data.ref.update.mock.calls).toEqual([
+    expect(queue.delete.mock.calls).toEqual([
+      [`${id}-mastodon`],
+      [`${id}-misskey`],
+    ]);
+    expect(targets).toEqual({
+      mastodon: {
+        status: "deleted",
+        deletedAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        scheduleTime: mastodon.scheduleTime,
+      },
+      misskey: {
+        status: "enqueued",
+        err: "error",
+        updatedAt: expect.any(Date),
+        scheduleTime: misskey.scheduleTime,
+      },
+    });
+    expect(ret).toEqual({ err: "error" });
+  });
+});
+
+describe("setPostStatusError", () => {
+  it("should set post status to error.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    updateDoc.mockResolvedValueOnce({});
+
+    // Execute
+    const ret = await post.setPostStatusError("Error message");
+
+    // Verify
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
-          status: "deleted",
-          targets: {
-            target1: {
-              status: "enqueued",
-              err: "error",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
-            target2: {
-              status: "enqueued",
-              err: "error",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: null,
-            },
+          status: "posting",
+          ["targets.mastodon"]: {
+            status: "failed",
+            err: "Error message",
+            updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
-          deletedAt: expect.any(Date),
         },
       ],
     ]);
+    expect(ret).toEqual({ err: "Error message" });
   });
 
-  it("should return error, if doc().update() exception is raised.", async () => {
+  it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    data.ref.update.mockImplementationOnce(() => Promise.reject("error"));
+    const target = "misskey";
+    const post = new Post(db, bucket, { id, target });
+    updateDoc.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await deletePosts(queue, data);
+    const ret = await post.setPostStatusError("error");
 
     // Verify
-    expect(result).toEqual({ err: "error", data: undefined });
-    expect(queue.delete.mock.calls).toEqual([["id-target1"], ["id-target2"]]);
-    expect(data.ref.update.mock.calls).toEqual([
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
-          status: "deleted",
-          targets: {
-            target1: {
-              status: "deleted",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: expect.any(Date),
-            },
-            target2: {
-              status: "deleted",
-              scheduleTime: expect.any(Date),
-              enqueuedAt: expect.any(Date),
-              updatedAt: expect.any(Date),
-              deletedAt: expect.any(Date),
-            },
+          status: "posting",
+          ["targets.misskey"]: {
+            status: "failed",
+            err: "error",
+            updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
-          deletedAt: expect.any(Date),
         },
       ],
     ]);
+    expect(ret).toEqual({ err: "error" });
+  });
+});
+
+describe("getPostData", () => {
+  it("should return error if getDoc returns error.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    getDoc.mockResolvedValueOnce({ err: "error" });
+
+    // Execute
+    const ret = await post.getPostData();
+
+    // Verify
+    expect(getDoc.mock.calls).toEqual([[ref]]);
+    expect(ret).toEqual({ err: `Failed to get posts/${ref.id}: error` });
+  });
+
+  it("should return error if doc is not exists.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const snap = { id, exists: false };
+    getDoc.mockResolvedValueOnce({ data: snap });
+
+    // Execute
+    const ret = await post.getPostData();
+
+    // Verify
+    expect(getDoc.mock.calls).toEqual([[ref]]);
+    expect(ret).toEqual({ err: `Not found: posts/${id}` });
+  });
+
+  it("should return error if doc has been deleted.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const snap = {
+      id,
+      exists: true,
+      get: jest.fn(() => new Date()), // deletedAt
+    };
+    getDoc.mockResolvedValueOnce({ data: snap });
+
+    // Execute
+    const ret = await post.getPostData();
+
+    // Verify
+    expect(getDoc.mock.calls).toEqual([[ref]]);
+    expect(snap.get.mock.calls).toEqual([["deletedAt"]]);
+    expect(ret).toEqual({ err: `Already deleted: posts/${id}` });
+  });
+
+  it("should return post data.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const targets = { mastodon: {}, misskey: {} };
+    const post = new Post(db, bucket, { id, target });
+    const snap = {
+      id,
+      exists: true,
+      get: jest.fn(() => null), // deletedAt
+      data: () => ({ text, files, targets }),
+    };
+    getDoc.mockResolvedValueOnce({ data: snap });
+
+    // Execute
+    const ret = await post.getPostData();
+
+    // Verify
+    expect(getDoc.mock.calls).toEqual([[ref]]);
+    expect(snap.get.mock.calls).toEqual([["deletedAt"]]);
+    expect(ret).toEqual({ data: { text, files, targets } });
+  });
+});
+
+describe("verifyTargetStatus", () => {
+  it("should return error if target is not found.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const targets = {};
+    const ret = post.verifyTargetStatus(targets);
+
+    // Verify
+    expect(ret).toEqual({ err: `Not found: mastodon in posts/${id}` });
+  });
+
+  it("should return error if target has been deleted.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const targets = { mastodon: { deletedAt: new Date() } };
+    const ret = post.verifyTargetStatus(targets);
+
+    // Verify
+    expect(ret).toEqual({ err: `Invalid status: mastodon is deleted` });
+  });
+
+  it("should return error if target status is invalid.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const targets = { mastodon: { status: "posted" } };
+    const ret = post.verifyTargetStatus(targets);
+
+    // Verify
+    expect(ret).toEqual({ err: `Invalid status: mastodon.status: posted` });
+  });
+
+  it("should return undefined if target status is valid.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const targets = { mastodon: { status: "enqueued" } };
+    const ret = post.verifyTargetStatus(targets);
+
+    // Verify
+    expect(ret).toEqual({ err: undefined });
   });
 });
 
 describe("post", () => {
-  const postData = {
-    targets: {
-      mastodon: { status: "enqueued", deletedAt: null },
-      bluesky: { status: "enqueued", deletedAt: null },
-      threads: { status: "enqueued", deletedAt: null },
-      dummy: { status: "enqueued", deletedAt: null },
+  const target = "mastodon";
+  const mastodon = {
+    status: "enqueued",
+    scheduleTime: new Date("2025-01-01T00:00:00.000Z"),
+  };
+  const misskey = {
+    status: "enqueued",
+    scheduleTime: new Date("2025-01-01T00:11:11.111Z"),
+  };
+  const targets = { mastodon, misskey };
+  const updateData01 = [
+    ref,
+    {
+      status: "posting",
+      ["targets.mastodon"]: {
+        status: "posting",
+        updatedAt: expect.any(Date),
+      },
+      updatedAt: expect.any(Date),
     },
-    text: "Text",
-  };
-  const postSnap = {
-    exists: true,
-    id: "post-id",
-    data: jest.fn(() => postData),
-    get: jest.fn((key) => postData[key]),
-  };
-  const postRef = {
-    get: jest.fn(() => Promise.resolve(postSnap)),
-    update: jest.fn(() => Promise.resolve()),
-  };
-  const authData = {
-    mastodon: { data: "mastodon-data" },
-    bluesky: { data: "bluesky-data" },
-    threads: { data: "threads-data" },
-    dummy: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const authSnap = {
-    exists: true,
-    data: () => authData,
-    get: jest.fn((key) => authData[key]),
-  };
-  const authRef = {
-    get: jest.fn(() => Promise.resolve(authSnap)),
-  };
-  const collection = {
-    doc: jest.fn(),
-  };
-  const db = {
-    collection: jest.fn(() => collection),
-  };
-  const bucket = { data: "bucket-data" };
+  ];
+  const updateData02 = [
+    ref,
+    {
+      status: "posting",
+      ["targets.mastodon"]: {
+        status: "completed",
+        updatedAt: expect.any(Date),
+      },
+      updatedAt: expect.any(Date),
+    },
+  ];
 
-  it("should return error, if failed to get post doc.", async () => {
+  it("should post to mastodon.", async () => {
     // Prepare
-    postRef.get.mockImplementationOnce(() =>
-      Promise.resolve({ exists: false }),
-    );
-    collection.doc.mockImplementationOnce(() => postRef);
+    const postData = { text, files, targets };
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: postData });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    const provider = new Mastodon(db, bucket);
+    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
+    Mastodon.prototype.post.mockResolvedValueOnce({});
+    updateDoc.mockResolvedValueOnce({}).mockResolvedValueOnce({});
 
     // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "target1",
-      text: "Text",
-    });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Not found: posts/post-id",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update).not.toHaveBeenCalled();
-    expect(authRef.get).not.toHaveBeenCalled();
-    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(updateDoc.mock.calls).toEqual([updateData01, updateData02]);
+    expect(ret).toEqual({ data: "posting" });
   });
 
-  it("should return error, if post is already deleted.", async () => {
+  it("should return error if getPostData returns error.", async () => {
     // Prepare
-    collection.doc.mockImplementationOnce(() => postRef);
-    postSnap.get.mockImplementationOnce(() => new Date());
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "target1" });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Deleted: posts/post-id",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "failed",
-            err: "Deleted: posts/post-id",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get).not.toHaveBeenCalled();
-    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if failed to get auth doc.", async () => {
+  it("should return error if verifyTargetStatus returns error.", async () => {
     // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    authRef.get.mockImplementationOnce(() =>
-      Promise.resolve({ exists: false }),
-    );
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: "error" }));
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "mastodon",
-    });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Not found: service/auth",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "failed",
-            err: "Not found: service/auth",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([["error"]]);
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if auth doc is already deleted.", async () => {
+  it("should return error if fail to get provider params.", async () => {
     // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    authSnap.get.mockImplementationOnce(() => new Date());
+    const target = "dummy";
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "mastodon",
-    });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Deleted: service/auth",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "failed",
-            err: "Deleted: service/auth",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([
+      ["Unsupported target: dummy"],
     ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"]]);
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if the target status is not enqueued.", async () => {
+  it("should return error if updateDoc returns error. #1", async () => {
     // Prepare
-    collection.doc.mockImplementationOnce(() => postRef);
-    postSnap.get
-      .mockImplementationOnce(() => null)
-      .mockImplementationOnce(() => ({
-        target1: { status: "failed" },
-      }));
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    const provider = new Mastodon(db, bucket);
+    updateDoc.mockResolvedValueOnce({ err: "update error" });
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "target1" });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Invalid status: target1.status: failed",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "failed",
-            err: "Invalid status: target1.status: failed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(Mastodon.prototype.refreshAccessToken).not.toHaveBeenCalled();
+    expect(Mastodon.prototype.post).not.toHaveBeenCalled();
+    expect(updateDoc.mock.calls).toEqual([updateData01]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([
+      ["Failed to set posing status: update error"],
     ]);
-    expect(authRef.get).not.toHaveBeenCalled();
-    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if the target is already deleted.", async () => {
+  it("should return error if updateDoc returns error. #2", async () => {
     // Prepare
-    collection.doc.mockImplementationOnce(() => postRef);
-    postSnap.get
-      .mockImplementationOnce(() => null)
-      .mockImplementationOnce(() => ({
-        target1: { status: "enqueued", deletedAt: new Date() },
-      }));
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    const provider = new Mastodon(db, bucket);
+    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
+    Mastodon.prototype.post.mockResolvedValueOnce({});
+    updateDoc
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ err: "update error" });
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "target1" });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Invalid status: target1 is deleted",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "failed",
-            err: "Invalid status: target1 is deleted",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(updateDoc.mock.calls).toEqual([updateData01, updateData02]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([
+      ["Failed to set completed status: update error"],
     ]);
-    expect(authRef.get).not.toHaveBeenCalled();
-    expect(authSnap.get).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if failed to get the target params.", async () => {
+  it("should return error if refreshAccessToken returns error.", async () => {
     // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    postSnap.get
-      .mockImplementationOnce(() => null)
-      .mockImplementationOnce(() => ({
-        target1: { status: "enqueued" },
-      }));
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    const provider = new Mastodon(db, bucket);
+    updateDoc.mockResolvedValueOnce({});
+    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({
+      err: "error",
+    });
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "target1" });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Not found: target1 in service/auth",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "failed",
-            err: "Not found: target1 in service/auth",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["target1"]]);
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(Mastodon.prototype.post).not.toHaveBeenCalled();
+    expect(updateDoc.mock.calls).toEqual([updateData01]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([["mastodon: error"]]);
+    expect(ret).toEqual({ err: "error" });
   });
 
-  it("should return error, if the target params is already deleted.", async () => {
+  it("should return error if post returns error.", async () => {
     // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    postSnap.get
-      .mockImplementationOnce(() => null)
-      .mockImplementationOnce(() => ({
-        target1: { status: "enqueued" },
-      }));
-    authSnap.get
-      .mockImplementationOnce(() => null)
-      .mockImplementationOnce(() => ({ deletedAt: new Date() }));
+    const post = new Post(db, bucket, { id, target });
+    mockGetPostData = jest.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    const provider = new Mastodon(db, bucket);
+    updateDoc.mockResolvedValueOnce({});
+    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
+    Mastodon.prototype.post.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "target1" });
+    const ret = await post.post();
 
     // Verify
-    expect(result).toEqual({
-      err: "Deleted: target1 in service/auth",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.target1": {
-            status: "failed",
-            err: "Deleted: target1 in service/auth",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["target1"]]);
-  });
-
-  it("should return error, if target is not supported.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-
-    // Execute
-    const result = await post(db, bucket, { id: "post-id", target: "dummy" });
-
-    // Verify
-    expect(result).toEqual({
-      err: "Unsupported target: dummy",
-      data: undefined,
-    });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.dummy": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.dummy": {
-            status: "failed",
-            err: "Unsupported target: dummy",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["dummy"]]);
-  });
-
-  it("should post mastodon, if target is mastodon.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    mastodon.post.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined }),
-    );
-
-    // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "mastodon",
-    });
-
-    // Verify
-    expect(result).toEqual({ err: undefined, data: "posting" });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(mastodon.post.mock.calls).toEqual([
-      [bucket, { data: "mastodon-data" }, "post-id", postData],
-    ]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "completed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
-  });
-
-  it("should post bluesky, if target is bluesky.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    bluesky.post.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined }),
-    );
-
-    // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "bluesky",
-    });
-
-    // Verify
-    expect(result).toEqual({ err: undefined, data: "posting" });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(bluesky.post.mock.calls).toEqual([
-      [bucket, { data: "bluesky-data" }, "post-id", postData],
-    ]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.bluesky": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.bluesky": {
-            status: "completed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["bluesky"]]);
-  });
-
-  it("should post threads, if target is threads.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    threads.post.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined }),
-    );
-
-    // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "threads",
-    });
-
-    // Verify
-    expect(result).toEqual({ err: undefined, data: "posting" });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(threads.post.mock.calls).toEqual([
-      [bucket, { data: "threads-data" }, "post-id", postData],
-    ]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.threads": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.threads": {
-            status: "completed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["threads"]]);
-  });
-
-  it("should return error, if target is failed.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    mastodon.post.mockImplementationOnce(() =>
-      Promise.resolve({ err: "error" }),
-    );
-
-    // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "mastodon",
-    });
-
-    // Verify
-    expect(result).toEqual({ err: "mastodon: error", data: undefined });
-    expect(db.collection.mock.calls).toEqual([["posts"], ["service"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"], ["auth"]]);
-    expect(mastodon.post.mock.calls).toEqual([
-      [bucket, { data: "mastodon-data" }, "post-id", postData],
-    ]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "failed",
-            err: "mastodon: error",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([[]]);
-    expect(authSnap.get.mock.calls).toEqual([["deletedAt"], ["mastodon"]]);
-  });
-
-  it("should return error, if postRef.update() raises an exception.", async () => {
-    // Prepare
-    collection.doc
-      .mockImplementationOnce(() => postRef)
-      .mockImplementationOnce(() => authRef);
-    postRef.update
-      .mockImplementationOnce(() => Promise.reject("error"))
-      .mockImplementationOnce(() => Promise.reject("error"));
-    mastodon.post.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined }),
-    );
-
-    // Execute
-    const result = await post(db, bucket, {
-      id: "post-id",
-      target: "mastodon",
-    });
-
-    // Verify
-    expect(result).toEqual({ err: "error", data: undefined });
-    expect(db.collection.mock.calls).toEqual([["posts"]]);
-    expect(collection.doc.mock.calls).toEqual([["post-id"]]);
-    expect(postRef.get.mock.calls).toEqual([[]]);
-    expect(postRef.update.mock.calls).toEqual([
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            status: "posting",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-      [
-        {
-          status: "posting",
-          "targets.mastodon": {
-            err: "error",
-            status: "failed",
-            updatedAt: expect.any(Date),
-          },
-          updatedAt: expect.any(Date),
-        },
-      ],
-    ]);
-    expect(authRef.get.mock.calls).toEqual([]);
-    expect(authSnap.get.mock.calls).toEqual([]);
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(updateDoc.mock.calls).toEqual([updateData01]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([["mastodon: error"]]);
+    expect(ret).toEqual({ err: "error" });
   });
 });
 
 describe("checkCompleted", () => {
-  it("should return 'completed', if all targets are completed.", async () => {
+  it("should update status to completed if all targets are completed.", async () => {
     // Prepare
-    const data = {
-      status: "posting",
-      targets: {
-        target1: { status: "completed" },
-        target2: { status: "completed" },
-      },
-    };
-    const doc = {
-      data: () => data,
-      ref: {
-        update: jest.fn(() => Promise.resolve()),
-      },
-    };
+    const target = "mastodon";
+    const mastodon = { status: "completed" };
+    const misskey = { status: "completed" };
+    const targets = { mastodon, misskey };
+    const postData = { text, files, targets };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+    updateDoc.mockResolvedValueOnce({});
 
     // Execute
-    const result = await checkCompleted(doc);
+    const ret = await post.checkCompleted();
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "completed" });
-    expect(doc.ref.update.mock.calls).toEqual([
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
           status: "completed",
           updatedAt: expect.any(Date),
         },
       ],
     ]);
+    expect(ret).toEqual({ data: "completed" });
   });
 
-  it("should return 'failed', if some targets are failed.", async () => {
+  it("should update status to failed if a targets are failed.", async () => {
     // Prepare
-    const data = {
-      status: "posting",
-      targets: {
-        target1: { status: "completed" },
-        target2: { status: "failed" },
-      },
-    };
-    const doc = {
-      data: () => data,
-      ref: {
-        update: jest.fn(() => Promise.resolve()),
-      },
-    };
+    const target = "mastodon";
+    const mastodon = { status: "completed" };
+    const misskey = { status: "failed" };
+    const targets = { mastodon, misskey };
+    const postData = { text, files, targets };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+    updateDoc.mockResolvedValueOnce({});
 
     // Execute
-    const result = await checkCompleted(doc);
+    const ret = await post.checkCompleted();
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "failed" });
-    expect(doc.ref.update.mock.calls).toEqual([
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
           status: "failed",
           updatedAt: expect.any(Date),
         },
       ],
     ]);
+    expect(ret).toEqual({ data: "failed" });
   });
 
-  it("should return current status, if some targets are not processed.", async () => {
+  it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    const data = {
-      status: "posting",
-      targets: {
-        target1: { status: "completed" },
-        target2: { status: "posting" },
-      },
-    };
-    const doc = {
-      data: () => data,
-      ref: {
-        update: jest.fn(() => Promise.resolve()),
-      },
-    };
+    const target = "mastodon";
+    const mastodon = { status: "completed" };
+    const misskey = { status: "completed" };
+    const targets = { mastodon, misskey };
+    const postData = { text, files, targets };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+    updateDoc.mockResolvedValueOnce({ err: "error" });
 
     // Execute
-    const result = await checkCompleted(doc);
+    const ret = await post.checkCompleted();
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: "posting" });
-    expect(doc.ref.update).not.toHaveBeenCalled();
-  });
-
-  it("should return error, if it is rejected.", async () => {
-    // Prepare
-    const data = {
-      status: "posting",
-      targets: {
-        target1: { status: "completed" },
-        target2: { status: "completed" },
-      },
-    };
-    const doc = {
-      data: () => data,
-      ref: {
-        update: jest.fn(() => Promise.reject("error")),
-      },
-    };
-
-    // Execute
-    const result = await checkCompleted(doc);
-
-    // Verify
-    expect(result).toEqual({ err: "error", data: undefined });
-    expect(doc.ref.update.mock.calls).toEqual([
+    expect(updateDoc.mock.calls).toEqual([
       [
+        ref,
         {
           status: "completed",
           updatedAt: expect.any(Date),
         },
       ],
     ]);
+    expect(ret).toEqual({ err: "error" });
+  });
+
+  it("should not update status if all targets are not ended.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const mastodon = { status: "completed" };
+    const misskey = { status: "enqueued" };
+    const targets = { mastodon, misskey };
+    const postData = { text, files, targets };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+
+    // Execute
+    const ret = await post.checkCompleted();
+
+    // Verify
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({});
   });
 });

@@ -1,78 +1,102 @@
 const { logger } = require("firebase-functions/v2");
-const {
-  getMimeTypes,
-  getMediaAsUint8Array,
-  reduceImageSize,
-} = require("./utils.js");
+const { getMediaAsBlob, sleep, httpRequest } = require("./utils.js");
+const { Provider } = require("./provider.js");
 
-/**
- * Post to Twitter
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (db, bucket, params, id, { text, files }) => {
-  const timeout = Number(process.env.IMAGE_UPLOAD_TIMEOUT || 5);
-  try {
-    const retRefresh = await refreshTwitterAccessToken(db);
-    if (retRefresh.err) {
-      return { err: retRefresh.err };
+class Twitter extends Provider {
+  /**
+   * Twitter constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "twitter";
+  }
+
+  /**
+   * Upload image
+   *
+   * @param {string} accessToken
+   * @param {string} id
+   * @param {string} file
+   * @returns Promise<{err: undefined|string, data: string|undefined}>
+   */
+  async uploadImage(accessToken, id, file) {
+    const timeout = Number(process.env.IMAGE_UPLOAD_TIMEOUT || 5);
+
+    const blob = await getMediaAsBlob(this.bucket, id, file);
+
+    if (blob.err) {
+      return blob;
     }
-    const accessToken = retRefresh.data ?? params.accessToken;
+
+    const form = new FormData();
+    form.append("media", blob.data, file);
+
+    const resp = await httpRequest("https://api.x.com/2/media/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: form,
+    });
+
+    if (resp.err) {
+      logger.error(resp.err);
+      return resp;
+    }
+
+    const data = await resp.data.json();
+    logger.info(`twitter post media: ${resp.status} ${JSON.stringify(data)}`);
+
+    if (
+      data.processing_info &&
+      data.processing_info.state === "in_progress" &&
+      data.processing_info.check_after_secs
+    ) {
+      const wait = Math.min(
+        data.processing_info.check_after_secs,
+        timeout * timeout,
+      );
+      logger.info(`twitter wait media upload: ${wait} sec.`);
+      await new sleep(wait);
+    }
+
+    return { err: undefined, data };
+  }
+
+  /**
+   * post
+   *
+   * @param {string} id
+   * @param {{ text:string, files: array|undefined }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, { text, files }) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { accessToken } = params.data;
 
     const media_ids = [];
+
     if (files?.length) {
-      const result = await getMediaAsUint8Array(bucket, id, files[0]);
-      const encoding = getMimeTypes(files[0]);
+      const image = await this.uploadImage(accessToken, id, files[0]);
 
-      if (result.err) {
-        return { err: result.err, data: undefined };
+      if (image.err) {
+        return image;
       }
-
-      const image = await reduceImageSize(
-        new Uint8Array(result.data),
-        1000 * 1000,
-      );
-
-      const form = new FormData();
-      form.append("media", new Blob([image], { type: encoding }), files[0]);
-
-      const resMedia = await fetch("https://api.x.com/2/media/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form,
-      });
-      const { status, statusText } = resMedia;
-      const data = await resMedia.json();
-      logger.info(`twitter post media: ${status} ${JSON.stringify(data)}`);
-
-      media_ids.push(data.id);
-
-      if (
-        status === 200 &&
-        data.processing_info &&
-        data.processing_info.state.state === "in_progress"
-      ) {
-        const wait = Math.min(
-          data.processing_info.check_after_secs ?? 0,
-          timeout * timeout,
-        );
-        logger.info(`twitter wait media upload: ${wait} sec.`);
-        await new Promise((r) => setTimeout(r, wait * 1000));
-      } else if (status !== 200) {
-        return { err: `${status} ${statusText}` };
-      }
+      media_ids.push(image.data.id);
     }
 
     text = text.trim();
 
-    const ret = await fetch("https://api.x.com/2/tweets", {
+    const resp = await httpRequest("https://api.x.com/2/tweets", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -83,111 +107,29 @@ const post = async (db, bucket, params, id, { text, files }) => {
       ),
     });
 
-    logger.info(
-      `twitter post media: ${ret.status} ${JSON.stringify(ret.data)}`,
-    );
-    if (ret.status !== 201) {
-      return { err: `${ret.status} ${ret.statusText}` };
+    if (resp.err) {
+      logger.error(resp.err);
+      return resp;
     }
 
     return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
   }
-};
 
-/**
- * Set access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {object} data
- * @returns {Promise<object>}
- */
-const setTwitterAccessToken = async (db, { status, code, challenge }) => {
-  try {
-    console.log(JSON.stringify({ status, code, challenge }));
+  /**
+   * Refresh access token
+   *
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async refreshAccessToken() {
+    const params = await this.getParams();
 
-    if (!status || status === "ng") {
-      const err = `invalid state: ${status}`;
-      console.error(err);
-      return { err };
+    if (params.err) {
+      return params;
     }
 
-    if (!code || code === "error") {
-      const err = `invalid code: ${code}`;
-      console.error(err);
-      return { err };
-    }
+    const { clientId, clientSecret, refreshToken, expiredAt } = params.data;
 
-    if (!challenge) {
-      const err = `invalid challenge: ${challenge}`;
-      console.error(err);
-      return { err };
-    }
-
-    const authRef = db.collection("service").doc("auth");
-    const auth = await authRef.get();
-    const { clientId, clientSecret, callBackUrl } = auth.get("twitter");
-
-    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
-    const formData = new URLSearchParams();
-    formData.append("code", code);
-    formData.append("grant_type", "authorization_code");
-    formData.append("redirect_uri", callBackUrl);
-    formData.append("code_verifier", challenge);
-
-    let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${basic}`,
-      },
-      body: formData,
-    });
-
-    if (oauthResp.status !== 200) {
-      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-
-    const oauthData = await oauthResp.json();
-    console.log(JSON.stringify(oauthData));
-    const expiredAt = new Date(
-      new Date().getTime() + oauthData.expires_in * 1000,
-    );
-
-    await authRef.update({
-      "twitter.accessToken": oauthData.access_token ?? null,
-      "twitter.refreshToken": oauthData.refresh_token ?? null,
-      "twitter.expiredAt": expiredAt,
-      updatedAt: new Date(),
-    });
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
-
-/**
- * Refresh access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {object} data
- * @returns {Promise<object>}
- */
-const refreshTwitterAccessToken = async (db) => {
-  try {
-    const authRef = db.collection("service").doc("auth");
-    const auth = await authRef.get();
-    const params = auth.get("twitter");
-    const { clientId, clientSecret, accessToken, refreshToken, expiredAt } =
-      params;
-
-    if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
+    if (expiredAt.toDate() > new Date(new Date().getTime() + 60 * 1000)) {
       return { err: undefined };
     }
 
@@ -199,7 +141,7 @@ const refreshTwitterAccessToken = async (db) => {
     formData.append("refresh_token", refreshToken);
     formData.append("grant_type", "refresh_token");
 
-    let oauthResp = await fetch("https://api.x.com/2/oauth2/token", {
+    let resp = await httpRequest("https://api.x.com/2/oauth2/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -208,28 +150,117 @@ const refreshTwitterAccessToken = async (db) => {
       body: formData,
     });
 
-    if (oauthResp.status !== 200) {
-      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
+    if (resp.err) {
+      const err = `/2/oauth2/token: ${resp.err}`;
+      logger.error(err);
       return { err };
     }
 
-    const oauthData = await oauthResp.json();
-    console.log(JSON.stringify(oauthData));
+    const oauthData = await resp.data.json();
 
-    await authRef.update({
-      "twitter.accessToken": oauthData.access_token ?? accessToken,
-      "twitter.refreshToken": oauthData.refresh_token ?? refreshToken,
-      "twitter.expiredAt": new Date(
-        new Date().getTime() + oauthData.expires_in * 1000,
-      ),
-      updatedAt: new Date(),
+    if (!oauthData.access_token) {
+      const err = "Failed to get new access_token";
+      logger.error(err);
+      return { err };
+    }
+
+    const updated = await this.updateParams({
+      accessToken: oauthData.access_token,
+      refreshToken: oauthData.refresh_token ?? undefined,
+      expiredAt: oauthData.expires_in
+        ? new Date(new Date().getTime() + oauthData.expires_in * 1000)
+        : undefined,
     });
 
-    return { err: undefined, data: oauthData.access_token };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
+    if (updated.err) {
+      logger.error(`updateParams ${updated.err}`);
+      return updated;
+    }
 
-module.exports = { post, setTwitterAccessToken };
+    return { err: undefined, data: oauthData.access_token };
+  }
+
+  /**
+   * Set access token
+   *
+   * @param {{status:string, code:string, challenge:string}} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async setAccessToken({ status, code, challenge }) {
+    logger.log(JSON.stringify({ status, code, challenge }));
+
+    if (!status || status === "ng") {
+      const err = `invalid status: ${status}`;
+      logger.error(err);
+      return { err };
+    }
+
+    if (!code || code === "error") {
+      const err = `invalid code: ${code}`;
+      logger.error(err);
+      return { err };
+    }
+
+    if (!challenge) {
+      const err = `invalid challenge: ${challenge}`;
+      logger.error(err);
+      return { err };
+    }
+
+    const params = await this.getParams();
+
+    if (params.err) {
+      return params;
+    }
+
+    const { clientId, clientSecret, callBackUrl } = params.data;
+
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+    const formData = new URLSearchParams();
+    formData.append("code", code);
+    formData.append("grant_type", "authorization_code");
+    formData.append("redirect_uri", callBackUrl);
+    formData.append("code_verifier", challenge);
+
+    let resp = await httpRequest("https://api.x.com/2/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${basic}`,
+      },
+      body: formData,
+    });
+
+    if (resp.err) {
+      const err = `/2/oauth2/token: ${resp.err}`;
+      logger.error(err);
+      return { err };
+    }
+
+    const oauthData = await resp.data.json();
+    logger.log(JSON.stringify(oauthData));
+
+    if (!oauthData.access_token) {
+      const err = "Failed to get new access_token";
+      logger.error(err);
+      return { err };
+    }
+
+    const updated = await this.updateParams({
+      accessToken: oauthData.access_token,
+      refreshToken: oauthData.refresh_token ?? undefined,
+      expiredAt: oauthData.expires_in
+        ? new Date(new Date().getTime() + oauthData.expires_in * 1000)
+        : undefined,
+    });
+
+    if (updated.err) {
+      return updated;
+    }
+
+    return { err: undefined };
+  }
+}
+
+module.exports = { Twitter };

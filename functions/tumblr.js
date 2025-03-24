@@ -1,29 +1,41 @@
 const { logger } = require("firebase-functions/v2");
-const { generateLinkCard } = require("./utils");
+const { getPublicMediaUrl, generateLinkCard, httpRequest } = require("./utils");
+const { Provider } = require("./provider.js");
 
-/**
- * Post to Tumblr
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (db, bucket, params, id, { text, files }) => {
-  try {
-    const retRefresh = await refreshTumblrAccessToken(db);
-    if (retRefresh.err) {
-      return { err: retRefresh.err };
+class Tumblr extends Provider {
+  /**
+   * Tumblr constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "tumblr";
+  }
+
+  /**
+   * post
+   *
+   * @param {string} id
+   * @param {{ text:string, files: array|undefined }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, { text, files }) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
     }
-    const accessToken = retRefresh.data ?? params.accessToken;
+
+    const { accessToken, blogId } = params.data;
 
     text = text.trim();
     let body = undefined;
 
     if (files?.length) {
-      const url = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
+      const url = getPublicMediaUrl(id, files[0]);
       body = JSON.stringify({
         content: [
           { type: "image", media: { url } },
@@ -31,9 +43,9 @@ const post = async (db, bucket, params, id, { text, files }) => {
         ],
       });
     } else {
-      const result = await generateLinkCard(text);
-      if (result.data) {
-        const url = result.data.uri;
+      const { data } = await generateLinkCard(text);
+      if (data) {
+        const url = data.uri;
         text = text.replace(url, "").trim();
         body = JSON.stringify({
           content: [
@@ -46,15 +58,8 @@ const post = async (db, bucket, params, id, { text, files }) => {
       }
     }
 
-    logger.info(
-      JSON.stringify({
-        url: `https://api.tumblr.com/v2/blog/${params.blogId}/posts`,
-        body,
-      }),
-    );
-
-    const ret = await fetch(
-      `https://api.tumblr.com/v2/blog/${params.blogId}/posts`,
+    const { err } = await httpRequest(
+      `https://api.tumblr.com/v2/blog/${blogId}/posts`,
       {
         method: "POST",
         headers: {
@@ -65,94 +70,32 @@ const post = async (db, bucket, params, id, { text, files }) => {
       },
     );
 
-    if (ret.status !== 201) {
+    if (err) {
       return {
-        err: `${ret.status} ${ret.statusText} ${JSON.stringify(await ret.json())}`,
+        err: `httpRequest: ${err}`,
       };
     }
 
     return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
   }
-};
 
-/**
- * Set access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {object} data
- * @returns {Promise<object>}
- */
-const setTumblrAccessToken = async (db, { code }) => {
-  try {
-    console.log(JSON.stringify({ code }));
+  /**
+   * Refresh access token
+   *
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async refreshAccessToken() {
+    const params = await this.getParams();
 
-    if (!code || code === "error") {
-      const err = `invalid code: ${code}`;
-      console.error(err);
-      return { err };
+    if (params.err) {
+      logger.error(params.err);
+      return params;
     }
 
-    const authRef = db.collection("service").doc("auth");
-    const auth = await authRef.get();
-    const { clientId, clientSecret, callBackUrl } = auth.get("tumblr");
-
-    const formData = new FormData();
-    formData.append("grant_type", "authorization_code");
-    formData.append("code", code);
-    formData.append("client_id", clientId);
-    formData.append("client_secret", clientSecret);
-    formData.append("redirect_uri", callBackUrl);
-
-    let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
-      method: "POST",
-      body: formData,
-    });
-
-    const oauthData = await oauthResp.json();
-    console.log(JSON.stringify(oauthData));
-
-    if (oauthResp.status !== 200) {
-      const err = `/v2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
-      return { err };
-    }
-
-    const expiredAt = new Date(
-      new Date().getTime() + oauthData.expires_in * 1000,
-    );
-
-    await authRef.update({
-      "tumblr.accessToken": oauthData.access_token ?? null,
-      "tumblr.refreshToken": oauthData.refresh_token ?? null,
-      "tumblr.expiredAt": expiredAt,
-      updatedAt: new Date(),
-    });
-
-    return { err: undefined };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
-
-/**
- * Refresh access token
- *
- * @param {FirebaseFirestore.Firestore} db
- * @param {object} data
- * @returns {Promise<object>}
- */
-const refreshTumblrAccessToken = async (db) => {
-  try {
-    const authRef = db.collection("service").doc("auth");
-    const auth = await authRef.get();
-    const params = auth.get("tumblr");
     const { clientId, clientSecret, accessToken, refreshToken, expiredAt } =
-      params;
+      params.data;
 
-    if (expiredAt > new Date(new Date().getTime() + 60 * 1000)) {
+    if (expiredAt.toDate() > new Date(new Date().getTime() + 60 * 1000)) {
       return { err: undefined };
     }
 
@@ -164,33 +107,102 @@ const refreshTumblrAccessToken = async (db) => {
     formData.append("client_id", clientId);
     formData.append("client_secret", clientSecret);
 
-    let oauthResp = await fetch("https://api.tumblr.com/v2/oauth2/token", {
-      method: "POST",
-      body: formData,
-    });
+    let oauthResp = await httpRequest(
+      "https://api.tumblr.com/v2/oauth2/token",
+      { method: "POST", body: formData },
+    );
 
-    if (oauthResp.status !== 200) {
-      const err = `/2/oauth2/token: ${oauthResp.status} ${oauthResp.statusText}`;
-      console.error(err);
+    if (oauthResp.err) {
+      const err = `/2/oauth2/token: ${oauthResp.err}`;
+      logger.error(err);
       return { err };
     }
 
-    const oauthData = await oauthResp.json();
-    console.log(JSON.stringify(oauthData));
+    const oauthData = await oauthResp.data.json();
 
-    await authRef.update({
-      "tumblr.accessToken": oauthData.access_token ?? accessToken,
-      "tumblr.refreshToken": oauthData.refresh_token ?? refreshToken,
-      "tumblr.expiredAt": new Date(
-        new Date().getTime() + oauthData.expires_in * 1000,
-      ),
-      updatedAt: new Date(),
+    const updated = await this.updateParams({
+      accessToken: oauthData.access_token ?? accessToken,
+      refreshToken: oauthData.refresh_token ?? refreshToken,
+      expiredAt: oauthData.expires_in
+        ? new Date(new Date().getTime() + oauthData.expires_in * 1000)
+        : undefined,
     });
 
-    return { err: undefined, data: oauthData.access_token };
-  } catch (e) {
-    return { err: e.toString() };
-  }
-};
+    if (updated.err) {
+      const err = `service/auth update: ${updated.err}`;
+      return { err };
+    }
 
-module.exports = { post, setTumblrAccessToken };
+    return { err: undefined };
+  }
+
+  /**
+   * Set access token
+   *
+   * @param {{code:string}} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async setAccessToken({ code }) {
+    logger.log(JSON.stringify({ code }));
+
+    if (!code || code === "error") {
+      const err = `invalid code: ${code}`;
+      logger.error(err);
+      return { err };
+    }
+
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { clientId, clientSecret, callBackUrl } = params.data;
+
+    const formData = new FormData();
+    formData.append("grant_type", "authorization_code");
+    formData.append("code", code);
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+    formData.append("redirect_uri", callBackUrl);
+
+    let oauthResp = await httpRequest(
+      "https://api.tumblr.com/v2/oauth2/token",
+      { method: "POST", body: formData },
+    );
+
+    if (oauthResp.err) {
+      const err = `/2/oauth2/token: ${oauthResp.err}`;
+      logger.error(err);
+      return { err };
+    }
+
+    const oauthData = await oauthResp.data.json();
+    logger.log(JSON.stringify(oauthData));
+
+    if (!oauthData.access_token) {
+      const err = "Failed to get new access_token";
+      logger.error(err);
+      return { err };
+    }
+
+    const updated = await this.updateParams({
+      accessToken: oauthData.access_token,
+      refreshToken: oauthData.refresh_token ?? undefined,
+      expiredAt: oauthData.expires_in
+        ? new Date(new Date().getTime() + oauthData.expires_in * 1000)
+        : undefined,
+    });
+
+    if (updated.err) {
+      const err = `service/auth update: ${updated.err}`;
+      logger.error(err);
+      return { err };
+    }
+
+    return { err: undefined };
+  }
+}
+
+module.exports = { Tumblr };

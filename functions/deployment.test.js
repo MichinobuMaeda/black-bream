@@ -142,7 +142,7 @@ describe("updateDataV1", () => {
     deleted.get
       .mockImplementationOnce(() => 0)
       .mockImplementationOnce(() => email);
-    set.mockImplementationOnce(() => Promise.reject("error"));
+    set.mockRejectedValueOnce("error");
 
     // Call
     let { err, data } = await updateDataV1(auth, db, deleted);
@@ -293,7 +293,7 @@ describe("updateDataV2", () => {
   it("should return error if doc().set() raises exception.", async () => {
     // Prepare
     deleted.get.mockImplementationOnce(() => 1);
-    set.mockImplementationOnce(() => Promise.reject("error"));
+    set.mockRejectedValueOnce("error");
 
     // Call
     let { err, data } = await updateDataV2(db, deleted);

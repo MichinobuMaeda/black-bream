@@ -1,24 +1,41 @@
 const { logger } = require("firebase-functions/v2");
+const { Provider } = require("./provider.js");
+const { getPublicMediaUrl, httpRequest } = require("./utils.js");
 
-/**
- * Post to Instagram
- *
- * @param {Bucket} bucket
- * @param {object} params
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>}
- */
-const post = async (bucket, params, id, { text, files }) => {
-  try {
+class Instagram extends Provider {
+  /**
+   * Instagram constructor
+   *
+   * @param {FirebaseFirestore.Firestore} db
+   * @param {import("@google-cloud/storage").Bucket} bucket
+   */
+  constructor(db, bucket) {
+    super(db, bucket);
+    this.id = "instagram";
+  }
+
+  /**
+   * post
+   *
+   * @param {string } id
+   * @param {{ text:string, files: array|undefined }} data
+   * @returns {Promise<{err: undefined|string}>}
+   */
+  async post(id, { text, files }) {
+    const params = await this.getParams();
+
+    if (params.err) {
+      logger.error(params.err);
+      return params;
+    }
+
+    const { clientId, accessToken } = params.data;
+
     if (!files?.length) {
       return { err: "No media files" };
     }
 
-    const { clientId, accessToken } = params;
-
-    const mediaUrl = `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${files[0]}`;
-    let response = await fetch(
+    let uploaded = await httpRequest(
       `https://graph.instagram.com/v22.0/${clientId}/media`,
       {
         method: "POST",
@@ -26,21 +43,24 @@ const post = async (bucket, params, id, { text, files }) => {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ caption: text, image_url: mediaUrl }),
+        body: JSON.stringify({
+          caption: text,
+          image_url: getPublicMediaUrl(id, files[0]),
+        }),
       },
     );
 
-    if (response.status !== 200) {
-      const err = `Failed to create container: ${response.status} ${response.statusText}`;
+    if (uploaded.err) {
+      const err = `Failed to create container: ${uploaded.err}`;
       logger.error(err);
       return { err };
     }
 
-    const media = await response.json();
+    const media = await uploaded.data.json();
 
     logger.info(`Created container: ${media.id}`);
 
-    const { status, statusText } = await fetch(
+    const posted = await httpRequest(
       `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
       {
         method: "POST",
@@ -52,17 +72,14 @@ const post = async (bucket, params, id, { text, files }) => {
       },
     );
 
-    if (status !== 200) {
-      const err = `Failed to publish: ${status} ${statusText}`;
+    if (posted.err) {
+      const err = `Failed to publish: ${posted.err}`;
       logger.error(err);
       return { err };
     }
 
     return { err: undefined };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
   }
-};
+}
 
-module.exports = { post };
+module.exports = { Instagram };

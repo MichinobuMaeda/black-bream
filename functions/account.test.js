@@ -37,7 +37,7 @@ describe("gateForGroupMembers", () => {
   it("returns 'missing-user-doc' if user document is missing.", async () => {
     // Prepare
     const user = { id: "user-id", exists: false };
-    get.mockImplementationOnce(() => Promise.resolve(user));
+    get.mockResolvedValueOnce(user);
 
     // Call
     const ret = await gateForGroupMembers(db, { uid }, "group-id", action);
@@ -53,9 +53,7 @@ describe("gateForGroupMembers", () => {
     // Prepare
     const user = { id: "user-id", exists: true };
     const group = { id: "group-id", get: jest.fn() };
-    get
-      .mockImplementationOnce(() => Promise.resolve(user))
-      .mockImplementationOnce(() => Promise.resolve(group));
+    get.mockResolvedValueOnce(user).mockResolvedValueOnce(group);
     group.get.mockImplementationOnce(() => ["another-user"]);
 
     // Call
@@ -73,13 +71,9 @@ describe("gateForGroupMembers", () => {
     // Prepare
     const user = { id: "user-id", exists: true };
     const group = { id: "group-id", get: jest.fn() };
-    get
-      .mockImplementationOnce(() => Promise.resolve(user))
-      .mockImplementationOnce(() => Promise.resolve(group));
+    get.mockResolvedValueOnce(user).mockResolvedValueOnce(group);
     group.get.mockImplementationOnce(() => [uid]);
-    action.mockImplementationOnce(() =>
-      Promise.resolve({ err: undefined, data: "test-result" }),
-    );
+    action.mockResolvedValueOnce({ err: undefined, data: "test-result" });
 
     // Call
     const ret = await gateForGroupMembers(db, { uid }, group.id, action);
@@ -133,7 +127,7 @@ describe("addAuthUser", () => {
   it("returns 'missing-user-doc' if user document is missing.", async () => {
     // Prepare
     const user = { exists: false };
-    get.mockImplementationOnce(() => Promise.resolve(user));
+    get.mockResolvedValueOnce(user);
 
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
@@ -149,7 +143,7 @@ describe("addAuthUser", () => {
   it("returns null if all processes are successful.", async () => {
     // Prepare
     const user = { exists: true };
-    get.mockImplementationOnce(() => Promise.resolve(user));
+    get.mockResolvedValueOnce(user);
 
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
@@ -165,8 +159,8 @@ describe("addAuthUser", () => {
   it("returns error if exception occurs in auth.createUser", async () => {
     // Prepare
     const user = { exists: true };
-    get.mockImplementationOnce(() => Promise.resolve(user));
-    auth.createUser.mockImplementationOnce(() => Promise.reject("test/error"));
+    get.mockResolvedValueOnce(user);
+    auth.createUser.mockRejectedValueOnce("test/error");
 
     // Call
     const ret = await addAuthUser(auth, db, uid, email);
@@ -220,7 +214,7 @@ describe("updateAuthEmail", () => {
 
   it("returns error if exception occurs in auth.updateEmail", async () => {
     // Prepare
-    auth.updateUser.mockImplementationOnce(() => Promise.reject("test/error"));
+    auth.updateUser.mockRejectedValueOnce("test/error");
 
     // Call
     const ret = await updateAuthEmail(auth, uid, email);
@@ -259,7 +253,7 @@ describe("removeAuthUser", () => {
 
   it("returns error if exception occurs in auth.deleteUser", async () => {
     // Prepare
-    auth.deleteUser.mockImplementationOnce(() => Promise.reject("test/error"));
+    auth.deleteUser.mockRejectedValueOnce("test/error");
 
     // Call
     const ret = await removeAuthUser(auth, uid);
@@ -288,7 +282,7 @@ describe("getAuthUser", () => {
   it("returns user if all processes are successful.", async () => {
     // Prepare
     const user = { uid };
-    auth.getUser.mockImplementationOnce(() => Promise.resolve(user));
+    auth.getUser.mockResolvedValueOnce(user);
 
     // Call
     const ret = await getAuthUser(auth, uid);
@@ -300,9 +294,7 @@ describe("getAuthUser", () => {
 
   it("returns null if user is not found.", async () => {
     // Prepare
-    auth.getUser.mockImplementationOnce(() =>
-      Promise.reject({ code: "auth/user-not-found" }),
-    );
+    auth.getUser.mockRejectedValueOnce({ code: "auth/user-not-found" });
 
     // Call
     const ret = await getAuthUser(auth, uid);
@@ -314,7 +306,7 @@ describe("getAuthUser", () => {
 
   it("returns error if exception occurs in auth.getUser", async () => {
     // Prepare
-    auth.getUser.mockImplementationOnce(() => Promise.reject("test/error"));
+    auth.getUser.mockRejectedValueOnce("test/error");
 
     // Call
     const ret = await getAuthUser(auth, uid);
