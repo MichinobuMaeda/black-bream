@@ -19,9 +19,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci && npm ci --prefix functions
-      - run: npm test
-      - run: cp -r -f -v .github/sites/${{ inputs.site-id }}/* ./
-
+      - name: Set site parameters
+        run: cp -r -f -v .github/sites/${{ inputs.site-id }}/* ./
       - name: Deploy Functions
         env:
           WORK_DIR: ${{ runner.temp }}/${{ inputs.site-id }}
@@ -37,9 +36,3 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/${{ inputs.site-id }}/service-account.json
         run: |
           npx firebase firestore:delete service/dataVersion --force --project ${{ inputs.site-id }}
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/coverage.json
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: MichinobuMaeda/black-bream

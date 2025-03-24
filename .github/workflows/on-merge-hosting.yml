@@ -17,7 +17,12 @@ on:
       - index.html
       - .nvmrc
 jobs:
+  coverage:
+    uses: ./.github/workflows/on-call-coverage.yml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
   black-bream:
+    needs: [coverage]
     uses: ./.github/workflows/on-call-hosting.yml
     with:
       site-id: black-bream
@@ -27,6 +32,7 @@ jobs:
       firebase_recaptcha_key: ${{ secrets.FIREBASE_RECAPTCHA_KEY_BLACK_BREAM }}
       repo_token: ${{ secrets.GITHUB_TOKEN }}
   grey-bream:
+    needs: [coverage]
     uses: ./.github/workflows/on-call-hosting.yml
     with:
       site-id: grey-bream

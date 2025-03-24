@@ -1,0 +1,24 @@
+name: Record coverage on merge
+on:
+  workflow_call:
+    secrets:
+      codecov_token:
+        required: true
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci && npm ci --prefix functions
+      - run: npm test
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage.json
+          token: ${{ secrets.codecov_token }}
+          slug: MichinobuMaeda/black-bream

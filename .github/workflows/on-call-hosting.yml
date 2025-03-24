@@ -25,9 +25,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci && npm ci --prefix functions
-      - run: npm test
-      - run: cp -r -f -v .github/sites/${{ inputs.site-id }}/* ./
-
+      - name: Set site parameters
+        run: cp -r -f -v .github/sites/${{ inputs.site-id }}/* ./
       - name: Set firebase api key
         run: |
           sed 's/FIREBASE_API_KEY/${{ secrets.firebase_api_key }}/' \
@@ -43,9 +42,3 @@ jobs:
           firebaseServiceAccount: ${{ secrets.firebase_service_account }}
           channelId: live
           projectId: ${{ inputs.site-id }}
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/coverage.json
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: MichinobuMaeda/black-bream
