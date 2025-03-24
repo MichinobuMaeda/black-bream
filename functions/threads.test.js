@@ -257,7 +257,7 @@ describe("refreshAccessToken", () => {
     expect(result).toEqual({ err: "Error" });
   });
 
-  it("should skip the refresh, if no access token is set.", async () => {
+  it("should return error, if no access token is set.", async () => {
     // Prepare
     mockGetParams.mockResolvedValueOnce({
       data: { ...params, accessToken: "" },
@@ -270,10 +270,10 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({ err: "No access token" });
   });
 
-  it("should skip the refresh," + " if no expiration is set.", async () => {
+  it("should return error if no expiration is set.", async () => {
     // Prepare
     mockGetParams.mockResolvedValueOnce({
       data: { ...params, expiredAt: null },
@@ -286,19 +286,19 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({ err: "No expiredAt" });
   });
 
   it(
     "should skip the refresh," +
-      " if there is more than a day until expiration.",
+      " if there is more than 10 day until expiration.",
     async () => {
       // Prepare
       mockGetParams.mockResolvedValueOnce({
         data: {
           ...params,
           expiredAt: Timestamp.fromMillis(
-            new Date().getTime() - 1000 * 60 * 60 * 24 - 1000,
+            new Date().getTime() + 1000 * 60 * 60 * 24 * 10 + 1000,
           ),
         },
       });

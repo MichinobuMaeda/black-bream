@@ -95,35 +95,45 @@ class Threads extends Provider {
 
     const { accessToken, expiredAt } = params.data;
 
-    if (
-      accessToken &&
-      expiredAt &&
-      expiredAt.toDate().getTime() > new Date().getTime() - 1000 * 60 * 60 * 24
-    ) {
-      const resp = await httpRequest(
-        "https://https://graph.threads.net/refresh_access_token" +
-          "?grant_type=th_refresh_token" +
-          `&access_token=${accessToken}`,
-      );
-
-      if (resp.err) {
-        logger.error(resp.err);
-        return { err: `Failed to refresh Threads access token: ${resp.err}` };
-      }
-
-      const json = await resp.data.json();
-      logger.info("Threads access token refreshed");
-
-      const updated = await this.updateParams({
-        accessToken: json.access_token,
-        expiredAt: new Date(new Date().getTime() + json.expires_in * 1000),
-      });
-
-      if (updated.err) {
-        logger.error(updated.err);
-        return updated;
-      }
+    if (!accessToken) {
+      return { err: "No access token" };
     }
+
+    if (!expiredAt) {
+      return { err: "No expiredAt" };
+    }
+
+    if (
+      expiredAt.toDate().getTime() >
+      new Date().getTime() + 1000 * 60 * 60 * 24 * 10
+    ) {
+      return { err: undefined };
+    }
+
+    const resp = await httpRequest(
+      "https://https://graph.threads.net/refresh_access_token" +
+        "?grant_type=th_refresh_token" +
+        `&access_token=${accessToken}`,
+    );
+
+    if (resp.err) {
+      logger.error(resp.err);
+      return { err: `Failed to refresh Threads access token: ${resp.err}` };
+    }
+
+    const json = await resp.data.json();
+    logger.info("Threads access token refreshed");
+
+    const updated = await this.updateParams({
+      accessToken: json.access_token,
+      expiredAt: new Date(new Date().getTime() + json.expires_in * 1000),
+    });
+
+    if (updated.err) {
+      logger.error(updated.err);
+      return updated;
+    }
+
     return { err: undefined };
   }
 
