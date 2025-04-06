@@ -1,26 +1,25 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const {
+import { describe, it, expect, afterEach, vi } from "vitest";
+import {
   getMediaAsBlob,
   httpRequest,
   getDoc,
   updateDoc,
   sleep,
-} = require("./utils.js");
+} from "./utils.js";
+import { Twitter } from "./twitter.js";
 
-const { Twitter } = require("./twitter.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
-
-FormData.prototype.append = jest.fn();
-URLSearchParams.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
+URLSearchParams.prototype.append = vi.fn();
 
 const db = {};
-const bucket = { file: jest.fn() };
+const bucket = { file: vi.fn() };
 const twitter = new Twitter(db, bucket);
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Twitter object", () => {
@@ -41,7 +40,7 @@ describe("uploadImage", () => {
     getMediaAsBlob.mockResolvedValue({ err: undefined, data: new Blob() });
     httpRequest.mockResolvedValue({
       err: undefined,
-      data: { json: jest.fn(() => Promise.resolve(mediaResp)) },
+      data: { json: vi.fn(() => Promise.resolve(mediaResp)) },
     });
 
     // Execute
@@ -82,7 +81,7 @@ describe("uploadImage", () => {
     getMediaAsBlob.mockResolvedValue({ err: undefined, data: new Blob() });
     httpRequest.mockResolvedValue({
       err: undefined,
-      data: { json: jest.fn(() => Promise.resolve(mediaResp)) },
+      data: { json: vi.fn(() => Promise.resolve(mediaResp)) },
     });
 
     // Execute
@@ -174,7 +173,7 @@ describe("post", () => {
     const text = "Hello, world!";
     const data = { text };
     const params = { accessToken };
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({ err: undefined, data: {} });
 
@@ -202,9 +201,9 @@ describe("post", () => {
     const files = ["1.jpg"];
     const data = { text, files };
     const params = { accessToken };
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
-    mockUploadImage = jest.spyOn(twitter, "uploadImage");
+    const mockUploadImage = vi.spyOn(twitter, "uploadImage");
     mockUploadImage.mockResolvedValue({
       err: undefined,
       data: { id: "media-id" },
@@ -234,7 +233,7 @@ describe("post", () => {
     const id = "post-id";
     const text = "Hello, world!";
     const data = { text };
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: "get-params-error" });
 
     // Execute
@@ -254,9 +253,9 @@ describe("post", () => {
     const files = ["1.jpg"];
     const data = { text, files };
     const params = { accessToken };
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
-    mockUploadImage = jest.spyOn(twitter, "uploadImage");
+    const mockUploadImage = vi.spyOn(twitter, "uploadImage");
     mockUploadImage.mockResolvedValue({ err: "upload-image-error" });
 
     // Execute
@@ -277,7 +276,7 @@ describe("post", () => {
     const files = ["1.jpg"];
     const data = { text };
     const params = { accessToken };
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({ err: "http-request-error" });
 
@@ -316,13 +315,13 @@ describe("refreshAccessToken", () => {
 
   it("should refresh access token.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
@@ -359,7 +358,7 @@ describe("refreshAccessToken", () => {
 
   it("should not refresh access token without expiration.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({
       err: undefined,
       data: {
@@ -381,7 +380,7 @@ describe("refreshAccessToken", () => {
 
   it("should return error when getParams returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: "get-params-error" });
 
     // Execute
@@ -395,7 +394,7 @@ describe("refreshAccessToken", () => {
 
   it("should return error when httpRequest returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({ err: "http-request-error" });
 
@@ -420,7 +419,7 @@ describe("refreshAccessToken", () => {
 
   it("should return error when access_token is not returned.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
@@ -449,7 +448,7 @@ describe("refreshAccessToken", () => {
   it("should skip update refreshToke or expiredAt without new values.", async () => {
     // Prepare
     const access_token = "new-access-token";
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
@@ -457,7 +456,7 @@ describe("refreshAccessToken", () => {
         json: () => Promise.resolve({ access_token }),
       },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
@@ -484,13 +483,13 @@ describe("refreshAccessToken", () => {
 
   it("should return error when updateParams returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: "update-params-error" });
 
     // Execute
@@ -544,13 +543,13 @@ describe("setAccessToken", () => {
 
   it("should set access token.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
@@ -642,7 +641,7 @@ describe("setAccessToken", () => {
 
   it("should return error when getParams returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: "get-params-error" });
 
     // Execute
@@ -656,7 +655,7 @@ describe("setAccessToken", () => {
 
   it("should return error when httpRequest returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({ err: "http-request-error" });
 
@@ -681,7 +680,7 @@ describe("setAccessToken", () => {
 
   it("should return error when access_token is not returned.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
@@ -711,7 +710,7 @@ describe("setAccessToken", () => {
 
   it("should skip update refreshToke or expiredAt without new values.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
@@ -724,7 +723,7 @@ describe("setAccessToken", () => {
           }),
       },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
@@ -757,13 +756,13 @@ describe("setAccessToken", () => {
 
   it("should return error when updateParams returns error.", async () => {
     // Prepare
-    mockGetParams = jest.spyOn(twitter, "getParams");
+    const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
       err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
-    mockUpdateParams = jest.spyOn(twitter, "updateParams");
+    const mockUpdateParams = vi.spyOn(twitter, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: "update-params-error" });
 
     // Execute

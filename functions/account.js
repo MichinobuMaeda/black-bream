@@ -1,4 +1,4 @@
-const { logger } = require("firebase-functions/v2");
+import { logger } from "firebase-functions/v2";
 
 /**
  * Gate for group members
@@ -9,7 +9,7 @@ const { logger } = require("firebase-functions/v2");
  * @param {function} action
  * @returns {Promise<Object>}
  */
-const gateForGroupMembers = async (db, { uid }, group, action) => {
+export const gateForGroupMembers = async (db, { uid }, group, action) => {
   if (!uid) {
     return { err: "missing-uid", data: undefined };
   }
@@ -33,7 +33,7 @@ const gateForGroupMembers = async (db, { uid }, group, action) => {
  * @param {string} email
  * @returns {Promise<Object>}
  */
-const addAuthUser = async (auth, db, uid, email) => {
+export const addAuthUser = async (auth, db, uid, email) => {
   if (!uid) {
     logger.error("missing-uid");
     return { err: "missing-uid" };
@@ -73,7 +73,7 @@ const addAuthUser = async (auth, db, uid, email) => {
  * @param {string} email
  * @returns {Promise<Object>}
  */
-const updateAuthEmail = async (auth, uid, email) => {
+export const updateAuthEmail = async (auth, uid, email) => {
   if (!uid) {
     logger.error("missing-uid");
     return { err: "missing-uid" };
@@ -101,7 +101,7 @@ const updateAuthEmail = async (auth, uid, email) => {
  * @param {string} uid
  * @returns {Promise<Object>}
  */
-const removeAuthUser = async (auth, uid) => {
+export const removeAuthUser = async (auth, uid) => {
   if (!uid) {
     logger.error("missing-uid");
     return { err: "missing-uid" };
@@ -125,7 +125,7 @@ const removeAuthUser = async (auth, uid) => {
  * @param {string} uid
  * @returns {Promise<Object>}
  */
-const getAuthUser = async (auth, uid) => {
+export const getAuthUser = async (auth, uid) => {
   if (!uid) {
     logger.error("missing-uid");
     return { err: "missing-uid", data: undefined };
@@ -144,12 +144,4 @@ const getAuthUser = async (auth, uid) => {
       return { err: e.code ?? e.toString(), data: undefined };
     }
   }
-};
-
-module.exports = {
-  gateForGroupMembers,
-  addAuthUser,
-  updateAuthEmail,
-  removeAuthUser,
-  getAuthUser,
 };

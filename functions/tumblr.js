@@ -1,8 +1,8 @@
-const { logger } = require("firebase-functions/v2");
-const { getPublicMediaUrl, generateLinkCard, httpRequest } = require("./utils");
-const { Provider } = require("./provider.js");
+import { logger } from "firebase-functions/v2";
+import { getPublicMediaUrl, generateLinkCard, httpRequest } from "./utils.js";
+import { Provider } from "./provider.js";
 
-class Tumblr extends Provider {
+export class Tumblr extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -203,5 +203,3 @@ class Tumblr extends Provider {
     return { err: undefined };
   }
 }
-
-module.exports = { Tumblr };

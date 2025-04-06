@@ -1,15 +1,14 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { getPublicMediaUrl, httpRequest, sleep } = require("./utils.js");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { getPublicMediaUrl, httpRequest, sleep } from "./utils.js";
+import { Instagram } from "./instagram.js";
 
-const { Instagram } = require("./instagram.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
-
-FormData.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
 
 const db = {};
-const bucket = { file: jest.fn() };
+const bucket = { file: vi.fn() };
 const instagram = new Instagram(db, bucket);
 
 const orgTimeout = process.env.IMAGE_UPLOAD_TIMEOUT;
@@ -19,7 +18,7 @@ const accessToken = "instagram-access-token";
 const params = { clientId, accessToken };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Instagram object", () => {
@@ -47,7 +46,7 @@ describe("Instagram.post", () => {
   };
   const uploadData = {
     data: {
-      json: jest.fn(() => Promise.resolve({ id: "media-id" })),
+      json: vi.fn(() => Promise.resolve({ id: "media-id" })),
     },
   };
   const publishUrl = `https://graph.instagram.com/v22.0/${clientId}/media_publish`;
@@ -60,10 +59,10 @@ describe("Instagram.post", () => {
     body: JSON.stringify({ creation_id: "media-id" }),
   };
   const publishData = {
-    data: { json: jest.fn(() => Promise.resolve({ id: "post-id" })) },
+    data: { json: vi.fn(() => Promise.resolve({ id: "post-id" })) },
   };
 
-  const mockGetParams = jest.spyOn(instagram, "getParams");
+  const mockGetParams = vi.spyOn(instagram, "getParams");
   mockGetParams.mockResolvedValue({ data: params });
 
   it("should return an error if getParams returns error.", async () => {

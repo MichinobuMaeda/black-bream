@@ -1,6 +1,6 @@
-const { getDoc, updateDoc } = require("./utils.js");
+import { getDoc, updateDoc } from "./utils.js";
 
-class Provider {
+export class Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -108,5 +108,3 @@ class Provider {
     return { err: undefined };
   }
 }
-
-module.exports = { Provider };

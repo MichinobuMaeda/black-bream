@@ -1,16 +1,12 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const {
-  getPublicMediaUrl,
-  generateLinkCard,
-  httpRequest,
-} = require("./utils.js");
-const { Tumblr } = require("./tumblr.js");
-const { mock } = require("@atproto/api");
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { getPublicMediaUrl, generateLinkCard, httpRequest } from "./utils.js";
+import { Tumblr } from "./tumblr.js";
+import { mock } from "@atproto/api";
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-FormData.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
 
 const db = {};
 const bucket = {};
@@ -34,7 +30,7 @@ const params = {
 };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Tumblr object", () => {
@@ -59,11 +55,9 @@ describe("post", () => {
   generateLinkCard.mockReturnValue({ data: undefined });
   httpRequest.mockResolvedValue({ err: undefined });
 
-  const mockGetParams = jest.spyOn(tumblr, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-
   it("should return error if getParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -79,6 +73,8 @@ describe("post", () => {
 
   it("should post only text.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
 
     // Execute
     const result = await tumblr.post(id, { text, files: undefined });
@@ -100,6 +96,8 @@ describe("post", () => {
 
   it("should post text and image", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
 
     // Execute
     const result = await tumblr.post(id, { text, files });
@@ -126,6 +124,8 @@ describe("post", () => {
 
   it("should post text and link", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     const text = "Text https://link";
     generateLinkCard.mockResolvedValueOnce({ data: { uri: "https://link" } });
 
@@ -154,6 +154,8 @@ describe("post", () => {
 
   it("should return error if post request failed.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValueOnce({ err: "Post request failed" });
 
     // Execute
@@ -202,15 +204,14 @@ describe("refreshAccessToken", () => {
     refreshToken: oauthData.refresh_token,
     expiredAt: expect.any(Date),
   };
-  mockGetParams = jest.spyOn(tumblr, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-  mockUpdateParams = jest.spyOn(tumblr, "updateParams");
-  mockUpdateParams.mockResolvedValue({ err: undefined });
 
   it("should return error if getParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
     const err = "Error";
-    mockGetParams.mockResolvedValueOnce({ err });
+    mockGetParams.mockResolvedValue({ err });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -225,6 +226,9 @@ describe("refreshAccessToken", () => {
 
   it("should skip if expiredAt < now", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     mockGetParams.mockResolvedValueOnce({
       data: {
         ...params,
@@ -245,6 +249,10 @@ describe("refreshAccessToken", () => {
 
   it("should return error if httpRequest returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     httpRequest.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -260,6 +268,9 @@ describe("refreshAccessToken", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
     mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -275,6 +286,10 @@ describe("refreshAccessToken", () => {
 
   it("should return error if httpRequest returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     httpRequest.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -290,6 +305,9 @@ describe("refreshAccessToken", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
     mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -305,6 +323,10 @@ describe("refreshAccessToken", () => {
 
   it("should set new access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -319,6 +341,10 @@ describe("refreshAccessToken", () => {
 
   it("should restore old access token if failed to get new access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });
@@ -369,13 +395,13 @@ describe("setAccessToken", () => {
     refreshToken: oauthData.refresh_token,
     expiredAt: expect.any(Date),
   };
-  mockGetParams = jest.spyOn(tumblr, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-  mockUpdateParams = jest.spyOn(tumblr, "updateParams");
-  mockUpdateParams.mockResolvedValue({ err: undefined });
 
   it("should return error if code is empty.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     const code = "";
 
     // Execute
@@ -391,6 +417,10 @@ describe("setAccessToken", () => {
 
   it("should return error if code is 'error'.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     const code = "error";
 
     // Execute
@@ -406,6 +436,9 @@ describe("setAccessToken", () => {
 
   it("should return error if getParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     const err = "Error";
     mockGetParams.mockResolvedValueOnce({ err });
 
@@ -422,6 +455,10 @@ describe("setAccessToken", () => {
 
   it("should return error if httpRequest returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     httpRequest.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -437,6 +474,9 @@ describe("setAccessToken", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
     mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -452,6 +492,10 @@ describe("setAccessToken", () => {
 
   it("should update access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
 
     // Execute
     const result = await tumblr.setAccessToken({ code });
@@ -466,6 +510,10 @@ describe("setAccessToken", () => {
 
   it("should restore old params if failed to get params except access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     const accessToken = "tumblr-access-token";
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({ access_token: accessToken }) },
@@ -486,6 +534,10 @@ describe("setAccessToken", () => {
 
   it("should return error if failed to get new access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(tumblr, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
+    mockUpdateParams.mockResolvedValue({ err: undefined });
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });

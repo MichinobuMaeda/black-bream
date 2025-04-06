@@ -1,9 +1,9 @@
-const { logger } = require("firebase-functions/v2");
-const { createHash } = require("node:crypto");
-const { getMediaAsBlob, httpRequest, sleep } = require("./utils.js");
-const { Provider } = require("./provider.js");
+import { logger } from "firebase-functions/v2";
+import { createHash } from "node:crypto";
+import { getMediaAsBlob, httpRequest, sleep } from "./utils.js";
+import { Provider } from "./provider.js";
 
-class Mastodon extends Provider {
+export class Mastodon extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -161,5 +161,3 @@ class Mastodon extends Provider {
     return this.requestPost(url, token, text, mediaResp.data);
   }
 }
-
-module.exports = { Mastodon };

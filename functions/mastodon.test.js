@@ -1,25 +1,18 @@
-const {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-const { getMediaAsBlob, httpRequest, sleep } = require("./utils.js");
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { getMediaAsBlob, httpRequest, sleep } from "./utils.js";
+import { Mastodon } from "./mastodon.js";
 
-const { Mastodon } = require("./mastodon.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
-
-FormData.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
 
 const url = "https://mastodon.example.com";
 const token = "mastodon-token";
 const params = { url, token };
 
 const db = {};
-const bucket = { file: jest.fn() };
+const bucket = { file: vi.fn() };
 const mastodon = new Mastodon(db, bucket);
 
 const orgTimeout = process.env.IMAGE_UPLOAD_TIMEOUT;
@@ -29,7 +22,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.IMAGE_UPLOAD_TIMEOUT = orgTimeout;
 });
 
@@ -190,7 +183,7 @@ describe("getMediaList", () => {
         json: () => Promise.resolve({ id: "media-id" }),
       },
     });
-    const mockWaitMediaUpload = jest.spyOn(mastodon, "waitMediaUpload");
+    const mockWaitMediaUpload = vi.spyOn(mastodon, "waitMediaUpload");
     mockWaitMediaUpload.mockResolvedValueOnce({
       err: "wait media upload failed",
     });
@@ -226,7 +219,7 @@ describe("getMediaList", () => {
         json: () => Promise.resolve({ id: "media-id" }),
       },
     });
-    const mockWaitMediaUpload = jest.spyOn(mastodon, "waitMediaUpload");
+    const mockWaitMediaUpload = vi.spyOn(mastodon, "waitMediaUpload");
     mockWaitMediaUpload.mockResolvedValueOnce({});
 
     // Execute
@@ -365,7 +358,7 @@ describe("post", () => {
   const text = "Text";
   const files = ["file1.png", "file2.png"];
 
-  const mockGetParams = jest.spyOn(mastodon, "getParams");
+  const mockGetParams = vi.spyOn(mastodon, "getParams");
   mockGetParams.mockResolvedValue({ data: params });
 
   it("should return error if getParams returns error.", async () => {
@@ -382,8 +375,8 @@ describe("post", () => {
 
   it("should post with media.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(mastodon, "getMediaList");
-    const mockRequestPost = jest.spyOn(mastodon, "requestPost");
+    const mockGetMediaList = vi.spyOn(mastodon, "getMediaList");
+    const mockRequestPost = vi.spyOn(mastodon, "requestPost");
     mockGetMediaList.mockResolvedValueOnce({ data: ["media-id"] });
     mockRequestPost.mockResolvedValueOnce({});
 
@@ -400,8 +393,8 @@ describe("post", () => {
 
   it("should post without media.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(mastodon, "getMediaList");
-    const mockRequestPost = jest.spyOn(mastodon, "requestPost");
+    const mockGetMediaList = vi.spyOn(mastodon, "getMediaList");
+    const mockRequestPost = vi.spyOn(mastodon, "requestPost");
     mockGetMediaList.mockResolvedValueOnce({ data: [] });
     mockRequestPost.mockResolvedValueOnce({});
 
@@ -416,8 +409,8 @@ describe("post", () => {
 
   it("should return error if getMediaList failed.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(mastodon, "getMediaList");
-    const mockRequestPost = jest.spyOn(mastodon, "requestPost");
+    const mockGetMediaList = vi.spyOn(mastodon, "getMediaList");
+    const mockRequestPost = vi.spyOn(mastodon, "requestPost");
     mockGetMediaList.mockResolvedValueOnce({ err: "Error" });
 
     // Execute

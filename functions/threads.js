@@ -1,8 +1,8 @@
-const { logger } = require("firebase-functions/v2");
-const { httpRequest, getPublicMediaUrl } = require("./utils.js");
-const { Provider } = require("./provider.js");
+import { logger } from "firebase-functions/v2";
+import { httpRequest, getPublicMediaUrl } from "./utils.js";
+import { Provider } from "./provider.js";
 
-class Threads extends Provider {
+export class Threads extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -229,5 +229,3 @@ class Threads extends Provider {
     return { err: undefined };
   }
 }
-
-module.exports = { Threads };

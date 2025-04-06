@@ -1,17 +1,17 @@
-const { logger } = require("firebase-functions/v2");
-const { BskyAgent } = require("@atproto/api");
-const { Provider } = require("./provider.js");
-const {
+import { logger } from "firebase-functions/v2";
+import { BskyAgent } from "@atproto/api";
+import { Provider } from "./provider.js";
+import {
   generateLinkCard,
   getMimeTypes,
   getMediaAsBlob,
   reduceImageSize,
   httpRequest,
-} = require("./utils");
+} from "./utils.js";
 
 const langs = ["ja"];
 
-class Bluesky extends Provider {
+export class Bluesky extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -188,5 +188,3 @@ class Bluesky extends Provider {
     return this.requestPost(agent, text, embed);
   }
 }
-
-module.exports = { Bluesky };

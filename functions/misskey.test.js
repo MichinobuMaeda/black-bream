@@ -1,12 +1,11 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { getMediaAsBlob, httpRequest } = require("./utils.js");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { getMediaAsBlob, httpRequest } from "./utils.js";
+import { Misskey } from "./misskey.js";
 
-const { Misskey } = require("./misskey.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
-
-FormData.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
 
 const url = "https://misskey.example.com";
 const token = "misskey-token";
@@ -14,13 +13,13 @@ const params = { url, token };
 
 const db = {};
 const contents = [new ArrayBuffer(8)];
-const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-const bucket = { file: jest.fn(() => fileRef) };
+const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+const bucket = { file: vi.fn(() => fileRef) };
 const misskey = new Misskey(db, bucket);
 
 afterEach(() => {
   process.env.IMAGE_UPLOAD_TIMEOUT = undefined;
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Misskey object", () => {
@@ -75,7 +74,7 @@ describe("getMediaList", () => {
         json: () => Promise.resolve({ id: "media-id" }),
       },
     });
-    FormData.prototype.append = jest.fn();
+    FormData.prototype.append = vi.fn();
 
     // Execute
     const result = await misskey.getMediaList(url, token, id, files);
@@ -106,7 +105,7 @@ describe("getMediaList", () => {
       data: blob,
     });
     httpRequest.mockImplementation(() => Promise.resolve({ err: "error" }));
-    FormData.prototype.append = jest.fn();
+    FormData.prototype.append = vi.fn();
 
     // Execute
     const result = await misskey.getMediaList(url, token, id, files);
@@ -140,7 +139,7 @@ describe("post", () => {
     files: ["1.jpg"],
   };
 
-  const mockGetParams = jest.spyOn(misskey, "getParams");
+  const mockGetParams = vi.spyOn(misskey, "getParams");
   mockGetParams.mockResolvedValue({ data: params });
 
   it("should return error, if getParams returns error.", async () => {
@@ -156,7 +155,7 @@ describe("post", () => {
 
   it("should post to Misskey.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(misskey, "getMediaList");
+    const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({ err: undefined, data: [] });
     httpRequest.mockResolvedValueOnce({ data: { status: 200 } });
 
@@ -186,7 +185,7 @@ describe("post", () => {
 
   it("should post with image to Misskey.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(misskey, "getMediaList");
+    const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({
       err: undefined,
       data: ["media-id"],
@@ -223,7 +222,7 @@ describe("post", () => {
 
   it("should return error, if failed to get image ids.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(misskey, "getMediaList");
+    const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({ err: "500 Server error" });
 
     // Execute
@@ -236,7 +235,7 @@ describe("post", () => {
 
   it("should return error, if fetch raises an exception for Misskey.", async () => {
     // Prepare
-    const mockGetMediaList = jest.spyOn(misskey, "getMediaList");
+    const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({ data: [] });
     httpRequest.mockResolvedValueOnce({ err: "error" });
 

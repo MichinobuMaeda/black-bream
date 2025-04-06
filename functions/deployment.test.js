@@ -1,33 +1,33 @@
-const { addAuthUser } = require("./account.js");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { addAuthUser } from "./account.js";
+import { updateDataV1, updateDataV2 } from "./deployment.js";
 
-const { updateDataV1, updateDataV2 } = require("./deployment.js");
-
-jest.mock("firebase-functions/logger");
-jest.mock("./account.js");
+vi.mock("firebase-functions/logger");
+vi.mock("./account.js");
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("updateDataV1", () => {
   const uid = "123456";
   const email = "test@example.com";
-  const auth = { getUser: jest.fn(), updateUser: jest.fn() };
-  const get = jest.fn();
-  const add = jest.fn();
-  const set = jest.fn();
-  const doc = jest.fn(() => ({ get, set }));
-  const db = { collection: jest.fn(() => ({ doc, add })) };
+  const auth = { getUser: vi.fn(), updateUser: vi.fn() };
+  const get = vi.fn();
+  const add = vi.fn();
+  const set = vi.fn();
+  const doc = vi.fn(() => ({ get, set }));
+  const db = { collection: vi.fn(() => ({ doc, add })) };
   const conf = {
     exists: true,
     id: "conf",
-    get: jest.fn(),
+    get: vi.fn(),
   };
   const deleted = {
     id: "dataVersion",
     exists: true,
-    get: jest.fn(),
-    ref: { set: jest.fn() },
+    get: vi.fn(),
+    ref: { set: vi.fn() },
   };
   const webAppUrl = process.env.WEB_APP_URL;
   const autoSendEmail = process.env.AUTO_SEND_EMAIL;
@@ -228,16 +228,16 @@ describe("updateDataV1", () => {
 });
 
 describe("updateDataV2", () => {
-  const get = jest.fn();
-  const add = jest.fn();
-  const set = jest.fn();
-  const doc = jest.fn(() => ({ get, set }));
-  const db = { collection: jest.fn(() => ({ doc, add })) };
+  const get = vi.fn();
+  const add = vi.fn();
+  const set = vi.fn();
+  const doc = vi.fn(() => ({ get, set }));
+  const db = { collection: vi.fn(() => ({ doc, add })) };
   const deleted = {
     id: "dataVersion",
     exists: true,
-    get: jest.fn(),
-    ref: { set: jest.fn() },
+    get: vi.fn(),
+    ref: { set: vi.fn() },
   };
   const createdAt = expect.any(Date);
   const updatedAt = expect.any(Date);

@@ -1,14 +1,12 @@
-const { logger } = require("firebase-functions/v2");
-
-const { getDoc, updateDoc } = require("./utils.js");
-
-const { Twitter } = require("./twitter.js");
-const { Mastodon } = require("./mastodon.js");
-const { Misskey } = require("./misskey.js");
-const { Tumblr } = require("./tumblr.js");
-const { Bluesky } = require("./bluesky.js");
-const { Threads } = require("./threads.js");
-const { Instagram } = require("./instagram.js");
+import { logger } from "firebase-functions/v2";
+import { getDoc, updateDoc } from "./utils.js";
+import { Twitter } from "./twitter.js";
+import { Mastodon } from "./mastodon.js";
+import { Misskey } from "./misskey.js";
+import { Tumblr } from "./tumblr.js";
+import { Bluesky } from "./bluesky.js";
+import { Threads } from "./threads.js";
+import { Instagram } from "./instagram.js";
 
 const providers = [
   Twitter,
@@ -23,7 +21,7 @@ const providers = [
 /**
  * Post
  */
-class Post {
+export class Post {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -323,5 +321,3 @@ class Post {
     return { err: undefined, data: status };
   }
 }
-
-module.exports = { Post };

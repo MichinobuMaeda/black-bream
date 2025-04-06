@@ -1,17 +1,17 @@
-const { logger } = require("firebase-functions/v2");
-const sharp = require("sharp");
-const { WritableStream } = require("htmlparser2/WritableStream");
-const { getDownloadURL } = require("firebase-admin/storage");
+import { logger } from "firebase-functions/v2";
+import sharp from "sharp";
+import { WritableStream } from "htmlparser2/WritableStream";
+import { getDownloadURL } from "firebase-admin/storage";
 
 const mediaSizeLimit = 1000 * 1000;
 
 /**
- * Generate a card object from a link
+ * Generate a card object} from a link
  *
  * @param {string} text
  * @returns {Promise<Object>}
  */
-const generateLinkCard = async (text) => {
+export const generateLinkCard = async (text) => {
   try {
     const link = text.match(/https:\/\/\S+/);
     if (!link) {
@@ -110,13 +110,13 @@ const mimeTypeList = {
 };
 
 /**
- * Get MIME type from URL or headers
+ * Get MIME type} from URL or headers
  *
  * @param {string} url
  * @param {Object} [headers]
  * @returns {string}
  */
-const getMimeTypes = (url, headers = {}) =>
+export const getMimeTypes = (url, headers = {}) =>
   headers["content-type"]?.replace(/;.*/, "") ??
   Object.entries(mimeTypeList).reduce(
     (acc, [key, value]) => (url.toLowerCase().endsWith(key) ? value : acc),
@@ -142,7 +142,7 @@ const getMimeTypes = (url, headers = {}) =>
  * @param {string} file
  * @returns {Promise<string>}
  */
-const getMediaDownloadUrl = (bucket, id, file) =>
+export const getMediaDownloadUrl = (bucket, id, file) =>
   getDownloadURL(bucket.file(`public/posts/${id}/${file}`));
 
 /**
@@ -153,7 +153,7 @@ const getMediaDownloadUrl = (bucket, id, file) =>
  * @param {string} file
  * @returns {Promise<{err: string|undefined, data: Uint8Array|undefined}>}
  */
-const getMediaAsUint8Array = async (bucket, id, file) => {
+export const getMediaAsUint8Array = async (bucket, id, file) => {
   try {
     const contents = await bucket.file(`public/posts/${id}/${file}`).download();
     return { err: undefined, data: new Uint8Array(contents[0]) };
@@ -170,7 +170,7 @@ const getMediaAsUint8Array = async (bucket, id, file) => {
  * @param {number} [maxSize]
  * @returns {Promise<{err: undefined|string, data: Uint8Array|undefined}>}
  */
-const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
+export const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
   try {
     const image = sharp(bin);
     const { width, height, size } = await image.metadata();
@@ -189,7 +189,7 @@ const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
         .toBuffer(),
     );
 
-    logger.info(`Image size reduced from ${size} to ${data.length}`);
+    logger.info(`Image size reduced} from ${size} to ${data.length}`);
 
     return { data };
   } catch (e) {
@@ -207,7 +207,12 @@ const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
  * @param {number} [maxSize]
  * @returns {Promise<{err: undefined|string, data: Blob|undefined}>}
  */
-const getMediaAsBlob = async (bucket, id, file, maxSize = mediaSizeLimit) => {
+export const getMediaAsBlob = async (
+  bucket,
+  id,
+  file,
+  maxSize = mediaSizeLimit,
+) => {
   const image = await getMediaAsUint8Array(bucket, id, file);
   if (image.err) {
     return image;
@@ -229,7 +234,7 @@ const getMediaAsBlob = async (bucket, id, file, maxSize = mediaSizeLimit) => {
  * @param {object} options
  * @returns {Promise<{err: undefined|string, data: any}>}
  */
-const httpRequest = async (url, options) =>
+export const httpRequest = async (url, options) =>
   fetch(url, options)
     .then((res) =>
       200 <= res.status && res.status < 300
@@ -245,7 +250,7 @@ const httpRequest = async (url, options) =>
  * @param {string} file
  * @returns {string}
  */
-const getPublicMediaUrl = (id, file) =>
+export const getPublicMediaUrl = (id, file) =>
   `${process.env.PUBLIC_POST_MEDIA_URL}/media/posts/${id}/${file}`;
 
 /**
@@ -254,7 +259,7 @@ const getPublicMediaUrl = (id, file) =>
  * @param {number} sec
  * @returns {Promise<void>}
  */
-const sleep = (sec) =>
+export const sleep = (sec) =>
   new Promise((resolve) => setTimeout(resolve, sec * 1000));
 
 /**
@@ -263,28 +268,14 @@ const sleep = (sec) =>
  * @param {FirebaseFirestore.DocumentReference} ref
  * @returns
  */
-const getDoc = async (ref) =>
+export const getDoc = async (ref) =>
   ref
     .get()
     .then((doc) => ({ data: doc }))
     .catch((e) => ({ err: e.toString() }));
 
-const updateDoc = async (ref, data) =>
+export const updateDoc = async (ref, data) =>
   ref
     .update(data)
     .then(() => ({}))
     .catch((e) => ({ err: e.toString() }));
-
-module.exports = {
-  generateLinkCard,
-  getMimeTypes,
-  getMediaDownloadUrl,
-  getMediaAsUint8Array,
-  getMediaAsBlob,
-  reduceImageSize,
-  httpRequest,
-  getPublicMediaUrl,
-  sleep,
-  getDoc,
-  updateDoc,
-};

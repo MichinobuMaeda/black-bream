@@ -1,6 +1,5 @@
-const { logger } = require("firebase-functions/v2");
-
-const { addAuthUser } = require("./account");
+import { logger } from "firebase-functions/v2";
+import { addAuthUser } from "./account.js";
 
 /**
  * Update data to version 1
@@ -10,7 +9,7 @@ const { addAuthUser } = require("./account");
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
  * @returns {Promise<Object>}
  */
-const updateDataV1 = async (auth, db, deleted) => {
+export const updateDataV1 = async (auth, db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 1) {
@@ -106,7 +105,7 @@ site.manager@example.com
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
  * @returns {Promise<Object>}
  */
-const updateDataV2 = async (db, deleted) => {
+export const updateDataV2 = async (db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 2) {
@@ -131,9 +130,4 @@ const updateDataV2 = async (db, deleted) => {
   }
 
   return { err: undefined, data: 2 };
-};
-
-module.exports = {
-  updateDataV1,
-  updateDataV2,
 };

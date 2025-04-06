@@ -5,11 +5,10 @@
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
-    "test": "jest --coverage",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
-  "type": "commonjs",
+  "type": "module",
   "engines": {
     "node": "22"
   },
@@ -20,9 +19,6 @@
     "firebase-functions": "^6.3.2",
     "htmlparser2": "^10.0.0",
     "sharp": "^0.33.5"
-  },
-  "devDependencies": {
-    "jest": "^29.7.0"
   },
   "private": true
 }

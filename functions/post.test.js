@@ -1,63 +1,62 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { Mastodon } = require("./mastodon.js");
-const { Misskey } = require("./misskey.js");
-const { Bluesky } = require("./bluesky.js");
-const { Threads } = require("./threads.js");
-const { Instagram } = require("./instagram.js");
-const { Twitter } = require("./twitter.js");
-const { Tumblr } = require("./tumblr.js");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { Mastodon } from "./mastodon.js";
+import { Misskey } from "./misskey.js";
+import { Bluesky } from "./bluesky.js";
+import { Threads } from "./threads.js";
+import { Instagram } from "./instagram.js";
+import { Twitter } from "./twitter.js";
+import { Tumblr } from "./tumblr.js";
+import { getDoc, updateDoc } from "./utils.js";
+import { Post } from "./post.js";
+import { jsonToLex, mock } from "@atproto/api";
+import { error } from "firebase-functions/logger";
 
-const { getDoc, updateDoc } = require("./utils.js");
-const { Post } = require("./post.js");
-const { jsonToLex, mock } = require("@atproto/api");
-const { error } = require("firebase-functions/logger");
+vi.mock("firebase-functions/logger");
+vi.mock("./utils.js");
 
-jest.mock("firebase-functions/logger");
-jest.mock("./utils.js");
-
-jest.mock("./mastodon.js");
+vi.mock("./mastodon.js");
 Mastodon.prototype.id = "mastodon";
-Mastodon.prototype.post = jest.fn(() => Promise.resolve({}));
-Mastodon.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./misskey.js");
+Mastodon.prototype.post = vi.fn(() => Promise.resolve({}));
+Mastodon.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./misskey.js");
 Misskey.prototype.id = "misskey";
-Misskey.prototype.post = jest.fn(() => Promise.resolve({}));
-Misskey.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./bluesky.js");
+Misskey.prototype.post = vi.fn(() => Promise.resolve({}));
+Misskey.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./bluesky.js");
 Bluesky.prototype.id = "bluesky";
-Bluesky.prototype.post = jest.fn(() => Promise.resolve({}));
-Bluesky.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./threads.js");
+Bluesky.prototype.post = vi.fn(() => Promise.resolve({}));
+Bluesky.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./threads.js");
 Threads.prototype.id = "threads";
-Threads.prototype.post = jest.fn(() => Promise.resolve({}));
-Threads.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./instagram.js");
+Threads.prototype.post = vi.fn(() => Promise.resolve({}));
+Threads.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./instagram.js");
 Instagram.prototype.id = "instagram";
-Instagram.prototype.post = jest.fn(() => Promise.resolve({}));
-Instagram.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./twitter.js");
+Instagram.prototype.post = vi.fn(() => Promise.resolve({}));
+Instagram.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./twitter.js");
 Twitter.prototype.id = "twitter";
-Twitter.prototype.post = jest.fn(() => Promise.resolve({}));
-Twitter.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
-jest.mock("./tumblr.js");
+Twitter.prototype.post = vi.fn(() => Promise.resolve({}));
+Twitter.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./tumblr.js");
 Tumblr.prototype.id = "tumblr";
-Tumblr.prototype.post = jest.fn(() => Promise.resolve({}));
-Tumblr.prototype.refreshAccessToken = jest.fn(() => Promise.resolve({}));
+Tumblr.prototype.post = vi.fn(() => Promise.resolve({}));
+Tumblr.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
 
 const id = "postsId";
-const ref = { id, get: jest.fn() };
-const doc = jest.fn((id) => ref);
-const collection = jest.fn(() => ({ doc }));
+const ref = { id, get: vi.fn() };
+const doc = vi.fn((id) => ref);
+const collection = vi.fn(() => ({ doc }));
 const db = { collection };
 const bucket = {};
 const text = "Text";
 const files = ["1.jpg"];
 const snap = { id, ref, data: () => ({ text, files, targets }) };
 /** @type import("firebase-admin/functions").TaskQueue */
-const queue = { enqueue: jest.fn(), delete: jest.fn() };
+const queue = { enqueue: vi.fn(), delete: vi.fn() };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("constructor", () => {
@@ -421,7 +420,7 @@ describe("getPostData", () => {
     const snap = {
       id,
       exists: true,
-      get: jest.fn(() => new Date()), // deletedAt
+      get: vi.fn(() => new Date()), // deletedAt
     };
     getDoc.mockResolvedValueOnce({ data: snap });
 
@@ -442,7 +441,7 @@ describe("getPostData", () => {
     const snap = {
       id,
       exists: true,
-      get: jest.fn(() => null), // deletedAt
+      get: vi.fn(() => null), // deletedAt
       data: () => ({ text, files, targets }),
     };
     getDoc.mockResolvedValueOnce({ data: snap });
@@ -541,9 +540,9 @@ describe("post", () => {
     // Prepare
     const postData = { text, files, targets };
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: postData });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
     const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
@@ -565,7 +564,7 @@ describe("post", () => {
   it("should return error if getPostData returns error.", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -580,11 +579,11 @@ describe("post", () => {
   it("should return error if verifyTargetStatus returns error.", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: "error" }));
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -602,11 +601,11 @@ describe("post", () => {
     // Prepare
     const target = "dummy";
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -625,13 +624,13 @@ describe("post", () => {
   it("should return error if updateDoc returns error. #1", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
     const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({ err: "update error" });
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -652,9 +651,9 @@ describe("post", () => {
   it("should return error if updateDoc returns error. #2", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
     const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
@@ -662,7 +661,7 @@ describe("post", () => {
     updateDoc
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({ err: "update error" });
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -683,16 +682,16 @@ describe("post", () => {
   it("should return error if refreshAccessToken returns error.", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
     const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({
       err: "error",
     });
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -711,15 +710,15 @@ describe("post", () => {
   it("should return error if post returns error.", async () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
-    mockGetPostData = jest.spyOn(post, "getPostData");
+    const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
-    mockVerifyTargetStatus = jest.spyOn(post, "verifyTargetStatus");
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
     const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     Mastodon.prototype.post.mockResolvedValueOnce({ err: "error" });
-    mockSetPostStatusError = jest.spyOn(post, "setPostStatusError");
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
     mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
 
     // Execute

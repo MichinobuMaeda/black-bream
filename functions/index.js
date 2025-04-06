@@ -1,25 +1,24 @@
-const {
+import {
   onDocumentCreated,
   onDocumentUpdated,
   onDocumentDeleted,
-} = require("firebase-functions/v2/firestore");
-const { onRequest, onCall } = require("firebase-functions/v2/https");
-const { onTaskDispatched } = require("firebase-functions/v2/tasks");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { logger } = require("firebase-functions/v2");
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
-const { getAuth } = require("firebase-admin/auth");
-const { getFunctions } = require("firebase-admin/functions");
-const { getStorage, getDownloadURL } = require("firebase-admin/storage");
-
-const { Threads } = require("./threads.js");
-const { Tumblr } = require("./tumblr.js");
-const { Twitter } = require("./twitter.js");
-const { Post } = require("./post.js");
-const account = require("./account.js");
-const deployment = require("./deployment.js");
-const { createUiTestData } = require("./ui_test_data.js");
+} from "firebase-functions/v2/firestore";
+import { onRequest, onCall } from "firebase-functions/v2/https";
+import { onTaskDispatched } from "firebase-functions/v2/tasks";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { logger } from "firebase-functions/v2";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
+import { getFunctions } from "firebase-admin/functions";
+import { getStorage, getDownloadURL } from "firebase-admin/storage";
+import { Threads } from "./threads.js";
+import { Tumblr } from "./tumblr.js";
+import { Twitter } from "./twitter.js";
+import { Post } from "./post.js";
+import * as account from "./account.js";
+import * as deployment from "./deployment.js";
+import { createUiTestData } from "./ui_test_data.js";
 
 const timeZone = "Asia/Tokyo";
 const region = "asia-northeast2";
@@ -32,7 +31,7 @@ const db = getFirestore(app);
 const bucket = getStorage(app).bucket();
 
 // https://<region>-<project-id>.cloudfunctions.net/public
-exports.media = onRequest({ region, cors: true }, async (req, res) => {
+export const media = onRequest({ region, cors: true }, async (req, res) => {
   if (req.method === "GET") {
     if (req.path.startsWith("/posts/")) {
       try {
@@ -53,7 +52,7 @@ exports.media = onRequest({ region, cors: true }, async (req, res) => {
   }
 });
 
-exports.post = onTaskDispatched({ region }, async ({ data }) =>
+export const post = onTaskDispatched({ region }, async ({ data }) =>
   new Post(db, bucket, data).post(),
 );
 
@@ -62,7 +61,7 @@ const getQueue = (project, location, name) =>
     `projects/${project}/locations/${location}/functions/${name}`,
   );
 
-exports.onPostCreated = onDocumentCreated(
+export const onPostCreated = onDocumentCreated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
@@ -75,7 +74,7 @@ exports.onPostCreated = onDocumentCreated(
   },
 );
 
-exports.onPostUpdated = onDocumentUpdated(
+export const onPostUpdated = onDocumentUpdated(
   { document: "posts/{postsId}", region },
   async ({ data, location, project }) => {
     if (process.env.FUNCTIONS_EMULATOR) {
@@ -110,7 +109,7 @@ exports.onPostUpdated = onDocumentUpdated(
   },
 );
 
-exports.onServiceAuthUpdated = onDocumentUpdated(
+export const onServiceAuthUpdated = onDocumentUpdated(
   { document: "service/auth", region },
   async ({ data }) => {
     const { after } = data;
@@ -126,54 +125,54 @@ exports.onServiceAuthUpdated = onDocumentUpdated(
   },
 );
 
-exports.addAuthUser = onCall(optOnCall, ({ data, auth }) =>
+export const addAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "managers", () =>
     account.addAuthUser(getAuth(app), db, data?.uid, data?.email),
   ),
 );
 
-exports.updateAuthEmail = onCall(optOnCall, ({ data, auth }) =>
+export const updateAuthEmail = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "managers", () =>
     account.updateAuthEmail(getAuth(app), data?.uid, data?.email),
   ),
 );
 
-exports.removeAuthUser = onCall(optOnCall, ({ data, auth }) =>
+export const removeAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "managers", () =>
     account.removeAuthUser(getAuth(app), data?.uid),
   ),
 );
 
-exports.getAuthUser = onCall(optOnCall, ({ data, auth }) =>
+export const getAuthUser = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "managers", () =>
     account.getAuthUser(getAuth(app), data?.uid),
   ),
 );
 
-exports.setThreadsAccessToken = onCall(optOnCall, ({ data, auth }) =>
+export const setThreadsAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "admins", () =>
     new Threads(db, bucket).setAccessToken(data),
   ),
 );
 
-exports.setTwitterAccessToken = onCall(optOnCall, ({ data, auth }) =>
+export const setTwitterAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "admins", () =>
     new Twitter(db, bucket).setAccessToken(data),
   ),
 );
 
-exports.setTumblrAccessToken = onCall(optOnCall, ({ data, auth }) =>
+export const setTumblrAccessToken = onCall(optOnCall, ({ data, auth }) =>
   account.gateForGroupMembers(db, auth, "admins", () =>
     new Tumblr(db, bucket).setAccessToken(data),
   ),
 );
 
-exports.daily = onSchedule(
+export const daily = onSchedule(
   { schedule: "every day 00:11", timeZone, region },
   async () => new Threads(db, bucket).refreshAccessToken(),
 );
 
-exports.onDataVersionDeleted = onDocumentDeleted(
+export const onDataVersionDeleted = onDocumentDeleted(
   { document: "service/dataVersion", region },
   async ({ data }) => {
     const auth = getAuth(app);
@@ -182,8 +181,9 @@ exports.onDataVersionDeleted = onDocumentDeleted(
   },
 );
 
-if (process.env.FUNCTIONS_EMULATOR) {
-  exports.uiTestData = onCall({ region }, () =>
-    createUiTestData(getAuth(app), db),
-  );
-}
+export const uiTestData = onCall(
+  { region },
+  process.env.FUNCTIONS_EMULATOR
+    ? () => createUiTestData(getAuth(app), db)
+    : () => {},
+);

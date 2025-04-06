@@ -1,28 +1,27 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { BskyAgent } = require("@atproto/api");
-
-let {
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { BskyAgent } from "@atproto/api";
+import {
   generateLinkCard,
   reduceImageSize,
   getMediaAsBlob,
   httpRequest,
   getMimeTypes,
-} = require("./utils.js");
-const { Bluesky } = require("./bluesky.js");
+} from "./utils.js";
+import { Bluesky } from "./bluesky.js";
 
-jest.mock("firebase-functions/logger");
-jest.mock("@atproto/api");
-BskyAgent.prototype.login = jest.fn(() => Promise.resolve({}));
-BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
-BskyAgent.prototype.uploadBlob = jest.fn(() =>
+vi.mock("firebase-functions/logger");
+vi.mock("@atproto/api");
+BskyAgent.prototype.login = vi.fn(() => Promise.resolve({}));
+BskyAgent.prototype.post = vi.fn(() => Promise.resolve());
+BskyAgent.prototype.uploadBlob = vi.fn(() =>
   Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
-jest.mock("./utils.js");
+vi.mock("./utils.js");
 
 const db = {};
 const contents = [new ArrayBuffer(8)];
-const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-const bucket = { file: jest.fn(() => fileRef) };
+const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+const bucket = { file: vi.fn(() => fileRef) };
 const bluesky = new Bluesky(db, bucket);
 
 const thumbUrl = "https://example.com/thumb.jpg";
@@ -32,10 +31,10 @@ const password = "bluesky-password";
 const params = { service, identifier, password };
 const agent = new BskyAgent(service);
 
-FormData.prototype.append = jest.fn();
+FormData.prototype.append = vi.fn();
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("login", () => {
@@ -206,7 +205,7 @@ describe("uploadThumb", () => {
 
 describe("generateExternal", () => {
   const text = "Text";
-  const mockUploadThumb = jest.spyOn(bluesky, "uploadThumb");
+  const mockUploadThumb = vi.spyOn(bluesky, "uploadThumb");
 
   it("should not generate external without card.", async () => {
     // Prepare
@@ -321,12 +320,12 @@ describe("post", () => {
   const langs = ["ja"];
   const image = new Uint8Array(10);
 
-  const mockLogin = jest.spyOn(bluesky, "login");
-  const mockUploadImage = jest.spyOn(bluesky, "uploadImage");
-  const mockGenerateExternal = jest.spyOn(bluesky, "generateExternal");
-  const mockRequestPost = jest.spyOn(bluesky, "requestPost");
+  const mockLogin = vi.spyOn(bluesky, "login");
+  const mockUploadImage = vi.spyOn(bluesky, "uploadImage");
+  const mockGenerateExternal = vi.spyOn(bluesky, "generateExternal");
+  const mockRequestPost = vi.spyOn(bluesky, "requestPost");
 
-  const mockGetParams = jest.spyOn(bluesky, "getParams");
+  const mockGetParams = vi.spyOn(bluesky, "getParams");
   mockGetParams.mockResolvedValue({ data: params });
 
   it("should return error. if getParams returns error.", async () => {

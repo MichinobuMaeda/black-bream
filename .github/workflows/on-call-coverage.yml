@@ -19,6 +19,6 @@ jobs:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/coverage.json
+          files: ./coverage/coverage-final.json
           token: ${{ secrets.codecov_token }}
           slug: MichinobuMaeda/black-bream

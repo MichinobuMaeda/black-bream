@@ -1,8 +1,8 @@
-const { logger } = require("firebase-functions/v2");
-const { Provider } = require("./provider.js");
-const { getPublicMediaUrl, httpRequest } = require("./utils.js");
+import { logger } from "firebase-functions/v2";
+import { Provider } from "./provider.js";
+import { getPublicMediaUrl, httpRequest } from "./utils.js";
 
-class Instagram extends Provider {
+export class Instagram extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -80,5 +80,3 @@ class Instagram extends Provider {
     return { err: undefined };
   }
 }
-
-module.exports = { Instagram };

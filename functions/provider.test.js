@@ -1,17 +1,16 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { getDoc, updateDoc } from "./utils.js";
+import { Provider } from "./provider.js";
 
-const { getDoc, updateDoc } = require("./utils.js");
-const { Provider } = require("./provider.js");
+vi.mock("./utils.js");
 
-jest.mock("./utils.js");
-
-const ref = { get: jest.fn() };
-const doc = jest.fn(() => ref);
-const db = { collection: jest.fn(() => ({ doc })) };
+const ref = { get: vi.fn() };
+const doc = vi.fn(() => ref);
+const db = { collection: vi.fn(() => ({ doc })) };
 const bucket = { data: "bucket" };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Provider", () => {
@@ -32,7 +31,7 @@ describe("Provider", () => {
 });
 
 describe("Provider.getParams", () => {
-  const snap = { exists: true, get: jest.fn(() => undefined) };
+  const snap = { exists: true, get: vi.fn(() => undefined) };
   getDoc.mockResolvedValue({ err: undefined, data: snap });
   const provider = new Provider(db, bucket);
   provider.id = "target-name";

@@ -1,8 +1,8 @@
-const { logger } = require("firebase-functions/v2");
-const { getMediaAsBlob, httpRequest } = require("./utils.js");
-const { Provider } = require("./provider.js");
+import { logger } from "firebase-functions/v2";
+import { getMediaAsBlob, httpRequest } from "./utils.js";
+import { Provider } from "./provider.js";
 
-class Misskey extends Provider {
+export class Misskey extends Provider {
   /**
    * @constructor
    * @param {FirebaseFirestore.Firestore} db
@@ -95,5 +95,3 @@ class Misskey extends Provider {
     return { err };
   }
 }
-
-module.exports = { Misskey };

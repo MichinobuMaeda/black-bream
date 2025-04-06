@@ -1,6 +1,5 @@
-const { logger } = require("firebase-functions/v2");
-
-const deployment = require("./deployment");
+import { logger } from "firebase-functions/v2";
+import * as deployment from "./deployment.js";
 
 /**
  * Create test data for UI testing.
@@ -9,7 +8,7 @@ const deployment = require("./deployment");
  * @param {FirebaseFirestore.Firestore} db
  * @returns {Promise<[string|null, number]>}
  */
-const createUiTestData = async (auth, db) => {
+export const createUiTestData = async (auth, db) => {
   logger.info("START: createUiTestData");
   try {
     if (!process.env.FUNCTIONS_EMULATOR) {
@@ -66,5 +65,3 @@ const createUiTestData = async (auth, db) => {
     return { error: e.toString() };
   }
 };
-
-module.exports = { createUiTestData };

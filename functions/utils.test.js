@@ -1,16 +1,9 @@
-const {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-const Readable = require("stream").Readable;
-const { getDownloadURL } = require("firebase-admin/storage");
-const { BskyAgent } = require("@atproto/api");
-const sharp = require("sharp");
-
-const {
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import Readable from "node:stream";
+import { getDownloadURL } from "firebase-admin/storage";
+import { BskyAgent } from "@atproto/api";
+import sharp from "sharp";
+import {
   generateLinkCard,
   getMimeTypes,
   getMediaDownloadUrl,
@@ -22,15 +15,15 @@ const {
   sleep,
   getDoc,
   updateDoc,
-} = require("./utils.js");
+} from "./utils.js";
 
-jest.mock("firebase-functions/logger");
-jest.mock("firebase-admin/storage");
-jest.mock("@atproto/api");
-jest.mock("sharp");
-BskyAgent.prototype.login = jest.fn(() => Promise.resolve());
-BskyAgent.prototype.post = jest.fn(() => Promise.resolve());
-global.fetch = jest.fn();
+vi.mock("firebase-functions/logger");
+vi.mock("firebase-admin/storage");
+vi.mock("@atproto/api");
+vi.mock("sharp");
+BskyAgent.prototype.login = vi.fn(() => Promise.resolve());
+BskyAgent.prototype.post = vi.fn(() => Promise.resolve());
+global.fetch = vi.fn();
 
 const orgPublicPostMediaUrl = process.env.PUBLIC_POST_MEDIA_URL;
 
@@ -39,7 +32,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.PUBLIC_POST_MEDIA_URL = orgPublicPostMediaUrl;
 });
 
@@ -216,7 +209,7 @@ describe("generateLinkCard", () => {
 });
 
 describe("getMimeTypes", () => {
-  it("should returns MIME-Types retrieved from HTTP response headers.", () => {
+  it("should returns MIME-Types retrieved} from HTTP response headers.", () => {
     // Prepare
     const url = "https://www.iana.org/_img/2021/iana-logo-header.jpeg";
     const headers = {
@@ -231,7 +224,7 @@ describe("getMimeTypes", () => {
   });
 
   it(
-    "should returns MIME-Types retrieved from the file extension," +
+    "should returns MIME-Types retrieved} from the file extension," +
       " if HTTP response headers is not set.",
     () => {
       // Prepare
@@ -246,8 +239,8 @@ describe("getMimeTypes", () => {
   );
 
   it(
-    "should returns MIME-Types retrieved from the file extension #1," +
-      " if failed to retrieve 'content-type' from HTTP response headers.",
+    "should returns MIME-Types retrieved} from the file extension #1," +
+      " if failed to retrieve 'content-type'} from HTTP response headers.",
     () => {
       // Prepare
       const url = "https://www.iana.org/_img/2021/iana-logo-header.jpeg";
@@ -262,8 +255,8 @@ describe("getMimeTypes", () => {
   );
 
   it(
-    "should returns MIME-Types retrieved from the file extension #2," +
-      " if failed to retrieve 'content-type' from HTTP response headers.",
+    "should returns MIME-Types retrieved} from the file extension #2," +
+      " if failed to retrieve 'content-type'} from HTTP response headers.",
     () => {
       // Prepare
       const url = "https://www.iana.org/_img/2021/index.html#abc";
@@ -278,8 +271,8 @@ describe("getMimeTypes", () => {
   );
 
   it(
-    "should returns MIME-Types retrieved from the file extension #3," +
-      " if failed to retrieve 'content-type' from HTTP response headers.",
+    "should returns MIME-Types retrieved} from the file extension #3," +
+      " if failed to retrieve 'content-type'} from HTTP response headers.",
     () => {
       // Prepare
       const url =
@@ -296,7 +289,7 @@ describe("getMimeTypes", () => {
 
   it(
     "should returns 'application/octet-stream'," +
-      " if failed to retrieve MIME-Types from HTTP response headers" +
+      " if failed to retrieve MIME-Types} from HTTP response headers" +
       " and the file extension.",
     () => {
       // Prepare
@@ -316,8 +309,8 @@ describe("getMediaDownloadUrl", () => {
   it("should returns download URL based on given id and file name.", async () => {
     // Prepare
     const contents = [new ArrayBuffer(8)];
-    const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-    const bucket = { file: jest.fn(() => fileRef) };
+    const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+    const bucket = { file: vi.fn(() => fileRef) };
     const id = "test-id";
     const filename = "test-filename";
     const url = "https://example.com/test.jpg";
@@ -337,8 +330,8 @@ describe("getMediaDownloadUrl", () => {
 
 describe("getMediaAsUint8Array", () => {
   const contents = [new ArrayBuffer(8)];
-  const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-  const bucket = { file: jest.fn(() => fileRef) };
+  const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+  const bucket = { file: vi.fn(() => fileRef) };
   const id = "test-id";
   const filename = "1.jpg";
 
@@ -418,8 +411,8 @@ describe("reduceImageSize", () => {
       const maxSize = 4;
       sharp.mockReturnValue({
         metadata: () => Promise.resolve({ size: 8 }),
-        resize: jest.fn().mockReturnThis(),
-        toBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(4))),
+        resize: vi.fn().mockReturnThis(),
+        toBuffer: vi.fn(() => Promise.resolve(new ArrayBuffer(4))),
       });
 
       // Execute
@@ -448,8 +441,8 @@ describe("reduceImageSize", () => {
 
 describe("getMediaAsBlob", () => {
   const contents = [new ArrayBuffer(8)];
-  const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-  const bucket = { file: jest.fn(() => fileRef) };
+  const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+  const bucket = { file: vi.fn(() => fileRef) };
   const id = "test-id";
   const filename = "1.jpg";
 
@@ -573,7 +566,7 @@ describe("getPublicMediaUrl", () => {
 });
 
 describe("sleep", () => {
-  global.setTimeout = jest.fn((r, ms) => r());
+  global.setTimeout = vi.fn((r, ms) => r());
 
   it("should sleep for the specified time.", async () => {
     // Prepare
@@ -590,7 +583,7 @@ describe("getDoc", () => {
   it("should returns document data.", async () => {
     // Prepare
     const doc = { data: () => ({ test: "data" }) };
-    const ref = { get: jest.fn(() => Promise.resolve(doc)) };
+    const ref = { get: vi.fn(() => Promise.resolve(doc)) };
 
     // Execute
     const ret = await getDoc(ref);
@@ -602,7 +595,7 @@ describe("getDoc", () => {
 
   it("should returns error, if get() raises an exception.", async () => {
     // Prepare
-    const ref = { get: jest.fn(() => Promise.reject("Error")) };
+    const ref = { get: vi.fn(() => Promise.reject("Error")) };
 
     // Execute
     const ret = await getDoc(ref);
@@ -616,7 +609,7 @@ describe("getDoc", () => {
 describe("updateDoc", () => {
   it("should update document data.", async () => {
     // Prepare
-    const ref = { update: jest.fn(() => Promise.resolve({})) };
+    const ref = { update: vi.fn(() => Promise.resolve({})) };
     const data = { test: "data" };
 
     // Execute
@@ -629,7 +622,7 @@ describe("updateDoc", () => {
 
   it("should returns error, if update() raises an exception.", async () => {
     // Prepare
-    const ref = { update: jest.fn(() => Promise.reject("Error")) };
+    const ref = { update: vi.fn(() => Promise.reject("Error")) };
     const data = { test: "data" };
 
     // Execute

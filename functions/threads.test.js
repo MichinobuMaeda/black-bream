@@ -1,32 +1,31 @@
-const { describe, it, expect, afterEach } = require("@jest/globals");
-const { Timestamp } = require("firebase-admin/firestore");
-const storage = require("firebase-admin/storage");
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { Timestamp } from "firebase-admin/firestore";
+import { getDownloadURL } from "firebase-admin/storage";
+import { httpRequest, getPublicMediaUrl } from "./utils.js";
+import { Threads } from "./threads.js";
 
-const { httpRequest, getPublicMediaUrl } = require("./utils.js");
-const { Threads } = require("./threads.js");
-
-jest.mock("firebase-functions/logger");
-jest.mock("firebase-admin/storage");
-jest.mock("./utils.js");
+vi.mock("firebase-functions/logger");
+vi.mock("firebase-admin/storage");
+vi.mock("./utils.js");
 
 const authSnap = {
   exists: true,
   data: () => authData,
-  get: jest.fn(),
+  get: vi.fn(),
 };
 const authRef = {
-  get: jest.fn(() => Promise.resolve(authSnap)),
-  update: jest.fn(() => Promise.resolve()),
+  get: vi.fn(() => Promise.resolve(authSnap)),
+  update: vi.fn(() => Promise.resolve()),
 };
 const collection = {
-  doc: jest.fn(() => authRef),
+  doc: vi.fn(() => authRef),
 };
 const db = {
-  collection: jest.fn(() => collection),
+  collection: vi.fn(() => collection),
 };
 const contents = [new ArrayBuffer(8)];
-const fileRef = { download: jest.fn(() => Promise.resolve(contents)) };
-const bucket = { file: jest.fn(() => fileRef) };
+const fileRef = { download: vi.fn(() => Promise.resolve(contents)) };
+const bucket = { file: vi.fn(() => fileRef) };
 const threads = new Threads(db, bucket);
 
 const params = {
@@ -40,10 +39,10 @@ const params = {
   ),
 };
 
-storage.getDownloadURL = jest.fn(() => Promise.resolve("download-url"));
+getDownloadURL = vi.fn(() => Promise.resolve("download-url"));
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Threads object", () => {
@@ -60,11 +59,9 @@ describe("post", () => {
     (id, file) => `https://public-post-media-url/public/posts/${id}/${file}`,
   );
 
-  const mockGetParams = jest.spyOn(threads, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-
   it("should return error, if getParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -78,6 +75,8 @@ describe("post", () => {
 
   it("should post to Threads.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest
       .mockResolvedValueOnce({
         data: {
@@ -111,6 +110,8 @@ describe("post", () => {
 
   it("should post with image to Threads.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest
       .mockResolvedValueOnce({
         data: {
@@ -145,6 +146,8 @@ describe("post", () => {
 
   it("should return error, if axis.post raises an exception for Threads.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -165,6 +168,8 @@ describe("post", () => {
 
   it("should return error, if axis.post returns error status for Threads.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValueOnce({ err: "500 Server error" });
 
     // Execute
@@ -187,6 +192,8 @@ describe("post", () => {
 
   it("should return error, if axis.post returns error status for Threads #2.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest
       .mockResolvedValueOnce({
         data: {
@@ -238,13 +245,12 @@ describe("refreshAccessToken", () => {
     accessToken: "new-access-token",
     expiredAt: expect.any(Date),
   };
-  const mockGetParams = jest.spyOn(threads, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-  const mockUpdateParams = jest.spyOn(threads, "updateParams");
-  mockUpdateParams.mockResolvedValue({});
 
   it("should return error, if getParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     mockGetParams.mockResolvedValueOnce({ err: "Error" });
 
     // Execute
@@ -259,6 +265,9 @@ describe("refreshAccessToken", () => {
 
   it("should return error, if no access token is set.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     mockGetParams.mockResolvedValueOnce({
       data: { ...params, accessToken: "" },
     });
@@ -275,6 +284,9 @@ describe("refreshAccessToken", () => {
 
   it("should return error if no expiration is set.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     mockGetParams.mockResolvedValueOnce({
       data: { ...params, expiredAt: null },
     });
@@ -294,6 +306,9 @@ describe("refreshAccessToken", () => {
       " if there is more than 10 day until expiration.",
     async () => {
       // Prepare
+      const mockGetParams = vi.spyOn(threads, "getParams");
+      const mockUpdateParams = vi.spyOn(threads, "updateParams");
+      mockUpdateParams.mockResolvedValue({});
       mockGetParams.mockResolvedValueOnce({
         data: {
           ...params,
@@ -316,6 +331,10 @@ describe("refreshAccessToken", () => {
 
   it("should refresh the access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce(respNewAccessToken);
 
     // Execute
@@ -330,6 +349,9 @@ describe("refreshAccessToken", () => {
 
   it("should return error, if updateParams returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
     httpRequest.mockResolvedValueOnce(respNewAccessToken);
     mockUpdateParams.mockResolvedValueOnce({ err: "error" });
 
@@ -345,6 +367,10 @@ describe("refreshAccessToken", () => {
 
   it("should return error, if httpRequest returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce({ err: "500 Server error" });
 
     // Execute
@@ -361,6 +387,10 @@ describe("refreshAccessToken", () => {
 
   it("should return error, if fetch raises an exception.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -410,13 +440,13 @@ describe("setAccessToken", () => {
       `&client_secret=${params.clientSecret}` +
       `&access_token=${oauthData.access_token}`,
   ];
-  const mockGetParams = jest.spyOn(threads, "getParams");
-  mockGetParams.mockResolvedValue({ data: params });
-  const mockUpdateParams = jest.spyOn(threads, "updateParams");
-  mockUpdateParams.mockResolvedValueOnce({});
 
   it("should update the access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
@@ -437,6 +467,12 @@ describe("setAccessToken", () => {
 
   it("should return error, if no code is set.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
+
+    // Execute
     const result = await threads.setAccessToken({ code: "" });
 
     // Verify
@@ -448,6 +484,9 @@ describe("setAccessToken", () => {
 
   it("should return error, if getDoc returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     mockGetParams.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -462,6 +501,10 @@ describe("setAccessToken", () => {
 
   it("should return error, if failed to auth access_token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     httpRequest.mockResolvedValueOnce({ err: "error" });
 
     // Execute
@@ -476,6 +519,10 @@ describe("setAccessToken", () => {
 
   it("should return error, if failed to get access token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });
@@ -494,6 +541,10 @@ describe("setAccessToken", () => {
 
   it("should return error, if failed to get access_token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
@@ -512,6 +563,10 @@ describe("setAccessToken", () => {
 
   it("should return error, if failed to get new access_token.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
+    mockUpdateParams.mockResolvedValueOnce({});
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
@@ -534,6 +589,9 @@ describe("setAccessToken", () => {
 
   it("should return error, if updateDoc returns error.", async () => {
     // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    const mockUpdateParams = vi.spyOn(threads, "updateParams");
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
