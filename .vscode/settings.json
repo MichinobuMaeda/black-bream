@@ -78,5 +78,7 @@
   "eslint.useFlatConfig": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "javascript.validate.enable": false,
-  "typescript.validate.enable": false
+  "typescript.validate.enable": false,
+  "testing.automaticallyOpenTestResults": "neverOpen",
+  "vitest.rootConfig": "vitest.config.ts"
 }

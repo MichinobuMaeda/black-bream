@@ -19,7 +19,7 @@ export default mergeConfig(
           resources: "usable",
         },
       },
-      exclude: ["functions/node_modules", "node_modules"],
+      exclude: ["functions/node_modules", "node_modules", "test/firestore"],
       coverage: {
         enabled: true,
         include: ["src/**/*.js", "functions/*.js"],
