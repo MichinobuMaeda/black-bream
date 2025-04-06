@@ -68,9 +68,9 @@ describe("reduceImageSize", () => {
     const maxSize = 1000 * 1000;
     const mimeType = "image/jpeg";
     const filename = "sample2232689.jpg";
-    const filePath = `file://${path.normalize(path.join(__dirname, filename))}`;
+    const filePath = path.join("test", "unit", "lib", filename);
     window.URL.createObjectURL.mockReturnValueOnce(filePath);
-    let buffer = fs.readFileSync(path.join(__dirname, filename));
+    let buffer = fs.readFileSync(filePath);
     const file = new File([buffer], filename, { type: mimeType });
 
     // Execute
@@ -85,9 +85,10 @@ describe("reduceImageSize", () => {
     const maxSize = 1000 * 1000;
     const mimeType = "image/jpeg";
     const filename = "sample2232689.jpg";
-    const filePath = `file://${path.normalize(path.join(__dirname, filename))}`;
+    const filePath = path.join("test", "unit", "lib", filename);
+    console.log("filePath", filePath);
     window.URL.createObjectURL.mockReturnValueOnce(filePath);
-    let buffer = fs.readFileSync(path.join(__dirname, filename));
+    let buffer = fs.readFileSync(filePath);
     const file = new File([buffer], filename, { type: mimeType });
     global.Image.prototype.decode.mockImplementationOnce(() =>
       Promise.reject("Invalid image"),

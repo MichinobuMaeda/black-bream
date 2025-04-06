@@ -66,6 +66,7 @@ describe("getNextPreDefinedSchedule", () => {
       " for delta:1 if base is later than now.",
     () => {
       // Prepare
+      const offset = new Date().getTimezoneOffset() * 60 * 1000;
       const delta = 1;
       const preDefined = {
         wd: [0, 1, 2, 3, 4],
@@ -81,7 +82,9 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-01T00:00:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2050-01-02T09:13:00.000+0900"));
+      ).toEqual(
+        new Date(new Date("2050-01-02T00:13:00.000+0900").getTime() - offset),
+      );
 
       // Execute and verify #2
       expect(
@@ -90,7 +93,9 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-02T09:11:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2050-01-02T09:13:00.000+0900"));
+      ).toEqual(
+        new Date(new Date("2050-01-02T00:13:00.000+0900").getTime() - offset),
+      );
 
       // Execute and verify #3
       expect(
@@ -99,7 +104,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-02T09:14:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2050-01-02T09:31:00.000+0900"));
+      ).toEqual(new Date(new Date("2050-01-02T00:31:00.000+0900") - offset));
 
       // Execute and verify #4
       expect(
@@ -108,7 +113,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-02T09:32:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2050-01-02T10:13:00.000+0900"));
+      ).toEqual(new Date(new Date("2050-01-02T01:13:00.000+0900") - offset));
 
       // Execute and verify #5
       expect(
@@ -117,7 +122,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-02T10:32:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2050-01-03T09:13:00.000+0900"));
+      ).toEqual(new Date(new Date("2050-01-03T00:13:00.000+0900") - offset));
     },
   );
 
@@ -152,6 +157,7 @@ describe("getNextPreDefinedSchedule", () => {
       " for delta:-1 if base is later than now.",
     () => {
       // Prepare
+      const offset = new Date().getTimezoneOffset() * 60 * 1000;
       const delta = -1;
       const preDefined = {
         wd: [0, 1, 2, 3, 4],
@@ -167,7 +173,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2050-01-01T00:00:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2049-12-30T10:31:00.000+0900"));
+      ).toEqual(new Date(new Date("2049-12-30T01:31:00.000+0900") - offset));
 
       // Execute and verify #1
       expect(
@@ -176,7 +182,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2049-12-30T10:32:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2049-12-30T10:31:00.000+0900"));
+      ).toEqual(new Date(new Date("2049-12-30T01:31:00.000+0900") - offset));
 
       // Execute and verify #2
       expect(
@@ -185,7 +191,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2049-12-30T10:30:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2049-12-30T10:13:00.000+0900"));
+      ).toEqual(new Date(new Date("2049-12-30T01:13:00.000+0900") - offset));
 
       // Execute and verify #3
       expect(
@@ -194,7 +200,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2049-12-30T10:12:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2049-12-30T09:31:00.000+0900"));
+      ).toEqual(new Date(new Date("2049-12-30T00:31:00.000+0900") - offset));
 
       // Execute and verify #4
       expect(
@@ -203,7 +209,7 @@ describe("getNextPreDefinedSchedule", () => {
           "2049-12-30T09:12:00.000+0900",
           delta,
         ),
-      ).toEqual(new Date("2049-12-29T10:31:00.000+0900"));
+      ).toEqual(new Date(new Date("2049-12-29T01:31:00.000+0900") - offset));
     },
   );
 
