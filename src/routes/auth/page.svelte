@@ -2,14 +2,10 @@
   import { push } from "svelte-spa-router";
   import Content from "../../lib/components/Content.svelte";
   import { callFunction } from "../../lib/firebase";
-  import {
-    loadTwitterState,
-    loadTwitterChallenge,
-    loadTumblrState,
-  } from "../../lib/localstorage.js";
+  import { localstorage } from "../../lib/localstorage.js";
   /**
    * @typedef {Object} Props
-   * @param {object} params
+   * @param {Object} params
    */
 
   /** @type {Props} */
@@ -40,7 +36,7 @@
     case "tumblr":
       switch (params.action) {
         case "callback":
-          if (params.status === loadTumblrState()) {
+          if (params.status === localstorage.tumblr.state.load()) {
             const code = params.data;
             (async () => {
               result = await callFunction("setTumblrAccessToken", { code });
@@ -61,8 +57,8 @@
         case "callback":
           {
             const param = {
-              status: loadTwitterState(),
-              challenge: loadTwitterChallenge(),
+              status: localstorage.twitter.state.load(),
+              challenge: localstorage.twitter.challenge.load(),
               code: params.data,
             };
             if (params.status === param.status) {

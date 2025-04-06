@@ -6,3 +6,10 @@
 - [Test Firestore Rules](docs/testFirestoreRules.md)
 - [Add site](docs/addSite.md)
 - [Note](docs/note.md)
+
+## Used Libraries and Licenses
+
+- <https://fonts.google.com/icons>
+- <https://fontawesome.com/license/free>
+- <https://en.wikipedia.org/wiki/Acanthopagrus_schlegelii#/media/File:NDL-DC_1306184-Utagawa_Hiroshige-広重魚尽_黒鯛・小鯛・山椒-crd.jpg>
+- <https://github.com/MichinobuMaeda/coarse-paper>

@@ -7,7 +7,7 @@ const { logger } = require("firebase-functions/v2");
  * @param {AuthData} authData
  * @param {string} group
  * @param {function} action
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const gateForGroupMembers = async (db, { uid }, group, action) => {
   if (!uid) {
@@ -31,7 +31,7 @@ const gateForGroupMembers = async (db, { uid }, group, action) => {
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} uid
  * @param {string} email
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const addAuthUser = async (auth, db, uid, email) => {
   if (!uid) {
@@ -71,7 +71,7 @@ const addAuthUser = async (auth, db, uid, email) => {
  * @param {Auth} auth
  * @param {string} uid
  * @param {string} email
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const updateAuthEmail = async (auth, uid, email) => {
   if (!uid) {
@@ -99,7 +99,7 @@ const updateAuthEmail = async (auth, uid, email) => {
  *
  * @param {Auth} auth
  * @param {string} uid
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const removeAuthUser = async (auth, uid) => {
   if (!uid) {
@@ -123,7 +123,7 @@ const removeAuthUser = async (auth, uid) => {
  *
  * @param {Auth} auth
  * @param {string} uid
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const getAuthUser = async (auth, uid) => {
   if (!uid) {

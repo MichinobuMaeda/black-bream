@@ -13,7 +13,7 @@
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
-  import { saveTumblrState } from "../../lib/localstorage";
+  import { localstorage } from "../../lib/localstorage";
 
   let edit = $state(false);
   let active = $state(false);
@@ -107,7 +107,7 @@
 
   const getTumblrAccessToken = () => {
     const state = nanoid(16);
-    saveTumblrState(state);
+    localstorage.tumblr.state.save(state);
     const scope = ["basic", "write", "offline_access"];
 
     const url =

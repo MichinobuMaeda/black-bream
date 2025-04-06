@@ -23,7 +23,10 @@
     postTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
-  import { formatISO, getNextPreDefinedSchedule } from "../../lib/datetime.js";
+  import {
+    formatDateTime,
+    getNextPreDefinedSchedule,
+  } from "../../lib/datetime.js";
 
   /**
    * @typedef {Object} Props
@@ -68,7 +71,7 @@
       text = post.text;
       checkedTargets = Object.keys(post.targets ?? {});
       savedImages = post.files ?? [];
-      schedule = formatISO(post.scheduledFor?.toDate());
+      schedule = formatDateTime(post.scheduledFor?.toDate());
       deleted = !!post.deletedAt;
     }
 
@@ -102,7 +105,7 @@
     text = post?.text;
     checkedTargets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
-    schedule = formatISO(post?.scheduledFor?.toDate());
+    schedule = formatDateTime(post?.scheduledFor?.toDate());
     if (next) {
       await push(`/posts/${next}`);
     } else {
@@ -185,7 +188,7 @@
                 id="prevSchedule"
                 icon={SvgArrowBack}
                 onClick={() => {
-                  schedule = formatISO(
+                  schedule = formatDateTime(
                     getNextPreDefinedSchedule(
                       store.conf.preDefinedSchedules,
                       schedule,
@@ -198,7 +201,7 @@
                 id="prevSchedule"
                 icon={SvgArrowForward}
                 onClick={() => {
-                  schedule = formatISO(
+                  schedule = formatDateTime(
                     getNextPreDefinedSchedule(
                       store.conf.preDefinedSchedules,
                       schedule,

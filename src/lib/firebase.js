@@ -46,9 +46,13 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-import { config, reCaptchaKey, region } from "../firebaseConfig.js";
-import { loadEmail, removeEmail, saveEmail } from "./localstorage.js";
-import { mimeTypeList } from "./utils.js";
+import * as firebaseConfig from "../firebaseConfig.js";
+import { localstorage } from "./localstorage.js";
+import {
+  getFileExtension,
+  getMimeTypeFromExtension,
+  reduceImageSize,
+} from "./media.js";
 
 const imageBasePath = "public/posts/";
 
@@ -83,267 +87,330 @@ export const socialLoginProviders = [
   },
 ];
 
-/**
- * Firebase objects
- */
-const app = initializeApp(config);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app, region);
-const storage = getStorage(app);
+export class FirebaseState {
+  /**
+   * @constructor
+   * @param {Object} firebaseConfig
+   */
+  constructor(firebaseConfig) {
+    this.firebaseConfig = firebaseConfig;
+    this.app = initializeApp(this.firebaseConfig.config);
+    this.auth = getAuth(this.app);
+    this.db = getFirestore(this.app);
+    this.functions = getFunctions(this.app, this.firebaseConfig.region);
+    this.storage = getStorage(this.app);
+    this.userData = [];
+  }
 
-if (reCaptchaKey !== "FIREBASE_RECAPTCHA_KEY") {
-  // const appCheck =
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(reCaptchaKey),
-    isTokenAutoRefreshEnabled: true,
-  });
+  /**
+   * Initialize firebase state
+   *
+   * @param {Location} location
+   * @param {Object} store
+   * @returns {void}
+   */
+  initFirebase(location, store) {
+    this.store = store;
+
+    this.setEnvironment(location);
+    this.handleFirebaseAuthLink(location);
+    this.initUserDataAll();
+    this.subscribeServiceConf();
+    this.subscribeAuthState();
+  }
+
+  /**
+   * Set firebase environment
+   *
+   * @param {Location} location
+   * @returns {void}
+   */
+  setEnvironment({ href }) {
+    if (href.includes("localhost") || href.includes("127.0.0.1")) {
+      console.log("connect to emulator");
+      connectAuthEmulator(this.auth, "http://127.0.0.1:9099");
+      connectFirestoreEmulator(this.db, "127.0.0.1", 8080);
+      connectFunctionsEmulator(this.functions, "127.0.0.1", 5001);
+      connectStorageEmulator(this.storage, "127.0.0.1", 9199);
+    } else {
+      initializeAppCheck(this.app, {
+        provider: new ReCaptchaEnterpriseProvider(
+          this.firebaseConfig.reCaptchaKey,
+        ),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
+  }
+
+  /**
+   * Handle firebase auth link
+   *
+   * @param {Location} location
+   * @returns {void}
+   */
+  handleFirebaseAuthLink({ href, replace }) {
+    if (isSignInWithEmailLink(this.auth, href)) {
+      let email = localstorage.email.load();
+      if (email) {
+        console.log(`signInWithEmailLink(${email})`);
+        signInWithEmailLink(this.auth, email, href)
+          .then(() => {
+            localstorage.email.clear();
+            if (href.includes("?")) {
+              replace(href.split("?")[0]);
+            }
+          })
+          .catch((e) => {
+            console.error(`signInWithEmailLink: ${e}`);
+          });
+      }
+    }
+  }
+
+  /**
+   * Subscribe service/conf
+   *
+   * @returns {void}
+   */
+  subscribeServiceConf() {
+    console.log("Subscribe service/conf");
+    onSnapshot(doc(this.db, "service", "conf"), (snap) => {
+      this.store.conf = this.castDocSnapshot(snap);
+    });
+  }
+
+  /**
+   * Subscribe auth state
+   *
+   * @returns {void}
+   */
+  subscribeAuthState() {
+    console.log("Subscribe auth");
+    this.auth.onAuthStateChanged((user) => {
+      this.store.authUser = user;
+      console.log(
+        `authUser: ${this.store.authUser?.uid ?? this.store.authUser}`,
+      );
+    });
+  }
+
+  /**
+   * Initialize all user data
+   *
+   * @returns {void}
+   */
+  initUserDataAll() {
+    this.userData = [
+      new UserData(
+        "users",
+        collection(this.db, "users"),
+        [],
+        (snap) => {
+          this.store.users = this.castQuerySnapshot(snap, "users");
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot users: ${error}`);
+        },
+      ),
+      new UserData(
+        "groups",
+        collection(this.db, "groups"),
+        [],
+        (snap) => {
+          this.store.groups = this.castQuerySnapshot(snap, "groups");
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot groups: ${error}`);
+        },
+      ),
+      new UserData(
+        "posts",
+        query(
+          collection(this.db, "posts"),
+          orderBy("scheduledFor", "desc"),
+          limit(1000),
+        ),
+        [],
+        (snap) => {
+          this.store.posts = this.castQuerySnapshot(snap, "posts");
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot posts: ${error}`);
+        },
+      ),
+      new UserData(
+        "templates",
+        query(collection(this.db, "templates"), orderBy("name", "asc")),
+        [],
+        (snap) => {
+          this.store.templates = this.castQuerySnapshot(snap, "templates");
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot templates: ${error}`);
+        },
+      ),
+      new UserData(
+        "auth",
+        doc(this.db, "service", "auth"),
+        undefined,
+        (snap) => {
+          this.store.auth = this.castDocSnapshot(snap);
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot auth: ${error}`);
+        },
+        ["admin"],
+      ),
+    ];
+  }
+
+  /**
+   * Subscribe all user data
+   *
+   * @returns {void}
+   */
+  subscribeUserDataAll() {
+    console.log("subscribeUserDataAll()");
+
+    this.userData
+      .filter((data) => this.store.admin || !data.require.includes("admin"))
+      .forEach((data) => data.subscribe());
+  }
+
+  /**
+   * Unsubscribe all user data
+   *
+   * @param {string} [cause]
+   * @returns {Promise<Object>}
+   */
+  async unsubscribeUserDataAll(cause = "") {
+    console.log(`unsubscribeUserDataAll(${cause})`);
+    try {
+      this.userData.forEach((data) => data.unsubscribe());
+
+      if (this.store.authUser) {
+        await signOut(fb.auth);
+      }
+
+      return { err: undefined };
+    } catch (error) {
+      console.error(`unsubscribeUserDataAll: ${error}`);
+      return { err: "error" };
+    }
+  }
+
+  /**
+   * Set locale of firebase auth
+   *
+   * @returns {void}
+   */
+  setAuthLocale() {
+    this.auth.languageCode = this.store.locale;
+    console.log(`auth.languageCode: ${this.auth.languageCode}`);
+  }
+
+  /**
+   * Cast document snapshot to data
+   *
+   * @param {DocumentSnapshot} snap
+   * @returns {Object}
+   */
+  castDocSnapshot(snap) {
+    console.log(`${snap.id}: ${snap.exists ? "loaded" : "not found"}`);
+    return snap.exists ? { id: snap.id, ...snap.data() } : undefined;
+  }
+
+  /**
+   * Cast query snapshot to data
+   *
+   * @param {QuerySnapshot} snap
+   * @param {string} name
+   * @returns {Object}
+   */
+  castQuerySnapshot(snap, name) {
+    console.log(`${name}: ${snap.docs.length}`);
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  }
 }
 
-/**
- * Initialize firebase connections.
- *
- * @param {string} url
- * @return {void}
- */
-export const initFirebaseConnections = (url) => {
-  if (url.includes("localhost") || url.includes("127.0.0.1")) {
-    console.log("connect to emulator");
-    connectAuthEmulator(auth, "http://127.0.0.1:9099");
-    connectFirestoreEmulator(db, "127.0.0.1", 8080);
-    connectFunctionsEmulator(functions, "127.0.0.1", 5001);
-    connectStorageEmulator(storage, "127.0.0.1", 9199);
+export const fb = new FirebaseState(firebaseConfig);
+
+/** @typedef {import("firebase/firestore").DocumentReference|import("firebase/firestore").CollectionReference|import("firebase/firestore").Query} FirebaseQuery */
+/** @typedef {import("firebase/firestore").DocumentSnapshot|import("firebase/firestore").QuerySnapshot} FirestoreSnapshot */
+
+export class UserData {
+  /**
+   * @constructor
+   * @param {string} name
+   * @param {FirebaseQuery} query
+   * @param {Array|null} initialData
+   * @param {Function} setData
+   * @param {Function} onError
+   * @param {array} [require]
+   */
+  constructor(name, query, initialData, setData, onError, require = []) {
+    /** @type {string} */
+    this.name = name;
+    /** @type {FirebaseQuery} */
+    this.query = query;
+    /** @type {Array|null} */
+    this.initialData = initialData;
+    /** @type {import("firebase/firestore").Unsubscribe|null} */
+    this.unsub = null;
+    /** @type {Function} */
+    this.setData = setData;
+    /** @type {Function} */
+    this.onError = onError;
+    /** @type {array} */
+    this.require = require;
   }
-};
 
-/**
- * Set locale of firebase auth
- *
- * @param {string} locale
- */
-export const setAuthLocale = (locale) => {
-  auth.languageCode = locale;
-};
-
-/**
- * Handle deep links
- *
- * @param {string} url
- * @param {Location} location
- * @return {void}
- */
-export const handleDeepLinks = (url, location) => {
-  if (isSignInWithEmailLink(auth, url)) {
-    let email = loadEmail();
-    if (email) {
-      console.log(`signInWithEmailLink(${email})`);
-      signInWithEmailLink(auth, email, url)
-        .then(() => {
-          removeEmail();
-          if (url.includes("?")) {
-            location.replace(url.split("?")[0]);
-          }
-        })
-        .catch((e) => {
-          console.error(`signInWithEmailLink: ${e}`);
-        });
+  /**
+   * Subscribe and set data to the store
+   *
+   * @returns {void}
+   */
+  subscribe() {
+    if (!this.unsub) {
+      console.log(`Subscribe ${this.name}`);
+      this.unsub = onSnapshot(
+        this.query,
+        (snap) => {
+          this.setData(snap);
+        },
+        (error) => {
+          this.onError(error);
+        },
+      );
     }
   }
-};
 
-/**
- * Subscribe conf
- *
- * @param {object} store
- * @return {void}
- */
-export const subscribeConf = (store) => {
-  console.log("init conf");
-  onSnapshot(doc(db, "service", "conf"), (doc) => {
-    store.conf = { id: doc.id, ...doc.data() };
-    console.log(`conf: ${store.conf === undefined ? "undefined" : "loaded"}`);
-  });
-};
-
-/**
- * Subscribe auth state
- *
- * @param {object} store
- * @return {void }
- */
-export const subscribeAuthState = (store) => {
-  console.log("init auth");
-  auth.onAuthStateChanged((user) => {
-    store.authUser = user;
-    console.log(`authUser: ${store.authUser?.uid ?? store.authUser}`);
-  });
-};
-
-/** @type {import("firebase/firestore").Unsubscribe|null} */
-let usersUnsub = null;
-
-/** @type {import("firebase/firestore").Unsubscribe|null} */
-let groupsUnsub = null;
-
-/** @type {import("firebase/firestore").Unsubscribe|null} */
-let postsUnsub = null;
-
-/** @type {import("firebase/firestore").Unsubscribe|null} */
-let templatesUnsub = null;
-
-/** @type {import("firebase/firestore").Unsubscribe|null} */
-let authUnsub = null;
-
-/**
- * Unsubscribe user data
- *
- * @param {object} store
- * @return {Promise<object>}
- */
-export const unsubscribeUserData = async (store) => {
-  console.log("unsubscribeUserData(store)");
-  try {
-    if (usersUnsub) {
-      usersUnsub();
-      usersUnsub = null;
-      store.users = [];
+  /**
+   * Unsubscribe and clear data to the store
+   *
+   * @returns {void}
+   */
+  unsubscribe() {
+    if (this.unsub) {
+      console.log(`Unsubscribe ${this.name}`);
+      this.unsub();
+      this.unsub = null;
+      this.setData(this.initialData);
     }
-
-    if (groupsUnsub) {
-      groupsUnsub();
-      groupsUnsub = null;
-      store.groups = [];
-    }
-
-    if (postsUnsub) {
-      postsUnsub();
-      postsUnsub = null;
-      store.posts = [];
-    }
-
-    if (templatesUnsub) {
-      templatesUnsub();
-      templatesUnsub = null;
-      store.templates = [];
-    }
-
-    if (authUnsub) {
-      authUnsub();
-      authUnsub = null;
-      store.auth = undefined;
-    }
-
-    if (store.authUser) {
-      await signOut(auth);
-    }
-
-    return { err: undefined };
-  } catch (error) {
-    console.error(`unsubscribeUserData: ${error}`);
-    return { err: "error" };
   }
-};
-
-/**
- * Subscribe user's data
- *
- * @param {object} store
- * @return {void}
- */
-export const subscribeUserData = (store) => {
-  console.log("subscribeUserData(store)");
-
-  if (!usersUnsub) {
-    usersUnsub = onSnapshot(
-      collection(db, "users"),
-      (snap) => {
-        store.users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        console.log(`users: ${store.users.length}`);
-      },
-      (error) => {
-        console.error(`onSnapshot users: ${error}`);
-        unsubscribeUserData(store);
-      },
-    );
-  }
-
-  if (!groupsUnsub) {
-    groupsUnsub = onSnapshot(
-      collection(db, "groups"),
-      (snap) => {
-        store.groups = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        console.log(`groups: ${store.groups.length}`);
-      },
-      (error) => {
-        console.error(`onSnapshot groups: ${error}`);
-        unsubscribeUserData(store);
-      },
-    );
-  }
-
-  if (!postsUnsub) {
-    postsUnsub = onSnapshot(
-      query(
-        collection(db, "posts"),
-        orderBy("scheduledFor", "desc"),
-        limit(1000),
-      ),
-      (snap) => {
-        store.posts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        console.log(`posts: ${store.posts.length}`);
-      },
-      (error) => {
-        console.error(`onSnapshot posts: ${error}`);
-        unsubscribeUserData(store);
-      },
-    );
-  }
-
-  if (!templatesUnsub) {
-    templatesUnsub = onSnapshot(
-      query(collection(db, "templates"), orderBy("name", "asc")),
-      (snap) => {
-        store.templates = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        console.log(`templates: ${store.templates.length}`);
-      },
-      (error) => {
-        console.error(`onSnapshot templates: ${error}`);
-        unsubscribeUserData(store);
-      },
-    );
-  }
-
-  if (!authUnsub) {
-    authUnsub = onSnapshot(
-      doc(db, "service", "auth"),
-      (doc) => {
-        store.auth = { id: doc.id, ...doc.data() };
-        console.log(
-          `auth: ${store.auth === undefined ? "undefined" : "loaded"}`,
-        );
-      },
-      (error) => {
-        console.error(`onSnapshot auth: ${error}`);
-        unsubscribeUserData(store);
-      },
-    );
-  }
-};
+}
 
 /**
  * Update document
  *
  * @param {string} col
  * @param {string} id
- * @param {object} data
- * @return {Promise<object>}
+ * @param {Object} data
+ * @returns {Promise<Object>}
  */
 export const updateDocument = async (col, id, data) => {
   try {
-    await updateDoc(doc(db, col, id), {
+    await updateDoc(doc(fb.db, col, id), {
       ...data,
       updatedAt: new Date(),
     });
@@ -359,27 +426,26 @@ export const updateDocument = async (col, id, data) => {
  * Create document
  *
  * @param {string} col
- * @param {object} data
+ * @param {Object} data
  * @param {boolean} [setId]
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const createDocument = async (col, data, setId = false) => {
-  const generateId = () =>
-    new Date()
-      .toISOString()
-      .replace(/[^0-9]/g, "")
-      .slice(2) + nanoid(6);
   try {
     let ret = {};
     if (setId) {
-      ret.id = generateId();
-      await setDoc(doc(db, col, ret.id), {
+      ret.id =
+        new Date()
+          .toISOString()
+          .replace(/[^0-9]/g, "")
+          .slice(2) + nanoid(6);
+      await setDoc(doc(fb.db, col, ret.id), {
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
     } else {
-      ret = await addDoc(collection(db, col), {
+      ret = await addDoc(collection(fb.db, col), {
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -400,7 +466,7 @@ export const createDocument = async (col, data, setId = false) => {
  * @returns
  */
 export const getSavedImageUrl = async (id, name) =>
-  getDownloadURL(ref(storage, `${imageBasePath}/${id}/${name}`));
+  getDownloadURL(ref(fb.storage, `${imageBasePath}/${id}/${name}`));
 
 /**
  * Save image to storage
@@ -411,47 +477,16 @@ export const getSavedImageUrl = async (id, name) =>
  */
 export const savePostImage = async (id, file, document) => {
   console.log(`savePostImage: ${file.name} ${file.size}`);
-  const ext = file.name.split(".").pop();
-  const mimeType = mimeTypeList["." + ext] ?? "application/octet-stream";
-  const metadata = { contentType: mimeType };
-  const imageRef = ref(storage, `${imageBasePath}/${id}/1.${ext}`);
+
+  const ext = getFileExtension(file.name);
+  const mimeType = getMimeTypeFromExtension(ext);
+  const maxSize = 1000 * 1000;
+  const blog = await reduceImageSize(document, file, mimeType, maxSize, 0.8);
 
   try {
-    if (file.size > 1000 * 1000) {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const { width, height } =
-            img.width > img.height
-              ? {
-                  width: 1024,
-                  height: Math.floor(img.height * (1024 / img.width)),
-                }
-              : {
-                  width: Math.floor(img.width * (1024 / img.height)),
-                  height: 1024,
-                };
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-          console.log(`saveImage: ${width}x${height} ${imageRef.fullPath}`);
-          ctx.canvas.toBlob(
-            (blob) => uploadBytes(imageRef, blob, metadata),
-            mimeType,
-            0.8,
-          );
-        };
-      };
-    } else {
-      console.log(`saveImage: ${imageRef.fullPath}`);
-      await uploadBytes(imageRef, file, metadata);
-    }
-
+    const metadata = { contentType: mimeType };
+    const imageRef = ref(fb.storage, `${imageBasePath}/${id}/1.${ext}`);
+    await uploadBytes(imageRef, blog, metadata);
     return { err: undefined };
   } catch (e) {
     console.error(`saveImage: ${e}`);
@@ -464,12 +499,12 @@ export const savePostImage = async (id, file, document) => {
  *
  * @param {string} email
  * @param {string} url
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const loginWithEmailLink = async (email, url) => {
   try {
-    await sendSignInLinkToEmail(auth, email, { url, handleCodeInApp: true });
-    saveEmail(email);
+    await sendSignInLinkToEmail(fb.auth, email, { url, handleCodeInApp: true });
+    localstorage.email.save(email);
 
     return { err: undefined };
   } catch (error) {
@@ -490,11 +525,11 @@ export const loginWithEmailLink = async (email, url) => {
  *
  * @param {string} email
  * @param {string} password
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const loginWithPassword = async (email, password) => {
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(fb.auth, email, password);
 
     return { err: undefined };
   } catch (error) {
@@ -514,13 +549,13 @@ export const loginWithPassword = async (email, password) => {
 /**
  * Logout
  *
- * @param {object} store
+ * @param {Object} store
  * @param {function|null} next
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const logout = async (store, next = null) => {
   try {
-    await unsubscribeUserData(store);
+    await fb.unsubscribeUserDataAll("logout");
 
     if (next) {
       await next();
@@ -537,11 +572,11 @@ export const logout = async (store, next = null) => {
  * Send password reset link
  *
  * @param {string|undefined} email
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const sendPasswordResetLink = async (email) => {
   try {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(fb.auth, email);
 
     return { err: undefined };
   } catch (error) {
@@ -560,16 +595,16 @@ export const sendPasswordResetLink = async (email) => {
 /**
  * Change email address
  *
- * @param {object} store
+ * @param {Object} store
  * @param {string} currentPassword
  * @param {string} email
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const changeEmail = async (store, currentPassword, email) => {
   try {
     await store.authUser.reload();
     await signInWithEmailAndPassword(
-      auth,
+      fb.auth,
       store.authUser.email,
       currentPassword,
     );
@@ -586,16 +621,16 @@ export const changeEmail = async (store, currentPassword, email) => {
 /**
  * Change password
  *
- * @param {object} store
+ * @param {Object} store
  * @param {string} currentPassword
  * @param {string} newPassword
- * @return {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const changePassword = async (store, currentPassword, newPassword) => {
   try {
     await store.authUser.reload();
     await signInWithEmailAndPassword(
-      auth,
+      fb.auth,
       store.authUser.email,
       currentPassword,
     );
@@ -610,53 +645,10 @@ export const changePassword = async (store, currentPassword, newPassword) => {
 };
 
 /**
- * Check if the user name is unique
- *
- * @param {object} store
- * @param {string} name
- * @param {string} [id]
- * @return {boolean}
- */
-export const isUniqueUserName = (store, name, id = null) =>
-  store.users.find(
-    (user) => user.id !== id && user.name === (name ?? "").trim(),
-  ) === undefined;
-
-/**
- * Check if the group name is unique
- *
- * @param {object} store
- * @param {string} name
- * @param {string} [id]
- * @return {boolean}
- */
-export const isUniqueGroupName = (store, name, id = null) =>
-  store.groups.find(
-    (group) => group.id !== id && group.name === (name ?? "").trim(),
-  ) === undefined;
-
-/**
- * Call function
- * @param {string} name
- * @param {object} param
- * @return {Promise<object>}
- */
-export const callFunction = async (name, param) => {
-  try {
-    const f = httpsCallable(functions, name);
-    const { data } = await f(param);
-    return data;
-  } catch (e) {
-    console.error(`${name}: ${e}`);
-    return { err: "error", data: undefined };
-  }
-};
-
-/**
  * Social login
  *
  * @param {string} id
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const socialLogin = async (id) => {
   try {
@@ -671,7 +663,7 @@ export const socialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await signInWithPopup(auth, provider);
+    await signInWithPopup(fb.auth, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -683,7 +675,7 @@ export const socialLogin = async (id) => {
  * Register social login
  *
  * @param {string} id
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export const registerSocialLogin = async (id) => {
   try {
@@ -695,7 +687,7 @@ export const registerSocialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await linkWithPopup(auth.currentUser, provider);
+    await linkWithPopup(fb.auth.currentUser, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -704,14 +696,18 @@ export const registerSocialLogin = async (id) => {
 };
 
 /**
- * Groups which user belong to
- *
- * @param {object} store
- * @param {string} uid
- * @return {array}
+ * Call function
+ * @param {string} name
+ * @param {Object} param
+ * @returns {Promise<Object>}
  */
-export const groupsOfUser = (store, uid) =>
-  store.groups.filter(
-    (group) =>
-      (store.manager || !group.deletedAt) && (group.users ?? []).includes(uid),
-  );
+export const callFunction = async (name, param) => {
+  try {
+    const f = httpsCallable(fb.functions, name);
+    const { data } = await f(param);
+    return data;
+  } catch (e) {
+    console.error(`${name}: ${e}`);
+    return { err: "error", data: undefined };
+  }
+};

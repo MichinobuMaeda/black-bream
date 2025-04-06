@@ -7,8 +7,8 @@
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
-  import { isUniqueGroupName, updateDocument } from "../../lib/firebase.js";
+  import { t, store, isUniqueGroupName } from "../../lib/store.svelte.js";
+  import { updateDocument } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -28,7 +28,7 @@
   let errorDisplayName = $derived(
     !name
       ? t().required()
-      : !isUniqueGroupName(store, name, group.id)
+      : !isUniqueGroupName(name, group.id)
         ? t().nameInUse()
         : "",
   );

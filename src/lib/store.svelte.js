@@ -1,10 +1,14 @@
 /* global $state, $derived */
-import { I18n } from "./i18n.js";
+import { I18n, DaysOfWeek } from "../i18n.js";
+import { localstorage } from "./localstorage.js";
 
-let locale = $state("ja");
+let locale = $state(localstorage.locale.load());
+
 let i18n = $derived(new I18n(locale));
-
 export const t = () => i18n;
+
+let daysOfWeek = $derived(new DaysOfWeek(locale));
+export const dow = () => daysOfWeek;
 
 let authUser = $state(undefined);
 let conf = $state(undefined);
@@ -13,10 +17,18 @@ let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
 let templates = $state([]);
-let user = $state(undefined);
-let admin = $state(false);
-let manager = $state(false);
-let operator = $state(false);
+
+let me = $derived(
+  authUser && users.length && groups.length
+    ? users.find(
+        (user) =>
+          user.id === authUser.uid && !user.restrictedAt && !user.deletedAt,
+      )
+    : undefined,
+);
+let admin = $derived(isMemberOf(me?.id, "admins"));
+let manager = $derived(isMemberOf(me?.id, "managers"));
+let operator = $derived(isMemberOf(me?.id, "operators"));
 
 export const store = {
   get locale() {
@@ -67,28 +79,74 @@ export const store = {
   set templates(value) {
     templates = value;
   },
-  get user() {
-    return user;
-  },
-  set user(value) {
-    user = value;
+  get me() {
+    return me;
   },
   get admin() {
     return admin;
   },
-  set admin(value) {
-    admin = value;
-  },
   get manager() {
     return manager;
-  },
-  set manager(value) {
-    manager = value;
   },
   get operator() {
     return operator;
   },
-  set operator(value) {
-    operator = value;
-  },
 };
+
+/**
+ * Whether the given user is a member of the given group
+ *
+ * @param {string} userId
+ * @param {string} groupId
+ * @returns {boolean}
+ */
+export const isMemberOf = (userId, groupId) =>
+  !!store.groups.some(
+    (group) => group.id === groupId && group.users.includes(userId),
+  );
+
+/**
+ * Save the locale to local storage
+ */
+export const saveLocale = () => {
+  if (store.locale !== localstorage.locale.load()) {
+    console.log(`Save locale: ${store.locale} to local storage`);
+    localstorage.locale.save(store.locale);
+  }
+};
+
+/**
+ * Check if the user name is unique
+ *
+ * @param {string} name
+ * @param {string} [id]
+ * @returns {boolean}
+ */
+export const isUniqueUserName = (name, id = null) =>
+  store.users.find(
+    (user) => user.id !== id && user.name === (name ?? "").trim(),
+  ) === undefined;
+
+/**
+ * Check if the group name is unique
+ *
+ * @param {string} name
+ * @param {string} [id]
+ * @returns {boolean}
+ */
+export const isUniqueGroupName = (name, id = null) =>
+  store.groups.find(
+    (group) => group.id !== id && group.name === (name ?? "").trim(),
+  ) === undefined;
+
+/**
+ * Groups which user belong to
+ *
+ * @param {string} uid
+ * @returns {array}
+ */
+export const groupsOfUser = (uid) =>
+  store.groups.filter(
+    (group) =>
+      (manager || !group.deletedAt) && (group.users ?? []).includes(uid),
+  );

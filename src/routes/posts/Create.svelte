@@ -20,8 +20,10 @@
     postTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
-  import { formatISO, getNextPreDefinedSchedule } from "../../lib/datetime.js";
-
+  import {
+    formatDateTime,
+    getNextPreDefinedSchedule,
+  } from "../../lib/datetime.js";
   let active = $state(false);
 
   let templates = $state((store.templates ?? []).filter((t) => !t.deletedAt));
@@ -40,7 +42,7 @@
   let errorTargets = $derived(
     active ? "" : !checkedTargets.length ? t().required() : "",
   );
-  let schedule = $state(formatISO(new Date()));
+  let schedule = $state(formatDateTime(new Date()));
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
   let showPreDefinedSchedule = $derived(
     store.conf.preDefinedSchedules?.wd.length > 0 &&
@@ -57,7 +59,7 @@
   const onCancel = async () => {
     text = "";
     checkedTargets = [];
-    schedule = formatISO(new Date());
+    schedule = formatDateTime(new Date());
     pop();
   };
 
@@ -152,7 +154,7 @@
                   id="prevSchedule"
                   icon={SvgArrowBack}
                   onClick={() => {
-                    schedule = formatISO(
+                    schedule = formatDateTime(
                       getNextPreDefinedSchedule(
                         store.conf.preDefinedSchedules,
                         schedule,
@@ -165,7 +167,7 @@
                   id="prevSchedule"
                   icon={SvgArrowForward}
                   onClick={() => {
-                    schedule = formatISO(
+                    schedule = formatDateTime(
                       getNextPreDefinedSchedule(
                         store.conf.preDefinedSchedules,
                         schedule,

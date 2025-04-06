@@ -5,35 +5,35 @@
   import ActionFields from "../../lib/components/ActionFields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
-  import { updateDocument, isUniqueUserName } from "../../lib/firebase.js";
+  import { t, isUniqueUserName, store } from "../../lib/store.svelte.js";
+  import { updateDocument } from "../../lib/firebase.js";
 
   let active = $state(false);
 
   // Fields
-  let name = $state(store.user.name);
+  let name = $state(store.me?.name);
   let errorDisplayName = $derived(
     !name
       ? t().required()
-      : !isUniqueUserName(store, name, store.user.id)
+      : !isUniqueUserName(name, store.me?.id)
         ? t().nameInUse()
         : "",
   );
 
   // Actions
   let result = $state(null);
-  let changed = $derived(!active && name !== store.user.name);
+  let changed = $derived(!active && name !== store.me?.name);
   let valid = $derived(!errorDisplayName);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
-    name = store.user.name;
+    name = store.me?.name;
   };
 
   const onSave = async () => {
     active = true;
     name = name.trim();
-    result = await updateDocument("users", store.user.id, { name });
+    result = await updateDocument("users", store.me?.id, { name });
     active = false;
   };
 </script>
@@ -47,7 +47,7 @@
         label={t().displayName()}
         type="text"
         bind:value={name}
-        message={t().current(store.user.name)}
+        message={t().current(store.me?.name)}
         error={errorDisplayName}
       />
     </Fields>

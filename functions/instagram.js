@@ -4,8 +4,7 @@ const { getPublicMediaUrl, httpRequest } = require("./utils.js");
 
 class Instagram extends Provider {
   /**
-   * Instagram constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */

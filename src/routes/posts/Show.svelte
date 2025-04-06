@@ -18,7 +18,6 @@
 
   /** @type {Props} */
   let { item } = $props();
-
   let post = $derived(store.posts.find((post) => post.id === item));
   let savedImages = $derived(post.files ?? []);
   let savedImageUrl = $derived(

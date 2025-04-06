@@ -2,9 +2,9 @@
   import { link } from "svelte-spa-router";
   import TargetIcon from "./TargetIcon.svelte";
   import StatusIcon from "./StatusIcon.svelte";
-  import { formatDateTime } from "../datetime.js";
+  import { formatLongDateTime } from "../datetime.js";
   import { postTargets } from "../firebase.js";
-  import { store } from "../store.svelte.js";
+  import { store, dow } from "../store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -23,7 +23,7 @@
   <div class="flex flex-row gap-2">
     <a class="flex flex-row gap-1 font-mono" href="/posts/{post.id}" use:link>
       <span class="size-6"><StatusIcon status={post.status} /></span>
-      {formatDateTime(post.scheduledFor?.toDate())}
+      {formatLongDateTime(post.scheduledFor?.toDate(), dow())}
     </a>
     <span class="flex flex-row gap-1">
       {#each targets as target (target)}

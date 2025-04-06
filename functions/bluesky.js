@@ -13,8 +13,7 @@ const langs = ["ja"];
 
 class Bluesky extends Provider {
   /**
-   * Bluesky constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */
@@ -122,7 +121,7 @@ class Bluesky extends Provider {
    *
    * @param {BskyAgent} agent
    * @param {string} text
-   * @param {object} embed
+   * @param {Object} embed
    * @returns
    */
   async requestPost(agent, text, embed) {

@@ -9,7 +9,7 @@ const mediaSizeLimit = 1000 * 1000;
  * Generate a card object from a link
  *
  * @param {string} text
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const generateLinkCard = async (text) => {
   try {
@@ -20,9 +20,9 @@ const generateLinkCard = async (text) => {
 
     const data = {
       uri: link[0],
-      title: null,
-      description: null,
-      thumbUrl: null,
+      title: "",
+      description: "",
+      thumbUrl: "",
     };
 
     const html = await fetch(data.uri);
@@ -113,7 +113,7 @@ const mimeTypeList = {
  * Get MIME type from URL or headers
  *
  * @param {string} url
- * @param {object} [headers]
+ * @param {Object} [headers]
  * @returns {string}
  */
 const getMimeTypes = (url, headers = {}) =>

@@ -9,6 +9,7 @@ const ds = generateDynamicScheme(config, false);
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  resolve: process.env.VITEST ? { conditions: ["browser"] } : undefined,
   plugins: [
     svelte(),
     VitePWA({

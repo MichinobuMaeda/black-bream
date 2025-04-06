@@ -8,7 +8,7 @@ const { addAuthUser } = require("./account");
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const updateDataV1 = async (auth, db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
@@ -104,7 +104,7 @@ site.manager@example.com
  *
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 const updateDataV2 = async (db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;

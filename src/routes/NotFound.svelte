@@ -14,7 +14,7 @@
   <div class="flex flex-row gap-8 justify-center">
     {#if window.history.length > 2}
       <button
-        class="text-link flex flex-row text-light-link dark:text-dark-link gap-1"
+        class="flex flex-row link cursor-pointer gap-1"
         on:click={() => history.back()}
       >
         <span class="h-6"><SvgArrowBackIosNew /></span>

@@ -1,31 +1,35 @@
 /**
- * Format a date object to an ISO string with the browser timezone.
+ * Format a date object to YYYY-MM-DD HH:mm string of the browser timezone.
  *
  * @param {Date} date
  * @returns {string}
  */
-export const formatISO = (date) =>
+export const formatDateTime = (date) =>
   date instanceof Date
     ? new Date(
         date.setHours(date.getHours() - new Date().getTimezoneOffset() / 60),
       )
         .toISOString()
         .substring(0, 16)
+        .replace("T", " ")
     : null;
 
 /**
- * Format a date object with the browser timezone.
+ * Format a date object to YYYY-MM-DD(dow)HH:mm string of the browser timezone.
  *
  * @param {Date} date
- * @returns {string}
+ * @param {import("../i18n").DaysOfWeek} daysOfWeek
+ * @returns
  */
-export const formatDateTime = (date) =>
-  date instanceof Date ? formatISO(date).replace("T", " ") : null;
+export const formatLongDateTime = (date, daysOfWeek) =>
+  date instanceof Date
+    ? formatDateTime(date).replace(" ", `(${daysOfWeek.short(date.getDay())})`)
+    : null;
 
 /**
  * Get the next schedule from the predefined schedules.
  *
- * @param {object} preDefined
+ * @param {Object} preDefined
  * @param {string} base
  * @param {number} [delta] 1 or -1
  */

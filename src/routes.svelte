@@ -14,7 +14,7 @@
   import { store } from "./lib/store.svelte.js";
 </script>
 
-{#if store.user}
+{#if store.me}
   {#if store.admin || store.manager}
     <Router
       routes={{

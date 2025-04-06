@@ -2,7 +2,7 @@ const contrast = { standard: 0, medium: 0.3, high: 0.9 };
 
 export default {
   appName: "Test bream",
-  seedColor: "#88DDAA",
+  seedColor: "#008888",
   contrastLevel: contrast.standard,
   link: { light: "--color-blue-700", dark: "--color-blue-300" },
   form: {

@@ -5,8 +5,7 @@
   import SvgGroup from "../../lib/icons/SvgGroup.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import Content from "../../lib/components/Content.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
-  import { groupsOfUser } from "../../lib/firebase.js";
+  import { t, store, groupsOfUser } from "../../lib/store.svelte.js";
 
   /**
    * @typedef {Object} Props
@@ -17,7 +16,7 @@
   let { item } = $props();
 
   let user = $derived(store.users.find((user) => user.id === item));
-  let groups = $derived(groupsOfUser(store, user.id));
+  let groups = $derived(groupsOfUser(user.id));
 </script>
 
 <h3>

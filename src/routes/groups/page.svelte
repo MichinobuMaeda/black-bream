@@ -8,7 +8,7 @@
 
   /**
    * @typedef {Object} Props
-   * @param {object} params
+   * @param {Object} params
    */
 
   /** @type {Props} */

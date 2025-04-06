@@ -12,7 +12,7 @@ import config from "./theme.js";
 /**
  * Generate a dynamic color scheme based on a seed color
  *
- * @param {object} config
+ * @param {Object} config
  * @param {boolean} isDark
  * @returns {DynamicScheme}
  */
@@ -47,7 +47,7 @@ const toKebabuCase = (str) =>
 /**
  * Generate a color scheme based on a seed color
  *
- * @param {object} config
+ * @param {Object} config
  * @returns {Promise<void>}
  */
 const generateThemeCss = async (config) => {

@@ -6,8 +6,8 @@
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
-  import { createDocument, isUniqueGroupName } from "../../lib/firebase.js";
+  import { t, store, isUniqueGroupName } from "../../lib/store.svelte.js";
+  import { createDocument } from "../../lib/firebase.js";
 
   let active = $state(false);
 
@@ -18,7 +18,7 @@
       ? ""
       : !name
         ? t().required()
-        : !isUniqueGroupName(store, name)
+        : !isUniqueGroupName(name)
           ? t().nameInUse()
           : "",
   );

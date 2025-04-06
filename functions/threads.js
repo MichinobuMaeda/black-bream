@@ -4,8 +4,7 @@ const { Provider } = require("./provider.js");
 
 class Threads extends Provider {
   /**
-   * Threads constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */

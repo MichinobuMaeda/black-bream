@@ -25,28 +25,27 @@ const providers = [
  */
 class Post {
   /**
-   * Constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    * @param {FirebaseFirestore.QueryDocumentSnapshot|{id:string, target:string}} data
    */
   constructor(db, bucket, data) {
-    /** @type FirebaseFirestore.Firestore */
+    /** @type {FirebaseFirestore.Firestore} */
     this.db = db;
-    /** @type import("@google-cloud/storage").Bucket */
+    /** @type {import("@google-cloud/storage").Bucket} */
     this.bucket = bucket;
     const { id, ref } = data;
-    /** @type FirebaseFirestore.DocumentReference */
+    /** @type {FirebaseFirestore.DocumentReference} */
     this.ref = ref || db.collection("posts").doc(id);
-    /** @type object */
+    /** @type {Object} */
     this.data = data.data instanceof Function ? { id, ...data.data() } : data;
   }
 
   /**
    * Create posts
    *
-   * @param {object} queue
+   * @param {Object} queue
    * @returns {Promise<{err: undefined|string, data: string|undefined}>}
    */
   async createPosts(queue) {
@@ -108,7 +107,7 @@ class Post {
   /**
    * Delete posts
    *
-   * @param {object} queue
+   * @param {Object} queue
    * @returns {Promise<err: undefined|string, data: string|undefined>}
    */
   async deletePosts(queue) {

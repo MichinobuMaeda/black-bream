@@ -13,10 +13,7 @@
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
-  import {
-    saveTwitterState,
-    saveTwitterChallenge,
-  } from "../../lib/localstorage";
+  import { localstorage } from "../../lib/localstorage";
 
   let edit = $state(false);
   let active = $state(false);
@@ -103,9 +100,9 @@
 
   const getTwitterAccessToken = () => {
     const state = nanoid(16);
-    saveTwitterState(state);
+    localstorage.twitter.state.save(state);
     const challenge = nanoid(32);
-    saveTwitterChallenge(challenge);
+    localstorage.twitter.challenge.save(challenge);
     const scope = [
       "tweet.read",
       "tweet.write",

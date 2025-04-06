@@ -6,9 +6,7 @@
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
   import SvgInfo from "../lib/icons/SvgInfo.svelte";
-  import { setAuthLocale } from "../lib/firebase";
-  import { locales } from "../lib/i18n.js";
-  import { saveLocale } from "../lib/localstorage";
+  import { locales } from "../i18n.js";
   import { store } from "../lib/store.svelte.js";
 </script>
 
@@ -19,14 +17,12 @@
     {label}
     onClick={() => {
       store.locale = value;
-      saveLocale(value);
-      setAuthLocale(value);
     }}
     disabled={store.locale === value}
   />
 {/snippet}
 
-{#snippet navItem(/** @type {object} */ Icon, /** @type {string} */ path)}
+{#snippet navItem(/** @type {Object} */ Icon, /** @type {string} */ path)}
   <IconButton
     id={`nav-${path}`}
     icon={Icon}
@@ -45,7 +41,7 @@
       {@render localeItem(locale.value, locale.label)}
     {/each}
   </div>
-  {#if store.user}
+  {#if store.me}
     {#if store.admin || store.manager}
       {@render navItem(SvgSettings, "/settings")}
     {/if}

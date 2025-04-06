@@ -7,15 +7,13 @@
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
+  import { t, store, isUniqueUserName } from "../../lib/store.svelte.js";
   import {
     createDocument,
     updateDocument,
     callFunction,
-    isUniqueUserName,
   } from "../../lib/firebase.js";
   import { validateEmail } from "../../lib/validator";
-
   let active = $state(false);
 
   // Fields
@@ -32,7 +30,7 @@
       ? ""
       : !name
         ? t().required()
-        : !isUniqueUserName(store, name)
+        : !isUniqueUserName(name)
           ? t().nameInUse()
           : "",
   );

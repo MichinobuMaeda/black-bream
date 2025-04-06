@@ -2,8 +2,7 @@ const { getDoc, updateDoc } = require("./utils.js");
 
 class Provider {
   /**
-   * Provider constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */
@@ -55,7 +54,7 @@ class Provider {
   /**
    * Update the params of the provider
    *
-   * @param {object} data
+   * @param {Object} data
    * @returns
    */
   async updateParams(data) {
@@ -79,7 +78,7 @@ class Provider {
   /**
    * post
    *
-   * @param {object} params
+   * @param {Object} params
    * @param {string} id
    * @param {{ text:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|string}>}
@@ -101,7 +100,7 @@ class Provider {
   /**
    * Set access token
    *
-   * @param {object} data
+   * @param {Object} data
    * @returns {Promise<{err: undefined|string}>}
    */
   // eslint-disable-next-line no-unused-vars

@@ -5,8 +5,7 @@ const { Provider } = require("./provider.js");
 
 class Mastodon extends Provider {
   /**
-   * Mastodon constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */

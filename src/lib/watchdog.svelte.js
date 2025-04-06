@@ -1,13 +1,12 @@
 /* global $state */
 import { store } from "./store.svelte.js";
 import { logout } from "./firebase.js";
-
-const localKeyWatchdogTimeout = "black_bream_watchdog_timeout";
+import { localstorage } from "./localstorage.js";
 
 let watchdogTimeout = $state(0);
 let timeoutId = null;
 
-watchdogTimeout = Number(localStorage.getItem(localKeyWatchdogTimeout)) || 0;
+watchdogTimeout = localstorage.watchdogTimeout.load();
 console.log("watchdogThresholdMinute", watchdogTimeout);
 
 const startWatchDog = () => {
@@ -41,7 +40,6 @@ export const getWatchdogTimeout = () => watchdogTimeout;
  * Gets the watchdog threshold in minutes.
  */
 export const setWatchdogTimeout = (value) => {
-  watchdogTimeout = Number(value);
-  localStorage.setItem(localKeyWatchdogTimeout, watchdogTimeout.toString());
+  localstorage.watchdogTimeout.save(value);
   stopWatchdog();
 };

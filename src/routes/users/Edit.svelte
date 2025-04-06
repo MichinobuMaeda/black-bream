@@ -9,13 +9,13 @@
   import ErrorMessage from "../../lib/components/ErrorMessage.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
   import {
+    t,
+    store,
     isUniqueUserName,
-    updateDocument,
-    callFunction,
     groupsOfUser,
-  } from "../../lib/firebase.js";
+  } from "../../lib/store.svelte.js";
+  import { updateDocument, callFunction } from "../../lib/firebase.js";
   import { validateEmail } from "../../lib/validator";
 
   /**
@@ -41,7 +41,7 @@
   let validateDisplayName = $derived(
     !name
       ? t().required()
-      : !isUniqueUserName(store, name, user.id)
+      : !isUniqueUserName(name, user.id)
         ? t().nameInUse()
         : "",
   );
@@ -62,10 +62,8 @@
     value: group.id,
     label: group.name,
   }));
-  let currentGroups = $derived(
-    groupsOfUser(store, user.id).map((group) => group.id),
-  );
-  let groups = $state(groupsOfUser(store, user.id).map((group) => group.id));
+  let currentGroups = $derived(groupsOfUser(user.id).map((group) => group.id));
+  let groups = $state(groupsOfUser(user.id).map((group) => group.id));
   let isSelectedGroupsChanged = $derived(
     groups.length !== currentGroups.length ||
       !groups.every((id) => currentGroups.includes(id)),
@@ -175,7 +173,7 @@
         message={t().current(user.name)}
         error={validateDisplayName}
       />
-      {#if store.user.id !== user.id}
+      {#if store.me?.id !== user.id}
         <div class="flex flex-wrap gap-6">
           <div class="flex flex-row gap-2 items-center">
             <Switch id="restricted" bind:checked={restricted} />

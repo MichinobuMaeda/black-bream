@@ -6,7 +6,6 @@
   import SvgPerson from "../../lib/icons/SvgPerson.svelte";
   import SvgBlock from "../../lib/icons/SvgBlock.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-
   let users = $derived(
     store.users.filter((user) => store.manager || !user.deletedAt),
   );

@@ -4,8 +4,7 @@ const { Provider } = require("./provider.js");
 
 class Twitter extends Provider {
   /**
-   * Twitter constructor
-   *
+   * @constructor
    * @param {FirebaseFirestore.Firestore} db
    * @param {import("@google-cloud/storage").Bucket} bucket
    */

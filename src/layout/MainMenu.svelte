@@ -17,7 +17,7 @@
 </script>
 
 {#snippet navItem(
-  /** @type {object} */ Icon,
+  /** @type {Object} */ Icon,
   /** @type {string} */ label,
   /** @type {string} */ path,
 )}
@@ -25,14 +25,14 @@
     class={"hidden xl:flex flex-row text-lg h-10 px-4 w-[224px] gap-2" +
       " justify-start items-center rounded-full" +
       linkColor($location, path)}
-    on:click={() => push(path)}
+    onclick={() => push(path)}
   >
     <span class="flex size-6"><Icon /></span>
     {label}
   </button>
   <button
     class="xl:hidden flex flex-col items-center"
-    on:click={() => push(path)}
+    onclick={() => push(path)}
   >
     <div
       class={"flex h-8 w-14 justify-center items-center rounded-full" +
@@ -54,21 +54,21 @@
 >
   <div class="flex flex-auto sm:grow-0 gap-2 xl:items-start items-center">
     {#if $location === "/"}
-      <button on:click={() => pop()}
+      <button onclick={() => pop()}
         ><img src="/favicon.svg" alt={t().appTitle()} class="size-10" /></button
       >
     {:else if history.length > 2}
-      <button class="size-10 p-1.5" on:click={() => pop()}
+      <button class="size-10 p-1.5" onclick={() => pop()}
         ><SvgArrowBackIosNew /></button
       >
     {:else}
-      <button class="size-10 p-1.5" on:click={() => replace("/")}
+      <button class="size-10 p-1.5" onclick={() => replace("/")}
         ><SvgArrowBackIosNew /></button
       >
     {/if}
     <span class="hidden xl:flex p-1 text-xl">{t().appTitle()}</span>
   </div>
-  {#if store.user}
+  {#if store.me}
     {@render navItem(SvgHome, t().home(), "/")}
     {#if store.operator}
       {@render navItem(SvgTask, t().posts(), "/posts")}
