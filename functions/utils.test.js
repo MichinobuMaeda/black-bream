@@ -568,7 +568,7 @@ describe("getPublicMediaUrl", () => {
     const ret = getPublicMediaUrl(id, file);
 
     // Verify
-    expect(ret).toEqual(`https://example.com/public/posts/${id}/${file}`);
+    expect(ret).toEqual(`https://example.com/media/posts/${id}/${file}`);
   });
 });
 
