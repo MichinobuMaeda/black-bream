@@ -32,7 +32,7 @@ const db = getFirestore(app);
 const bucket = getStorage(app).bucket();
 
 // https://<region>-<project-id>.cloudfunctions.net/public
-exports.public = onRequest({ region, cors: true }, async (req, res) => {
+exports.media = onRequest({ region, cors: true }, async (req, res) => {
   if (req.method === "GET") {
     if (req.path.startsWith("/posts/")) {
       try {

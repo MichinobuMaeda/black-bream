@@ -246,7 +246,7 @@ const httpRequest = async (url, options) =>
  * @returns {string}
  */
 const getPublicMediaUrl = (id, file) =>
-  `${process.env.PUBLIC_POST_MEDIA_URL}/public/posts/${id}/${file}`;
+  `${process.env.PUBLIC_POST_MEDIA_URL}/media/posts/${id}/${file}`;
 
 /**
  * Sleep
