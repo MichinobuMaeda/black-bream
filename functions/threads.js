@@ -104,13 +104,13 @@ export class Threads extends Provider {
 
     if (
       expiredAt.toDate().getTime() >
-      new Date().getTime() + 1000 * 60 * 60 * 24 * 10
+      new Date().getTime() + 1000 * 60 * 60 * 24 * 2
     ) {
       return { err: undefined };
     }
 
     const resp = await httpRequest(
-      "https://https://graph.threads.net/refresh_access_token" +
+      "https://graph.threads.net/refresh_access_token" + // Fixed the URL by removing the duplicate "https://"
         "?grant_type=th_refresh_token" +
         `&access_token=${accessToken}`,
     );
