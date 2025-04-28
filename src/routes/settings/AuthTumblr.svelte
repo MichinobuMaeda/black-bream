@@ -1,5 +1,6 @@
 <script>
   import { nanoid } from "nanoid";
+  import { serverTimestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -55,7 +56,7 @@
   let tumblrAccessTokenIsValid = $derived(
     tumblrAccessToken &&
       tumblrExpiredAt &&
-      tumblrExpiredAt.toDate() > new Date(),
+      tumblrExpiredAt.toDate().getTime() > new Date().getTime(),
   );
 
   let tumblrAccessTokenReady = $derived(
@@ -98,8 +99,8 @@
         clientId: tumblrClientId,
         clientSecret: tumblrClientSecret,
         blogId: tumblrBlogId,
-        updatedAt: new Date(),
-        deletedAt: tumblrEnabled ? null : new Date(),
+        updatedAt: serverTimestamp(),
+        deletedAt: tumblrEnabled ? null : serverTimestamp(),
       },
     });
     active = false;

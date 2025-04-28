@@ -1,5 +1,6 @@
 <script>
   import { nanoid } from "nanoid";
+  import { serverTimestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -50,7 +51,7 @@
   let twitterAccessTokenIsValid = $derived(
     twitterAccessToken &&
       twitterExpiredAt &&
-      twitterExpiredAt.toDate() > new Date(),
+      twitterExpiredAt.toDate().getTime() > new Date().getTime(),
   );
 
   let twitterAccessTokenReady = $derived(
@@ -91,8 +92,8 @@
         callBackUrl: twitterCallBackUrl,
         clientId: twitterClientId,
         clientSecret: twitterClientSecret,
-        updatedAt: new Date(),
-        deletedAt: twitterEnabled ? null : new Date(),
+        updatedAt: serverTimestamp(),
+        deletedAt: twitterEnabled ? null : serverTimestamp(),
       },
     });
     active = false;

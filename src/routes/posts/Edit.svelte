@@ -1,5 +1,6 @@
 <script>
   import { pop, push } from "svelte-spa-router";
+  import { serverTimestamp, Timestamp } from "firebase/firestore";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
@@ -14,7 +15,7 @@
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
+  import { t, store, dt } from "../../lib/store.svelte.js";
   import {
     createDocument,
     updateDocument,
@@ -23,10 +24,6 @@
     postTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
-  import {
-    formatDateTime,
-    getNextPreDefinedSchedule,
-  } from "../../lib/datetime.js";
 
   /**
    * @typedef {Object} Props
@@ -71,7 +68,7 @@
       text = post.text;
       checkedTargets = Object.keys(post.targets ?? {});
       savedImages = post.files ?? [];
-      schedule = formatDateTime(post.scheduledFor?.toDate());
+      schedule = dt(post.scheduledFor).formatDateTime();
       deleted = !!post.deletedAt;
     }
 
@@ -105,7 +102,7 @@
     text = post?.text;
     checkedTargets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
-    schedule = formatDateTime(post?.scheduledFor?.toDate());
+    schedule = dt(post?.scheduledFor).formatDateTime();
     if (next) {
       await push(`/posts/${next}`);
     } else {
@@ -130,11 +127,11 @@
       .reduce(
         (acc, cur) => ({
           ...acc,
-          [cur]: { status, createdAt: new Date() },
+          [cur]: { status, createdAt: serverTimestamp() },
         }),
         {},
       );
-    const scheduledFor = new Date(schedule);
+    const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
 
     const data = { text, files, targets, scheduledFor };
 
@@ -146,7 +143,7 @@
       !deleted &&
       new Date(schedule).getTime() !== post?.scheduledFor?.toDate().getTime()
     ) {
-      await updateDocument("posts", post?.id, { deletedAt: new Date() });
+      await updateDocument("posts", post?.id, { deletedAt: serverTimestamp() });
       data.status = "requested";
       result = await createDocument("posts", data, true);
       next = result.data?.id;
@@ -188,26 +185,14 @@
                 id="prevSchedule"
                 icon={SvgArrowBack}
                 onClick={() => {
-                  schedule = formatDateTime(
-                    getNextPreDefinedSchedule(
-                      store.conf.preDefinedSchedules,
-                      schedule,
-                      -1,
-                    ),
-                  );
+                  schedule = dt(schedule).getPrevSchedule().formatDateTime();
                 }}
               />
               <IconButton
                 id="prevSchedule"
                 icon={SvgArrowForward}
                 onClick={() => {
-                  schedule = formatDateTime(
-                    getNextPreDefinedSchedule(
-                      store.conf.preDefinedSchedules,
-                      schedule,
-                      1,
-                    ),
-                  );
+                  schedule = dt(schedule).getNextSchedule().formatDateTime();
                 }}
               />
             {/if}

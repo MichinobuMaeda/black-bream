@@ -1,6 +1,7 @@
 /* global $state, $derived */
 import { I18n, DaysOfWeek } from "../i18n.js";
 import { localstorage } from "./localstorage.js";
+import { LocalizedDateTime } from "./datetime.js";
 
 let locale = $state(localstorage.locale.load());
 
@@ -17,6 +18,7 @@ let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
 let templates = $state([]);
+let logs = $state([]);
 
 let me = $derived(
   authUser && users.length && groups.length
@@ -29,6 +31,15 @@ let me = $derived(
 let admin = $derived(isMemberOf(me?.id, "admins"));
 let manager = $derived(isMemberOf(me?.id, "managers"));
 let operator = $derived(isMemberOf(me?.id, "operators"));
+
+/**
+ * Create DateTime object from seed
+ *
+ * @param {number|string|Date|Timestamp} [seed]
+ * @returns {LocalizedDateTime}
+ */
+export const dt = (seed) =>
+  LocalizedDateTime.factory(locale, conf?.preDefinedSchedules || {}, seed);
 
 export const store = {
   get locale() {
@@ -78,6 +89,12 @@ export const store = {
   },
   set templates(value) {
     templates = value;
+  },
+  get logs() {
+    return logs;
+  },
+  set logs(value) {
+    logs = value;
   },
   get me() {
     return me;

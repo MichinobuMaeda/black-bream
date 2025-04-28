@@ -6,10 +6,18 @@ import { getDownloadURL } from "firebase-admin/storage";
 const mediaSizeLimit = 1000 * 1000;
 
 /**
+ * @typedef {Object} LinkCard
+ * @property {string} uri
+ * @property {string} title
+ * @property {string} description
+ * @property {string} thumbUrl
+ */
+
+/**
  * Generate a card object} from a link
  *
  * @param {string} text
- * @returns {Promise<Object>}
+ * @returns {Promise<{err: undefined|Error, data: LinkCard|null|undefined}>}
  */
 export const generateLinkCard = async (text) => {
   try {
@@ -68,8 +76,8 @@ export const generateLinkCard = async (text) => {
     parserStream.write(await html.text());
 
     return { err: undefined, data };
-  } catch (e) {
-    return { err: e.toString(), data: undefined };
+  } catch (err) {
+    return { err };
   }
 };
 
@@ -151,15 +159,14 @@ export const getMediaDownloadUrl = (bucket, id, file) =>
  * @param {import("@google-cloud/storage").Bucket} bucket
  * @param {string} id
  * @param {string} file
- * @returns {Promise<{err: string|undefined, data: Uint8Array|undefined}>}
+ * @returns {Promise<{err: undefined|Error, data: Uint8Array|undefined}>}
  */
 export const getMediaAsUint8Array = async (bucket, id, file) => {
   try {
     const contents = await bucket.file(`public/posts/${id}/${file}`).download();
     return { err: undefined, data: new Uint8Array(contents[0]) };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString(), data: undefined };
+  } catch (err) {
+    return { err };
   }
 };
 
@@ -168,7 +175,7 @@ export const getMediaAsUint8Array = async (bucket, id, file) => {
  *
  * @param {Uint8Array} bin
  * @param {number} [maxSize]
- * @returns {Promise<{err: undefined|string, data: Uint8Array|undefined}>}
+ * @returns {Promise<{err: undefined|Error, data: Uint8Array|undefined}>}
  */
 export const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
   try {
@@ -192,9 +199,8 @@ export const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
     logger.info(`Image size reduced} from ${size} to ${data.length}`);
 
     return { data };
-  } catch (e) {
-    logger.error(e);
-    return { err: e.toString() };
+  } catch (err) {
+    return { err };
   }
 };
 
@@ -205,7 +211,7 @@ export const reduceImageSize = async (bin, maxSize = mediaSizeLimit) => {
  * @param {string} id
  * @param {string} file
  * @param {number} [maxSize]
- * @returns {Promise<{err: undefined|string, data: Blob|undefined}>}
+ * @returns {Promise<{err: undefined|Error, data: Blob|undefined}>}
  */
 export const getMediaAsBlob = async (
   bucket,
@@ -231,17 +237,17 @@ export const getMediaAsBlob = async (
  * HTTP request
  *
  * @param {string} url
- * @param {object} options
- * @returns {Promise<{err: undefined|string, data: any}>}
+ * @param {Object} options
+ * @returns {Promise<{err: undefined|Error, data: Response|undefined}>}
  */
 export const httpRequest = async (url, options) =>
   fetch(url, options)
     .then((res) =>
       200 <= res.status && res.status < 300
         ? { err: undefined, data: res }
-        : { err: `${res.status} ${res.statusText}`, data: undefined },
+        : { err: new Error(`${res.status} ${res.statusText}`) },
     )
-    .catch((e) => ({ err: e.toString(), data: undefined }));
+    .catch((err) => ({ err }));
 
 /**
  * Get public media URL
@@ -263,19 +269,78 @@ export const sleep = (sec) =>
   new Promise((resolve) => setTimeout(resolve, sec * 1000));
 
 /**
+ * Get firestore document reference
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {string} collection
+ * @param {string} id
+ * @returns {FirebaseFirestore.DocumentReference}
+ */
+export const docRef = (db, collection, id) => db.collection(collection).doc(id);
+
+/**
  * Get Firestore document
  *
  * @param {FirebaseFirestore.DocumentReference} ref
- * @returns
+ * @returns {Promise<{err: undefined|Error, data: FirebaseFirestore.DocumentSnapshot}>}
  */
 export const getDoc = async (ref) =>
   ref
     .get()
     .then((doc) => ({ data: doc }))
-    .catch((e) => ({ err: e.toString() }));
+    .catch((err) => ({ err }));
 
+/**
+ * Update Firestore document
+ *
+ * @param {FirebaseFirestore.DocumentReference} ref
+ * @param {FirebaseFirestore.DocumentData} data
+ * @returns {Promise<{err: undefined|Error}>}
+ */
 export const updateDoc = async (ref, data) =>
   ref
     .update(data)
     .then(() => ({}))
-    .catch((e) => ({ err: e.toString() }));
+    .catch((err) => ({ err }));
+
+const onError = async (db, err) => {
+  logger.error(err);
+  return db.collection("logs").add({
+    level: "error",
+    message: err.message || err.toString() || "Unknown error",
+    stack: err.stack || "",
+    createdAt: new Date(),
+  });
+};
+
+/**
+ * Handle error
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @returns {Function}
+ */
+export const handleError = (db) => async (f) =>
+  f
+    .then((data) =>
+      data.err === undefined ? data : onError(db, data.err).then(() => data),
+    )
+    .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));
+
+/**
+ * Handle onCall
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @returns {Function}
+ */
+export const handleOnCall =
+  (db) =>
+  async (name, { uid }, params, f) =>
+    db
+      .collection("logs")
+      .add({
+        level: "info",
+        message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
+        createdAt: new Date(),
+      })
+      .then(() => handleError(db)(f))
+      .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));

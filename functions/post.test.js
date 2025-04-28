@@ -106,7 +106,8 @@ describe("createPosts", () => {
     const postData = { text, files, targets, scheduledFor };
     const snap = { id, ref, data: () => postData };
     const post = new Post(db, bucket, snap);
-    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    const err = new Error("test error");
+    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce(err);
     updateDoc.mockResolvedValueOnce({});
 
     // Execute
@@ -139,7 +140,7 @@ describe("createPosts", () => {
       },
       misskey: {
         status: "failed",
-        err: "error",
+        err: err.message,
         enqueuedAt: null,
         updatedAt: expect.any(Date),
         deletedAt: null,
@@ -181,8 +182,10 @@ describe("createPosts", () => {
     const postData = { text, files, targets, scheduledFor };
     const snap = { id, ref, data: () => postData };
     const post = new Post(db, bucket, snap);
-    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce("error");
-    updateDoc.mockResolvedValueOnce({ err: "error" });
+    const err1 = new Error("test error 1");
+    const err2 = new Error("test error 2");
+    queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce(err1);
+    updateDoc.mockResolvedValueOnce({ err: err2 });
 
     // Execute
     const ret = await post.createPosts(queue);
@@ -214,7 +217,7 @@ describe("createPosts", () => {
       },
       misskey: {
         status: "failed",
-        err: "error",
+        err: err1.message,
         enqueuedAt: null,
         updatedAt: expect.any(Date),
         deletedAt: null,
@@ -239,7 +242,7 @@ describe("createPosts", () => {
         },
       ],
     ]);
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err: err2 });
   });
 });
 
@@ -257,7 +260,8 @@ describe("deletePosts", () => {
     const targets = { mastodon, misskey };
     const snap = { id, ref, data: () => ({ text, files, targets }) };
     const post = new Post(db, bucket, snap);
-    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce("error");
+    const err = new Error("test error");
+    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce(err);
     updateDoc.mockResolvedValueOnce({});
 
     // Execute
@@ -277,7 +281,7 @@ describe("deletePosts", () => {
       },
       misskey: {
         status: "enqueued",
-        err: "error",
+        err: err.message,
         updatedAt: expect.any(Date),
         scheduleTime: misskey.scheduleTime,
       },
@@ -298,8 +302,10 @@ describe("deletePosts", () => {
     const targets = { mastodon, misskey };
     const snap = { id, ref, data: () => ({ text, files, targets }) };
     const post = new Post(db, bucket, snap);
-    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce("error");
-    updateDoc.mockResolvedValueOnce({ err: "error" });
+    const err1 = new Error("test error 1");
+    const err2 = new Error("test error 2");
+    queue.delete.mockResolvedValueOnce().mockRejectedValueOnce(err1);
+    updateDoc.mockResolvedValueOnce({ err: err2 });
 
     // Execute
     const ret = await post.deletePosts(queue);
@@ -318,12 +324,12 @@ describe("deletePosts", () => {
       },
       misskey: {
         status: "enqueued",
-        err: "error",
+        err: err1.message,
         updatedAt: expect.any(Date),
         scheduleTime: misskey.scheduleTime,
       },
     });
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err: err2 });
   });
 });
 
@@ -333,9 +339,10 @@ describe("setPostStatusError", () => {
     const target = "mastodon";
     const post = new Post(db, bucket, { id, target });
     updateDoc.mockResolvedValueOnce({});
+    const err = new Error("test error");
 
     // Execute
-    const ret = await post.setPostStatusError("Error message");
+    const ret = await post.setPostStatusError(err);
 
     // Verify
     expect(updateDoc.mock.calls).toEqual([
@@ -345,24 +352,25 @@ describe("setPostStatusError", () => {
           status: "posting",
           ["targets.mastodon"]: {
             status: "failed",
-            err: "Error message",
+            err: err.message,
             updatedAt: expect.any(Date),
           },
           updatedAt: expect.any(Date),
         },
       ],
     ]);
-    expect(ret).toEqual({ err: "Error message" });
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
     const target = "misskey";
     const post = new Post(db, bucket, { id, target });
-    updateDoc.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    updateDoc.mockResolvedValueOnce({ err });
 
     // Execute
-    const ret = await post.setPostStatusError("error");
+    const ret = await post.setPostStatusError(new Error("error"));
 
     // Verify
     expect(updateDoc.mock.calls).toEqual([
@@ -379,7 +387,7 @@ describe("setPostStatusError", () => {
         },
       ],
     ]);
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err });
   });
 });
 
@@ -388,14 +396,15 @@ describe("getPostData", () => {
     // Prepare
     const target = "mastodon";
     const post = new Post(db, bucket, { id, target });
-    getDoc.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    getDoc.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.getPostData();
 
     // Verify
     expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(ret).toEqual({ err: `Failed to get posts/${ref.id}: error` });
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if doc is not exists.", async () => {
@@ -410,7 +419,7 @@ describe("getPostData", () => {
 
     // Verify
     expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(ret).toEqual({ err: `Not found: posts/${id}` });
+    expect(ret).toEqual({ err: new Error(`Not found: posts/${id}`) });
   });
 
   it("should return error if doc has been deleted.", async () => {
@@ -430,7 +439,7 @@ describe("getPostData", () => {
     // Verify
     expect(getDoc.mock.calls).toEqual([[ref]]);
     expect(snap.get.mock.calls).toEqual([["deletedAt"]]);
-    expect(ret).toEqual({ err: `Already deleted: posts/${id}` });
+    expect(ret).toEqual({ err: new Error(`Already deleted: posts/${id}`) });
   });
 
   it("should return post data.", async () => {
@@ -465,7 +474,9 @@ describe("verifyTargetStatus", () => {
     const ret = post.verifyTargetStatus(targets);
 
     // Verify
-    expect(ret).toEqual({ err: `Not found: mastodon in posts/${id}` });
+    expect(ret).toEqual({
+      err: new Error(`Not found: mastodon in posts/${id}`),
+    });
   });
 
   it("should return error if target has been deleted.", async () => {
@@ -476,7 +487,9 @@ describe("verifyTargetStatus", () => {
     const ret = post.verifyTargetStatus(targets);
 
     // Verify
-    expect(ret).toEqual({ err: `Invalid status: mastodon is deleted` });
+    expect(ret).toEqual({
+      err: new Error(`Invalid status: mastodon is deleted`),
+    });
   });
 
   it("should return error if target status is invalid.", async () => {
@@ -487,7 +500,9 @@ describe("verifyTargetStatus", () => {
     const ret = post.verifyTargetStatus(targets);
 
     // Verify
-    expect(ret).toEqual({ err: `Invalid status: mastodon.status: posted` });
+    expect(ret).toEqual({
+      err: new Error(`Invalid status: mastodon.status: posted`),
+    });
   });
 
   it("should return undefined if target status is valid.", async () => {
@@ -498,7 +513,7 @@ describe("verifyTargetStatus", () => {
     const ret = post.verifyTargetStatus(targets);
 
     // Verify
-    expect(ret).toEqual({ err: undefined });
+    expect(ret).toEqual({});
   });
 });
 
@@ -543,7 +558,7 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: postData });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     Mastodon.prototype.post.mockResolvedValueOnce({});
@@ -565,7 +580,8 @@ describe("post", () => {
     // Prepare
     const post = new Post(db, bucket, { id, target });
     const mockGetPostData = vi.spyOn(post, "getPostData");
-    mockGetPostData.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockGetPostData.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -573,7 +589,7 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(updateDoc).not.toHaveBeenCalled();
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if verifyTargetStatus returns error.", async () => {
@@ -582,9 +598,10 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: "error" }));
+    const err = new Error("test error");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err }));
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -592,9 +609,9 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(mockSetPostStatusError.mock.calls).toEqual([["error"]]);
+    expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
     expect(updateDoc).not.toHaveBeenCalled();
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if fail to get provider params.", async () => {
@@ -604,9 +621,10 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -615,10 +633,10 @@ describe("post", () => {
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
     expect(mockSetPostStatusError.mock.calls).toEqual([
-      ["Unsupported target: dummy"],
+      [new Error("Unsupported target: dummy")],
     ]);
     expect(updateDoc).not.toHaveBeenCalled();
-    expect(ret).toEqual({ err: "error" });
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error. #1", async () => {
@@ -627,11 +645,12 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const provider = new Mastodon(db, bucket);
-    updateDoc.mockResolvedValueOnce({ err: "update error" });
+    const err = new Error("test error");
+    updateDoc.mockResolvedValueOnce({ err });
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -642,10 +661,8 @@ describe("post", () => {
     expect(Mastodon.prototype.refreshAccessToken).not.toHaveBeenCalled();
     expect(Mastodon.prototype.post).not.toHaveBeenCalled();
     expect(updateDoc.mock.calls).toEqual([updateData01]);
-    expect(mockSetPostStatusError.mock.calls).toEqual([
-      ["Failed to set posing status: update error"],
-    ]);
-    expect(ret).toEqual({ err: "error" });
+    expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error. #2", async () => {
@@ -654,15 +671,14 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     Mastodon.prototype.post.mockResolvedValueOnce({});
-    updateDoc
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({ err: "update error" });
+    const err = new Error("test error");
+    updateDoc.mockResolvedValueOnce({}).mockResolvedValueOnce({ err });
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -673,10 +689,8 @@ describe("post", () => {
     expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
     expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
     expect(updateDoc.mock.calls).toEqual([updateData01, updateData02]);
-    expect(mockSetPostStatusError.mock.calls).toEqual([
-      ["Failed to set completed status: update error"],
-    ]);
-    expect(ret).toEqual({ err: "error" });
+    expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if refreshAccessToken returns error.", async () => {
@@ -685,14 +699,13 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
-    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({
-      err: "error",
-    });
+    const err = new Error("test error");
+    Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({ err });
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -703,8 +716,8 @@ describe("post", () => {
     expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
     expect(Mastodon.prototype.post).not.toHaveBeenCalled();
     expect(updateDoc.mock.calls).toEqual([updateData01]);
-    expect(mockSetPostStatusError.mock.calls).toEqual([["mastodon: error"]]);
-    expect(ret).toEqual({ err: "error" });
+    expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
+    expect(ret).toEqual({ err });
   });
 
   it("should return error if post returns error.", async () => {
@@ -713,13 +726,14 @@ describe("post", () => {
     const mockGetPostData = vi.spyOn(post, "getPostData");
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
-    mockVerifyTargetStatus.mockImplementationOnce(() => ({ err: undefined }));
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
     const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
-    Mastodon.prototype.post.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    Mastodon.prototype.post.mockResolvedValueOnce({ err });
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
-    mockSetPostStatusError.mockResolvedValueOnce({ err: "error" });
+    mockSetPostStatusError.mockResolvedValueOnce({ err });
 
     // Execute
     const ret = await post.post();
@@ -730,8 +744,8 @@ describe("post", () => {
     expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
     expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
     expect(updateDoc.mock.calls).toEqual([updateData01]);
-    expect(mockSetPostStatusError.mock.calls).toEqual([["mastodon: error"]]);
-    expect(ret).toEqual({ err: "error" });
+    expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
+    expect(ret).toEqual({ err });
   });
 });
 

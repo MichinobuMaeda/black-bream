@@ -1,5 +1,6 @@
 <script>
   import { pop } from "svelte-spa-router";
+  import { serverTimestamp } from "firebase/firestore";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
@@ -99,9 +100,9 @@
     ) {
       result = await updateDocument("users", uid, {
         name,
-        deletedAt: deleted ? new Date() : null,
-        restrictedAt: restricted ? new Date() : null,
-        updatedAt: new Date(),
+        deletedAt: deleted ? serverTimestamp() : null,
+        restrictedAt: restricted ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
       });
     }
 
@@ -126,7 +127,7 @@
           .map((group) =>
             updateDocument("groups", group.id, {
               users: [...group.users.filter((id) => id !== uid), uid],
-              updatedAt: new Date(),
+              updatedAt: serverTimestamp(),
             }),
           ),
       );
@@ -140,7 +141,7 @@
           .map((group) =>
             updateDocument("groups", group.id, {
               users: group.users.filter((id) => id !== uid),
-              updatedAt: new Date(),
+              updatedAt: serverTimestamp(),
             }),
           ),
       );

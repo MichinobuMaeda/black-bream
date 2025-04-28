@@ -1,4 +1,5 @@
 <script>
+  import { serverTimestamp, Timestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -55,12 +56,16 @@
     active = true;
     instagramAccessToken = instagramAccessToken.trim();
     instagramClientId = instagramClientId.trim();
+    const expiredAt = Timestamp.fromMillis(
+      new Date().getTime() + 1000 * (60 * 60 * 24 * 60 - 60),
+    );
     result = await updateDocument("service", "auth", {
       instagram: {
         clientId: instagramClientId,
         accessToken: instagramAccessToken,
-        updatedAt: new Date(),
-        deletedAt: instagramEnabled ? null : new Date(),
+        expiredAt,
+        updatedAt: serverTimestamp(),
+        deletedAt: instagramEnabled ? null : serverTimestamp(),
       },
     });
     active = false;

@@ -7,8 +7,7 @@
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
-  import { store } from "../../lib/store.svelte.js";
-  import { formatDateTime } from "../../lib/datetime";
+  import { store, dt } from "../../lib/store.svelte.js";
   import { getSavedImageUrl, postTargets } from "../../lib/firebase.js";
 
   /**
@@ -33,7 +32,7 @@
   <h3>
     <span class="flex grow gap-2">
       <span class="size-7"><StatusIcon status={post?.status} /></span>
-      {formatDateTime(post.scheduledFor?.toDate())}
+      {dt(post.scheduledFor).formatDateTime()}
     </span>
     {#if store.operator && post.status !== "completed"}
       <IconButtonOutlined

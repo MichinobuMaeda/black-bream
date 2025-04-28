@@ -1,12 +1,13 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { getDoc, updateDoc } from "./utils.js";
+import { docRef, getDoc, updateDoc } from "./utils.js";
 import { Provider } from "./provider.js";
 
-vi.mock("./utils.js");
-
-const ref = { get: vi.fn() };
-const doc = vi.fn(() => ref);
-const db = { collection: vi.fn(() => ({ doc })) };
+vi.mock("./utils.js", () => ({
+  docRef: vi.fn(),
+  getDoc: vi.fn(),
+  updateDoc: vi.fn(),
+}));
+const db = { test: "db" };
 const bucket = { data: "bucket" };
 
 afterEach(() => {
@@ -31,92 +32,114 @@ describe("Provider", () => {
 });
 
 describe("Provider.getParams", () => {
-  const snap = { exists: true, get: vi.fn(() => undefined) };
-  getDoc.mockResolvedValue({ err: undefined, data: snap });
   const provider = new Provider(db, bucket);
   provider.id = "target-name";
 
   it("should return error if getDoc returns error.", async () => {
     // Prepare
-    getDoc.mockResolvedValueOnce({ err: "Error" });
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const err = new Error("test error");
+    getDoc.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(result).toEqual({ err: "service/auth Error" });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(result).toEqual({ err });
   });
 
   it("should return error if service/auth does not exist.", async () => {
     // Prepare
-    getDoc.mockResolvedValueOnce({ err: undefined, data: { exists: false } });
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    getDoc.mockResolvedValueOnce({ data: { exists: false } });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(result).toEqual({ err: "service/auth not found" });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(result).toEqual({ err: new Error("service/auth not found") });
   });
 
   it("should return error if service/auth is deleted.", async () => {
     // Prepare
-    snap.get.mockImplementationOnce(() => new Date());
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const authDoc = { exists: true, get: vi.fn(() => new Date()) };
+    getDoc.mockResolvedValueOnce({ data: authDoc });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(snap.get.mock.calls).toEqual([["deletedAt"]]);
-    expect(result).toEqual({ err: "service/auth is deleted" });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(authDoc.get.mock.calls).toEqual([["deletedAt"]]);
+    expect(result).toEqual({ err: new Error("service/auth is deleted") });
   });
 
   it("should return error if service/auth/target-name does not exist.", async () => {
     // Prepare
-    snap.get
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const authDoc = { exists: true, get: vi.fn(() => new Date()) };
+    authDoc.get
       .mockImplementationOnce(() => undefined) // deletedAt
       .mockImplementationOnce(() => undefined); // target-name
+    getDoc.mockResolvedValueOnce({ data: authDoc });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(snap.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
-    expect(result).toEqual({ err: "service/auth/target-name not found" });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(authDoc.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
+    expect(result).toEqual({
+      err: new Error("service/auth/target-name not found"),
+    });
   });
 
   it("should return error if service/auth/target-name is deleted.", async () => {
     // Prepare
-    snap.get
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const authDoc = { exists: true, get: vi.fn(() => new Date()) };
+    authDoc.get
       .mockImplementationOnce(() => undefined) // deletedAt
       .mockImplementationOnce(() => ({ deletedAt: new Date() })); // target-name
+    getDoc.mockResolvedValueOnce({ data: authDoc });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(snap.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
-    expect(result).toEqual({ err: "service/auth/target-name is deleted" });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(authDoc.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
+    expect(result).toEqual({
+      err: new Error("service/auth/target-name is deleted"),
+    });
   });
 
   it("should return data", async () => {
     // Prepare
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const authDoc = { exists: true, get: vi.fn(() => new Date()) };
     const data = { key: "value" };
-    snap.get
+    authDoc.get
       .mockImplementationOnce(() => undefined) // deletedAt
       .mockImplementationOnce(() => data); // target-name
+    getDoc.mockResolvedValueOnce({ data: authDoc });
 
     // Execute
     const result = await provider.getParams();
 
     // Verify
-    expect(getDoc.mock.calls).toEqual([[ref]]);
-    expect(snap.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
-    expect(result).toEqual({ err: undefined, data });
+    expect(getDoc.mock.calls).toEqual([[authRef]]);
+    expect(authDoc.get.mock.calls).toEqual([["deletedAt"], [provider.id]]);
+    expect(result).toEqual({ data });
   });
 });
 
@@ -133,23 +156,28 @@ describe("Provider.updateParams", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    updateDoc.mockResolvedValueOnce({ err: "Error" });
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
+    const err = new Error("test error");
+    updateDoc.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await provider.updateParams(data);
 
     // Verify
-    expect(updateDoc.mock.calls).toEqual([[ref, update]]);
-    expect(result).toEqual({ err: "service/auth update: Error" });
+    expect(updateDoc.mock.calls).toEqual([[authRef, update]]);
+    expect(result).toEqual({ err });
   });
 
   it("should return no error.", async () => {
     // Execute
+    const authRef = { id: "service/auth" };
+    docRef.mockReturnValue(authRef);
     const result = await provider.updateParams(data);
 
     // Verify
-    expect(updateDoc.mock.calls).toEqual([[ref, update]]);
-    expect(result).toEqual({ err: undefined });
+    expect(updateDoc.mock.calls).toEqual([[authRef, update]]);
+    expect(result).toEqual({});
   });
 });
 

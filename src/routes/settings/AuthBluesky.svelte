@@ -1,4 +1,5 @@
 <script>
+  import { serverTimestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -70,8 +71,8 @@
         service: blueskyService,
         identifier: blueskyIdentifier,
         password: blueskyPassword,
-        updatedAt: new Date(),
-        deletedAt: blueskyEnabled ? null : new Date(),
+        updatedAt: serverTimestamp(),
+        deletedAt: blueskyEnabled ? null : serverTimestamp(),
       },
     });
     active = false;

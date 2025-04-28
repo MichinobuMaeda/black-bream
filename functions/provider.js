@@ -1,4 +1,4 @@
-import { getDoc, updateDoc } from "./utils.js";
+import { docRef, getDoc, updateDoc } from "./utils.js";
 
 export class Provider {
   /**
@@ -16,39 +16,24 @@ export class Provider {
   /**
    * Get the params of the provider
    *
-   * @returns {Promise<{err: undefined|string}, data>}
+   * @returns {Promise<{err: undefined|Error}, data>}
    */
   async getParams() {
-    const authRef = this.db.collection("service").doc("auth");
-    const auth = await getDoc(authRef);
-
-    if (auth.err) {
-      return { err: `service/auth ${auth.err}` };
-    }
-
-    if (!auth.data.exists) {
-      const err = "service/auth not found";
-      return { err };
-    }
-
-    if (auth.data.get("deletedAt")) {
-      const err = "service/auth is deleted";
-      return { err };
-    }
-
-    const data = auth.data.get(this.id);
-
-    if (!data) {
-      const err = `service/auth/${this.id} not found`;
-      return { err };
-    }
-
-    if (data.deletedAt) {
-      const err = `service/auth/${this.id} is deleted`;
-      return { err };
-    }
-
-    return { err: undefined, data };
+    return getDoc(docRef(this.db, "service", "auth")).then(({ err, data }) =>
+      err
+        ? { err }
+        : !data.exists
+          ? { err: new Error("service/auth not found") }
+          : data.get("deletedAt")
+            ? { err: new Error("service/auth is deleted") }
+            : { then: (fn) => fn(data.get(this.id)) }.then((data) =>
+                !data
+                  ? { err: new Error(`service/auth/${this.id} not found`) }
+                  : data.deletedAt
+                    ? { err: new Error(`service/auth/${this.id} is deleted`) }
+                    : { data },
+              ),
+    );
   }
 
   /**
@@ -58,18 +43,16 @@ export class Provider {
    * @returns
    */
   async updateParams(data) {
-    const authRef = this.db.collection("service").doc("auth");
     const update = {};
     Object.entries(data).forEach(([key, value]) => {
       update[`${this.id}.${key}`] = value;
     });
     update.updatedAt = new Date();
 
-    const updated = await updateDoc(authRef, update);
+    const updated = await updateDoc(docRef(this.db, "service", "auth"), update);
 
     if (updated.err) {
-      const err = `service/auth update: ${updated.err}`;
-      return { err };
+      return updated;
     }
 
     return { err: undefined };

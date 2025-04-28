@@ -1,5 +1,6 @@
 <script>
   import { pop } from "svelte-spa-router";
+  import { serverTimestamp, Timestamp } from "firebase/firestore";
   import SvgNoteAdd from "../../lib/icons/SvgNoteAdd.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
@@ -13,17 +14,13 @@
   import SvgArrowForward from "../../lib/icons/SvgArrowForward.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
+  import { t, store, dt } from "../../lib/store.svelte.js";
   import {
     createDocument,
     savePostImage,
     postTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
-  import {
-    formatDateTime,
-    getNextPreDefinedSchedule,
-  } from "../../lib/datetime.js";
   let active = $state(false);
 
   let templates = $state((store.templates ?? []).filter((t) => !t.deletedAt));
@@ -42,7 +39,7 @@
   let errorTargets = $derived(
     active ? "" : !checkedTargets.length ? t().required() : "",
   );
-  let schedule = $state(formatDateTime(new Date()));
+  let schedule = $state(dt().formatDateTime());
   let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
   let showPreDefinedSchedule = $derived(
     store.conf.preDefinedSchedules?.wd.length > 0 &&
@@ -59,7 +56,7 @@
   const onCancel = async () => {
     text = "";
     checkedTargets = [];
-    schedule = formatDateTime(new Date());
+    schedule = dt().formatDateTime();
     pop();
   };
 
@@ -80,11 +77,11 @@
       .reduce(
         (acc, cur) => ({
           ...acc,
-          [cur]: { status, createdAt: new Date() },
+          [cur]: { status, createdAt: serverTimestamp() },
         }),
         {},
       );
-    const scheduledFor = new Date(schedule);
+    const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
 
     result = await createDocument(
       "posts",
@@ -154,26 +151,14 @@
                   id="prevSchedule"
                   icon={SvgArrowBack}
                   onClick={() => {
-                    schedule = formatDateTime(
-                      getNextPreDefinedSchedule(
-                        store.conf.preDefinedSchedules,
-                        schedule,
-                        -1,
-                      ),
-                    );
+                    schedule = dt(schedule).getPrevSchedule().formatDateTime();
                   }}
                 />
                 <IconButton
                   id="prevSchedule"
                   icon={SvgArrowForward}
                   onClick={() => {
-                    schedule = formatDateTime(
-                      getNextPreDefinedSchedule(
-                        store.conf.preDefinedSchedules,
-                        schedule,
-                        1,
-                      ),
-                    );
+                    schedule = dt(schedule).getNextSchedule().formatDateTime();
                   }}
                 />
               {/if}

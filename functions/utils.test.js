@@ -13,8 +13,11 @@ import {
   httpRequest,
   getPublicMediaUrl,
   sleep,
+  docRef,
   getDoc,
   updateDoc,
+  handleError,
+  handleOnCall,
 } from "./utils.js";
 
 vi.mock("firebase-functions/logger");
@@ -44,10 +47,7 @@ describe("generateLinkCard", () => {
     const result = await generateLinkCard("test");
 
     // Verify
-    expect(result).toEqual({
-      err: undefined,
-      data: null,
-    });
+    expect(result).toEqual({ data: null });
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -61,10 +61,7 @@ describe("generateLinkCard", () => {
     const result = await generateLinkCard("test\nhttps://example.com\ntest");
 
     // Verify
-    expect(result).toEqual({
-      err: undefined,
-      data: null,
-    });
+    expect(result).toEqual({ data: null });
   });
 
   it("should returns card data, if text includes url. #1", async () => {
@@ -195,16 +192,14 @@ describe("generateLinkCard", () => {
 
   it("should returns error, if fetch() throws an exception.", async () => {
     // Prepare
-    global.fetch.mockRejectedValue("test error");
+    const err = new Error("test error");
+    global.fetch.mockRejectedValue(err);
 
     // Execute
     const result = await generateLinkCard("test\nhttps://example.com\ntest");
 
     // Verify
-    expect(result).toEqual({
-      err: "test error",
-      data: undefined,
-    });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -342,10 +337,7 @@ describe("getMediaAsUint8Array", () => {
     const ret = await getMediaAsUint8Array(bucket, id, filename);
 
     // Verify
-    expect(ret).toEqual({
-      err: undefined,
-      data: new Uint8Array(contents[0]),
-    });
+    expect(ret).toEqual({ data: new Uint8Array(contents[0]) });
     expect(bucket.file.mock.calls).toEqual([
       [`public/posts/${id}/${filename}`],
     ]);
@@ -426,15 +418,16 @@ describe("reduceImageSize", () => {
 
   it("should returns error, if sharp() raises an exception.", async () => {
     // Prepare
+    const err = new Error("test error");
     const image = new Uint8Array(8);
     const maxSize = 4;
-    sharp.mockReturnValue({ metadata: () => Promise.reject("Error") });
+    sharp.mockReturnValue({ metadata: () => Promise.reject(err) });
 
     // Execute
     const ret = await reduceImageSize(image, maxSize);
 
     // Verify
-    expect(ret).toEqual({ err: "Error" });
+    expect(ret).toEqual({ err });
     expect(sharp.mock.calls).toEqual([[image]]);
   });
 });
@@ -509,7 +502,7 @@ describe("httpRequest", () => {
     const ret = await httpRequest(url, options);
 
     // Verify
-    expect(ret).toEqual({ err: undefined, data: resp });
+    expect(ret).toEqual({ data: resp });
     expect(global.fetch.mock.calls).toEqual([[url, options]]);
   });
 
@@ -521,13 +514,14 @@ describe("httpRequest", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ test: "test" }),
     };
-    global.fetch.mockRejectedValue("Error");
+    const err = new Error("test error");
+    global.fetch.mockRejectedValue(err);
 
     // Execute
     const ret = await httpRequest(url, options);
 
     // Verify
-    expect(ret).toEqual({ err: "Error", data: undefined });
+    expect(ret).toEqual({ err });
     expect(global.fetch.mock.calls).toEqual([[url, options]]);
   });
 
@@ -546,7 +540,7 @@ describe("httpRequest", () => {
     const ret = await httpRequest(url, options);
 
     // Verify
-    expect(ret).toEqual({ err: "404 Not found", data: undefined });
+    expect(ret).toEqual({ err: new Error("404 Not found") });
     expect(global.fetch.mock.calls).toEqual([[url, options]]);
   });
 });
@@ -579,6 +573,25 @@ describe("sleep", () => {
   });
 });
 
+describe("docRef", () => {
+  it("should returns document reference.", () => {
+    // Prepare
+    const collection = "test-collection";
+    const id = "test-id";
+    const ref = { test: "test" };
+    const collectionRef = { doc: vi.fn(() => ref) };
+    const db = { collection: vi.fn(() => collectionRef) };
+
+    // Execute
+    const ret = docRef(db, collection, id);
+
+    // Verify
+    expect(ret).toEqual(ref);
+    expect(db.collection.mock.calls).toEqual([[collection]]);
+    expect(collectionRef.doc.mock.calls).toEqual([[id]]);
+  });
+});
+
 describe("getDoc", () => {
   it("should returns document data.", async () => {
     // Prepare
@@ -590,19 +603,20 @@ describe("getDoc", () => {
 
     // Verify
     expect(ref.get.mock.calls).toEqual([[]]);
-    expect(ret).toEqual({ err: undefined, data: doc });
+    expect(ret).toEqual({ data: doc });
   });
 
   it("should returns error, if get() raises an exception.", async () => {
     // Prepare
-    const ref = { get: vi.fn(() => Promise.reject("Error")) };
+    const err = new Error("test error");
+    const ref = { get: vi.fn(() => Promise.reject(err)) };
 
     // Execute
     const ret = await getDoc(ref);
 
     // Verify
     expect(ref.get.mock.calls).toEqual([[]]);
-    expect(ret).toEqual({ err: "Error", data: undefined });
+    expect(ret).toEqual({ err });
   });
 });
 
@@ -617,12 +631,13 @@ describe("updateDoc", () => {
 
     // Verify
     expect(ref.update.mock.calls).toEqual([[data]]);
-    expect(ret).toEqual({ err: undefined });
+    expect(ret).toEqual({});
   });
 
   it("should returns error, if update() raises an exception.", async () => {
     // Prepare
-    const ref = { update: vi.fn(() => Promise.reject("Error")) };
+    const err = new Error("test error");
+    const ref = { update: vi.fn(() => Promise.reject(err)) };
     const data = { test: "data" };
 
     // Execute
@@ -630,6 +645,206 @@ describe("updateDoc", () => {
 
     // Verify
     expect(ref.update.mock.calls).toEqual([[data]]);
-    expect(ret).toEqual({ err: "Error" });
+    expect(ret).toEqual({ err });
+  });
+});
+
+describe("handleError", () => {
+  it("should not record error, if f() returns no error.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const data = { data: "test" };
+    const f = vi.fn(() => Promise.resolve(data));
+
+    // Execute
+    const ret = await handleError(db)(f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+    expect(ret).toEqual(data);
+  });
+
+  it("should record error, if f() returns an error.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const data = { err: "test" };
+    const f = vi.fn(() => Promise.resolve(data));
+
+    // Execute
+    const ret = await handleError(db)(f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "error",
+          message: "test",
+          stack: "",
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual(data);
+  });
+
+  it("should record error, if f() returns an empty error.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const data = { err: "" };
+    const f = vi.fn(() => Promise.resolve(data));
+
+    // Execute
+    const ret = await handleError(db)(f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "error",
+          message: "Unknown error",
+          stack: "",
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual(data);
+  });
+
+  it("should record error, if f() raises an error.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const err = new Error("test error");
+    const f = vi.fn(() => Promise.reject(err));
+
+    // Execute
+    const ret = await handleError(db)(f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "error",
+          message: err.message,
+          stack: err.stack,
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual({ err: err.toString() });
+  });
+});
+
+describe("handleOnCall", () => {
+  it("should call f() and record log.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const name = "testFunction";
+    const uid = "test-uid";
+    const params = { param: "test" };
+    const f = vi.fn(() => Promise.resolve({ data: "test" }));
+
+    // Execute
+    const ret = await handleOnCall(db)(name, { uid }, params, f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "info",
+          message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual({ data: "test" });
+  });
+
+  it("should record error, if f() returns an error.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const name = "testFunction";
+    const uid = "test-uid";
+    const params = { param: "test" };
+    const data = { err: "test" };
+    const f = vi.fn(() => Promise.resolve(data));
+
+    // Execute
+    const ret = await handleOnCall(db)(name, { uid }, params, f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"], ["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "info",
+          message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
+          createdAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          level: "error",
+          message: "test",
+          stack: "",
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual(data);
+  });
+
+  it("should record error, if db.collection('logs').add() occurs an error", async () => {
+    // Prepare
+    const add = vi.fn();
+    const err = new Error("test error");
+    add.mockRejectedValueOnce(err).mockResolvedValueOnce({});
+    const db = { collection: vi.fn(() => ({ add })) };
+    const name = "testFunction";
+    const uid = "test-uid";
+    const params = { param: "test" };
+    const data = { data: "test" };
+    const f = vi.fn(() => Promise.resolve(data));
+
+    // Execute
+    const ret = await handleOnCall(db)(name, { uid }, params, f());
+
+    // Verify
+    expect(f.mock.calls).toEqual([[]]);
+    expect(db.collection.mock.calls).toEqual([["logs"], ["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "info",
+          message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
+          createdAt: expect.any(Date),
+        },
+      ],
+      [
+        {
+          level: "error",
+          message: "test error",
+          stack: err.stack,
+          createdAt: expect.any(Date),
+        },
+      ],
+    ]);
+    expect(ret).toEqual({ err: err.toString() });
   });
 });

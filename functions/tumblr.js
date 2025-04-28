@@ -18,13 +18,12 @@ export class Tumblr extends Provider {
    *
    * @param {string} id
    * @param {{ text:string, files: array|undefined }} data
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async post(id, { text, files }) {
     const params = await this.getParams();
 
     if (params.err) {
-      logger.error(params.err);
       return params;
     }
 
@@ -70,24 +69,21 @@ export class Tumblr extends Provider {
     );
 
     if (err) {
-      return {
-        err: `httpRequest: ${err}`,
-      };
+      return { err };
     }
 
-    return { err: undefined };
+    return {};
   }
 
   /**
    * Refresh access token
    *
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async refreshAccessToken() {
     const params = await this.getParams();
 
     if (params.err) {
-      logger.error(params.err);
       return params;
     }
 
@@ -95,7 +91,7 @@ export class Tumblr extends Provider {
       params.data;
 
     if (expiredAt.toDate() > new Date(new Date().getTime() + 60 * 1000)) {
-      return { err: undefined };
+      return {};
     }
 
     logger.info(JSON.stringify(params));
@@ -112,9 +108,7 @@ export class Tumblr extends Provider {
     );
 
     if (oauthResp.err) {
-      const err = `/2/oauth2/token: ${oauthResp.err}`;
-      logger.error(err);
-      return { err };
+      return { err: oauthResp.err };
     }
 
     const oauthData = await oauthResp.data.json();
@@ -128,32 +122,28 @@ export class Tumblr extends Provider {
     });
 
     if (updated.err) {
-      const err = `service/auth update: ${updated.err}`;
-      return { err };
+      return updated;
     }
 
-    return { err: undefined };
+    return {};
   }
 
   /**
    * Set access token
    *
    * @param {{code:string}} data
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async setAccessToken({ code }) {
     logger.log(JSON.stringify({ code }));
 
     if (!code || code === "error") {
-      const err = `invalid code: ${code}`;
-      logger.error(err);
-      return { err };
+      return { err: new Error(`invalid code: '${code}'`) };
     }
 
     const params = await this.getParams();
 
     if (params.err) {
-      logger.error(params.err);
       return params;
     }
 
@@ -172,18 +162,14 @@ export class Tumblr extends Provider {
     );
 
     if (oauthResp.err) {
-      const err = `/2/oauth2/token: ${oauthResp.err}`;
-      logger.error(err);
-      return { err };
+      return { err: oauthResp.err };
     }
 
     const oauthData = await oauthResp.data.json();
     logger.log(JSON.stringify(oauthData));
 
     if (!oauthData.access_token) {
-      const err = "Failed to get new access_token";
-      logger.error(err);
-      return { err };
+      return { err: new Error("Failed to get new access_token") };
     }
 
     const updated = await this.updateParams({
@@ -195,11 +181,9 @@ export class Tumblr extends Provider {
     });
 
     if (updated.err) {
-      const err = `service/auth update: ${updated.err}`;
-      logger.error(err);
-      return { err };
+      return updated;
     }
 
-    return { err: undefined };
+    return {};
   }
 }

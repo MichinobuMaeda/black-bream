@@ -7,19 +7,16 @@ import { addAuthUser } from "./account.js";
  * @param {Auth} auth
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @returns {Promise<Object>}
+ * @returns {Promise<{err: undefined|Error, data: number}>}
  */
 export const updateDataV1 = async (auth, db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
 
   if (ver < 1) {
-    var err = undefined;
-
     try {
       const email = deleted.get("email");
       if (!email) {
-        logger.error("missing-email");
-        return { err: "missing-email", data: ver };
+        return { err: new Error("missing-email"), data: ver };
       }
 
       await db
@@ -88,10 +85,8 @@ site.manager@example.com
         err: err ?? null,
         updatedAt: new Date(),
       });
-    } catch (e) {
-      logger.error(e.code ?? e.toString());
-      err = e.code ?? e.toString();
-      return { err: err, data: ver };
+    } catch (err) {
+      return { err, data: ver };
     }
   }
 
@@ -103,7 +98,7 @@ site.manager@example.com
  *
  * @param {FirebaseFirestore.Firestore} db
  * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
- * @returns {Promise<Object>}
+ * @returns {Promise<{err: undefined|Error, data: number}>}
  */
 export const updateDataV2 = async (db, deleted) => {
   let ver = Number(deleted.get("ver")) || 0;
@@ -122,12 +117,10 @@ export const updateDataV2 = async (db, deleted) => {
         err: err ?? null,
         updatedAt: new Date(),
       });
-    } catch (e) {
-      logger.error(e.code ?? e.toString());
-      err = e.code ?? e.toString();
-      return { err: e.code ?? e.toString(), data: ver };
+    } catch (err) {
+      return { err, data: ver };
     }
   }
 
-  return { err: undefined, data: 2 };
+  return { data: 2 };
 };

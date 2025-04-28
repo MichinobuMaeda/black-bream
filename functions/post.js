@@ -44,7 +44,7 @@ export class Post {
    * Create posts
    *
    * @param {Object} queue
-   * @returns {Promise<{err: undefined|string, data: string|undefined}>}
+   * @returns {Promise<{err: undefined|Error, data: string|undefined}>}
    */
   async createPosts(queue) {
     const delay = 9 * 1000;
@@ -77,10 +77,10 @@ export class Post {
             params.updatedAt = new Date();
             params.deletedAt = null;
           })
-          .catch((e) => {
-            logger.error(e);
+          .catch((err) => {
+            logger.error(err);
             params.status = "failed";
-            params.err = e.toString();
+            params.err = err.message;
             params.enqueuedAt = null;
             params.updatedAt = new Date();
             params.deletedAt = null;
@@ -99,14 +99,14 @@ export class Post {
       return updated;
     }
 
-    return { err: undefined, data: "enqueued" };
+    return { data: "enqueued" };
   }
 
   /**
    * Delete posts
    *
    * @param {Object} queue
-   * @returns {Promise<err: undefined|string, data: string|undefined>}
+   * @returns {Promise<err: undefined|Error, data: string|undefined>}
    */
   async deletePosts(queue) {
     const { id, targets } = this.data;
@@ -121,9 +121,9 @@ export class Post {
             params.deletedAt = new Date();
             params.updatedAt = new Date();
           })
-          .catch((e) => {
-            logger.error(e);
-            params.err = e.toString();
+          .catch((err) => {
+            logger.error(err);
+            params.err = err.message;
             params.updatedAt = new Date();
           }),
       ),
@@ -140,32 +140,30 @@ export class Post {
       return updated;
     }
 
-    return { err: undefined, data: "deleted" };
+    return { data: "deleted" };
   }
 
   /**
    * Set error status for post
    *
    * @param {string} err
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async setPostStatusError(err) {
     const { target } = this.data;
-    logger.error(`${target}: ${err}`);
 
     const updated = await updateDoc(this.ref, {
       status: "posting",
       [`targets.${target}`]: {
         status: "failed",
-        err,
+        err: err.message,
         updatedAt: new Date(),
       },
       updatedAt: new Date(),
     });
 
     if (updated.err) {
-      logger.error(updated.err);
-      return { err: updated.err };
+      return updated;
     }
 
     return { err };
@@ -174,21 +172,21 @@ export class Post {
   /**
    * Get post data
    *
-   * @returns {Promise<{err: undefined|string, data: object|undefined}>}
+   * @returns {Promise<{err: undefined|Error, data: object|undefined}>}
    */
   async getPostData() {
     const doc = await getDoc(this.ref);
 
     if (doc.err) {
-      return { err: `Failed to get posts/${this.ref.id}: ${doc.err}` };
+      return doc;
     }
 
     if (!doc.data.exists) {
-      return { err: `Not found: posts/${this.ref.id}` };
+      return { err: new Error(`Not found: posts/${this.ref.id}`) };
     }
 
     if (doc.data.get("deletedAt")) {
-      return { err: `Already deleted: posts/${this.ref.id}` };
+      return { err: new Error(`Already deleted: posts/${this.ref.id}`) };
     }
 
     return { data: doc.data.data() };
@@ -198,32 +196,32 @@ export class Post {
    * Verify the status of the target
    *
    * @param {Array} targets
-   * @returns {{err: undefined|string}}
+   * @returns {{err: undefined|Error}}
    */
   verifyTargetStatus(targets) {
     const { id, target } = this.data;
 
     if (!targets[target]) {
-      return { err: `Not found: ${target} in posts/${id}` };
+      return { err: new Error(`Not found: ${target} in posts/${id}`) };
     }
 
     const { status, deletedAt } = targets[target];
 
     if (deletedAt) {
-      return { err: `Invalid status: ${target} is deleted` };
+      return { err: new Error(`Invalid status: ${target} is deleted`) };
     }
 
     if (status !== "enqueued") {
-      return { err: `Invalid status: ${target}.status: ${status}` };
+      return { err: new Error(`Invalid status: ${target}.status: ${status}`) };
     }
 
-    return { err: undefined };
+    return {};
   }
 
   /**
    * Post
    *
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async post() {
     const { id, target } = this.data;
@@ -233,7 +231,6 @@ export class Post {
     const postData = await this.getPostData();
 
     if (postData.err) {
-      logger.error(postData.err);
       return { err: postData.err };
     }
 
@@ -250,8 +247,9 @@ export class Post {
       .find((provider) => provider.id === target);
 
     if (!provider) {
-      const err = `Unsupported target: ${target}`;
-      return this.setPostStatusError(err);
+      return this.setPostStatusError(
+        new Error(`Unsupported target: ${target}`),
+      );
     }
 
     const posting = await updateDoc(this.ref, {
@@ -261,20 +259,19 @@ export class Post {
     });
 
     if (posting.err) {
-      const err = `Failed to set posing status: ${posting.err}`;
-      return this.setPostStatusError(err);
+      return this.setPostStatusError(posting.err);
     }
 
     const refreshed = await provider.refreshAccessToken();
 
     if (refreshed.err) {
-      return this.setPostStatusError(`${target}: ${refreshed.err}`);
+      return this.setPostStatusError(refreshed.err);
     }
 
     let posted = await provider.post(id, data);
 
     if (posted.err) {
-      return this.setPostStatusError(`${target}: ${posted.err}`);
+      return this.setPostStatusError(posted.err);
     }
 
     const completed = await updateDoc(this.ref, {
@@ -284,11 +281,10 @@ export class Post {
     });
 
     if (completed.err) {
-      const err = `Failed to set completed status: ${completed.err}`;
-      return this.setPostStatusError(err);
+      return this.setPostStatusError(completed.err);
     }
 
-    return { err: undefined, data: "posting" };
+    return { data: "posting" };
   }
 
   /**
@@ -301,7 +297,7 @@ export class Post {
     const ended = ["completed", "failed"];
 
     if (Object.values(targets).some((t) => !ended.includes(t.status))) {
-      return { err: undefined, data: undefined };
+      return {};
     }
 
     const status = Object.values(targets).some((t) => t.status === "failed")
@@ -314,10 +310,9 @@ export class Post {
     });
 
     if (updated.err) {
-      logger.error(updated.err);
       return updated;
     }
 
-    return { err: undefined, data: status };
+    return { data: status };
   }
 }

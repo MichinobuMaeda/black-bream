@@ -1,4 +1,5 @@
 <script>
+  import { serverTimestamp } from "firebase/firestore";
   import Content from "../../lib/components/Content.svelte";
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
@@ -56,7 +57,7 @@
   const onSave = async () => {
     name = name.trim();
     text = text.trim();
-    const deletedAt = deleted ? new Date() : null;
+    const deletedAt = deleted ? serverTimestamp() : null;
     active = true;
     result = await (id
       ? updateDocument("templates", id, { name, text, deletedAt })

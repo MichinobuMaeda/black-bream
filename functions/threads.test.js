@@ -62,7 +62,8 @@ describe("post", () => {
   it("should return error, if getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
-    mockGetParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
@@ -70,7 +71,7 @@ describe("post", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should post to Threads.", async () => {
@@ -105,7 +106,7 @@ describe("post", () => {
         { method: "POST" },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should post with image to Threads.", async () => {
@@ -141,20 +142,21 @@ describe("post", () => {
         { method: "POST" },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error, if axis.post raises an exception for Threads.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
-    httpRequest.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
 
     // Verify
-    expect(result).toEqual({ err: "Failed to create container: error" });
+    expect(result).toEqual({ err });
     expect(httpRequest.mock.calls).toEqual([
       [
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
@@ -170,7 +172,8 @@ describe("post", () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
-    httpRequest.mockResolvedValueOnce({ err: "500 Server error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
@@ -185,15 +188,14 @@ describe("post", () => {
         { method: "POST" },
       ],
     ]);
-    expect(result).toEqual({
-      err: "Failed to create container: 500 Server error",
-    });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if axis.post returns error status for Threads #2.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
+    const err = new Error("test error");
     httpRequest
       .mockResolvedValueOnce({
         data: {
@@ -201,7 +203,7 @@ describe("post", () => {
           json: () => Promise.resolve({ id: "01234566789" }),
         },
       })
-      .mockResolvedValueOnce({ err: "500 Server error" });
+      .mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
@@ -222,7 +224,7 @@ describe("post", () => {
         { method: "POST" },
       ],
     ]);
-    expect(result).toEqual({ err: "500 Server error" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -251,7 +253,8 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
-    mockGetParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -260,7 +263,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if no access token is set.", async () => {
@@ -279,7 +282,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "No access token" });
+    expect(result).toEqual({ err: new Error("No access token") });
   });
 
   it("should return error if no expiration is set.", async () => {
@@ -298,7 +301,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "No expiredAt" });
+    expect(result).toEqual({ err: new Error("No expiredAt") });
   });
 
   it(
@@ -325,7 +328,7 @@ describe("refreshAccessToken", () => {
       expect(mockGetParams.mock.calls).toEqual([[]]);
       expect(httpRequest).not.toHaveBeenCalled();
       expect(mockUpdateParams).not.toHaveBeenCalled();
-      expect(result).toEqual({ err: undefined });
+      expect(result).toEqual({});
     },
   );
 
@@ -344,7 +347,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([[refreshTokenUrl]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateDataNewAccessToken]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error, if updateParams returns error.", async () => {
@@ -353,7 +356,8 @@ describe("refreshAccessToken", () => {
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     httpRequest.mockResolvedValueOnce(respNewAccessToken);
-    mockUpdateParams.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -362,7 +366,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([[refreshTokenUrl]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateDataNewAccessToken]]);
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if httpRequest returns error.", async () => {
@@ -371,7 +375,8 @@ describe("refreshAccessToken", () => {
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
-    httpRequest.mockResolvedValueOnce({ err: "500 Server error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -380,9 +385,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([[refreshTokenUrl]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      err: "Failed to refresh Threads access token: 500 Server error",
-    });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if fetch raises an exception.", async () => {
@@ -391,7 +394,8 @@ describe("refreshAccessToken", () => {
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
-    httpRequest.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -400,9 +404,7 @@ describe("refreshAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([[refreshTokenUrl]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      err: "Failed to refresh Threads access token: error",
-    });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -462,7 +464,7 @@ describe("setAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([httpPostParams, httpGetParams]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error, if no code is set.", async () => {
@@ -479,7 +481,7 @@ describe("setAccessToken", () => {
     expect(mockGetParams).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "No code" });
+    expect(result).toEqual({ err: new Error("No code") });
   });
 
   it("should return error, if getDoc returns error.", async () => {
@@ -487,7 +489,8 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValueOnce({});
-    mockGetParams.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
@@ -496,7 +499,7 @@ describe("setAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if failed to auth access_token.", async () => {
@@ -504,8 +507,8 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
-    httpRequest.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
@@ -514,7 +517,7 @@ describe("setAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([httpPostParams]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "POST /oauth/access_token: error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if failed to get access token.", async () => {
@@ -535,7 +538,7 @@ describe("setAccessToken", () => {
     expect(httpRequest.mock.calls).toEqual([httpPostParams]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
     expect(result).toEqual({
-      err: "POST /oauth/access_token: failed to get access token",
+      err: new Error("POST /oauth/access_token: failed to get access token"),
     });
   });
 
@@ -545,11 +548,12 @@ describe("setAccessToken", () => {
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValueOnce({});
+    const err = new Error("test error");
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
       })
-      .mockResolvedValueOnce({ err: "error" });
+      .mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
@@ -558,7 +562,7 @@ describe("setAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([httpPostParams, httpGetParams]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "GET /access_token: error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if failed to get new access_token.", async () => {
@@ -583,7 +587,7 @@ describe("setAccessToken", () => {
     expect(httpRequest.mock.calls).toEqual([httpPostParams, httpGetParams]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
     expect(result).toEqual({
-      err: "GET /access_token: failed to get access token",
+      err: new Error("GET /access_token: failed to get access token"),
     });
   });
 
@@ -599,7 +603,8 @@ describe("setAccessToken", () => {
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(tokenData) },
       });
-    mockUpdateParams.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
@@ -608,6 +613,6 @@ describe("setAccessToken", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([httpPostParams, httpGetParams]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 });

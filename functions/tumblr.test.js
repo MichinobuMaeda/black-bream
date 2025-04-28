@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { getPublicMediaUrl, generateLinkCard, httpRequest } from "./utils.js";
 import { Tumblr } from "./tumblr.js";
 import { mock } from "@atproto/api";
+import { error } from "firebase-functions/logger";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");
@@ -53,12 +54,13 @@ describe("post", () => {
   };
   getPublicMediaUrl.mockReturnValue("https://public-media-url");
   generateLinkCard.mockReturnValue({ data: undefined });
-  httpRequest.mockResolvedValue({ err: undefined });
+  httpRequest.mockResolvedValue({});
 
   it("should return error if getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(tumblr, "getParams");
-    mockGetParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.post(id, { text, files });
@@ -68,7 +70,7 @@ describe("post", () => {
     expect(getPublicMediaUrl).not.toHaveBeenCalled();
     expect(generateLinkCard).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should post only text.", async () => {
@@ -91,7 +93,7 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should post text and image", async () => {
@@ -119,7 +121,7 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should post text and link", async () => {
@@ -149,14 +151,15 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error if post request failed.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
-    httpRequest.mockResolvedValueOnce({ err: "Post request failed" });
+    const err = new Error("Post request failed");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.post(id, { text, files });
@@ -178,7 +181,7 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: "httpRequest: Post request failed" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -208,10 +211,10 @@ describe("refreshAccessToken", () => {
   it("should return error if getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(tumblr, "getParams");
-    const err = "Error";
+    const err = new Error("test error");
     mockGetParams.mockResolvedValue({ err });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -228,7 +231,7 @@ describe("refreshAccessToken", () => {
     // Prepare
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     mockGetParams.mockResolvedValueOnce({
       data: {
         ...params,
@@ -244,7 +247,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error if httpRequest returns error.", async () => {
@@ -252,8 +255,9 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
-    httpRequest.mockResolvedValueOnce({ err: "Error" });
+    mockUpdateParams.mockResolvedValue({});
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -263,7 +267,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: `/2/oauth2/token: Error` });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error.", async () => {
@@ -271,7 +275,8 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -281,7 +286,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: "service/auth update: Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if httpRequest returns error.", async () => {
@@ -290,7 +295,8 @@ describe("refreshAccessToken", () => {
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
     mockUpdateParams.mockResolvedValue({ err: undefined });
-    httpRequest.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -300,7 +306,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: `/2/oauth2/token: Error` });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error.", async () => {
@@ -308,7 +314,8 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -318,7 +325,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: "service/auth update: Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should set new access token.", async () => {
@@ -326,7 +333,7 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await tumblr.refreshAccessToken();
@@ -336,7 +343,7 @@ describe("refreshAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should restore old access token if failed to get new access token.", async () => {
@@ -344,7 +351,7 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });
@@ -364,7 +371,7 @@ describe("refreshAccessToken", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 });
 
@@ -401,7 +408,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     const code = "";
 
     // Execute
@@ -412,7 +419,7 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: `invalid code: ${code}` });
+    expect(result).toEqual({ err: new Error(`invalid code: '${code}'`) });
   });
 
   it("should return error if code is 'error'.", async () => {
@@ -420,7 +427,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     const code = "error";
 
     // Execute
@@ -431,15 +438,15 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: `invalid code: ${code}` });
+    expect(result).toEqual({ err: new Error(`invalid code: '${code}'`) });
   });
 
   it("should return error if getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
-    const err = "Error";
+    mockUpdateParams.mockResolvedValue({});
+    const err = new Error("test error");
     mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
@@ -458,8 +465,9 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
-    httpRequest.mockResolvedValueOnce({ err: "Error" });
+    mockUpdateParams.mockResolvedValue({});
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.setAccessToken({ code });
@@ -469,7 +477,7 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: `/2/oauth2/token: Error` });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if updateDoc returns error.", async () => {
@@ -477,7 +485,8 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await tumblr.setAccessToken({ code });
@@ -487,7 +496,7 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: "service/auth update: Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should update access token.", async () => {
@@ -495,7 +504,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await tumblr.setAccessToken({ code });
@@ -505,7 +514,7 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams.mock.calls).toEqual([[updateData]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should restore old params if failed to get params except access token.", async () => {
@@ -513,7 +522,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     const accessToken = "tumblr-access-token";
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({ access_token: accessToken }) },
@@ -529,7 +538,7 @@ describe("setAccessToken", () => {
     expect(mockUpdateParams.mock.calls).toEqual([
       [{ accessToken: accessToken }],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error if failed to get new access token.", async () => {
@@ -537,7 +546,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(tumblr, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(tumblr, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });
@@ -550,6 +559,8 @@ describe("setAccessToken", () => {
     expect(FormData.prototype.append.mock.calls).toEqual(formData);
     expect(httpRequest.mock.calls).toEqual([[authUrl, authParams]]);
     expect(mockUpdateParams).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "Failed to get new access_token" });
+    expect(result).toEqual({
+      err: new Error("Failed to get new access_token"),
+    });
   });
 });

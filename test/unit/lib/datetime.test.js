@@ -7,249 +7,378 @@ import {
   expect,
   vi,
 } from "vitest";
+import { add } from "date-fns";
+import { Timestamp } from "firebase/firestore";
 
-import {
-  formatDateTime,
-  formatLongDateTime,
-  getNextPreDefinedSchedule,
-} from "../../../src/lib/datetime.js";
-
-Date.prototype.getTimezoneOffset = vi.fn();
-
-const orgTz = process.env.TZ;
-beforeAll(() => {
-  process.env.TZ = "Asia/Tokyo";
-});
+import { LocalizedDateTime } from "../../../src/lib/datetime.js";
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
-afterAll(() => {
-  process.env.TZ = orgTz;
-});
+describe("LocalizedDateTime's constructor", () => {
+  const systemTz = process.env.TZ || "Asia/Tokyo";
 
-describe("formatDateTime", () => {
   it(
-    "should format a date object to YYYY-MM-DD HH:mm string" +
-      " of the browser timezone.",
+    "should set system timezone, given value," + " locale and schedule.",
     () => {
       // Prepare
-      Date.prototype.getTimezoneOffset.mockReturnValue(-540); // UTC+9
-      const date = new Date("2000-01-01T00:00:00Z");
+      const iso = "2020-01-01T00:00:00.000Z";
+      const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
-      // Execute and verify
-      expect(formatDateTime(date)).toBe("2000-01-01 09:00");
+      // Execute
+      const ldt = new LocalizedDateTime(new Date(iso), "ja", sch);
+
+      // Verify
+      expect(ldt.locale).toBe("ja");
+      expect(ldt.sch).toEqual(sch);
+      expect(ldt.dt).toEqual(new Date(iso));
     },
   );
-
-  it("should return null for invalid date", () => {
-    // Prepare
-    const invalidDate = "invalid date";
-
-    // Execute and verify
-    expect(formatDateTime(invalidDate)).toBe(null);
-  });
 });
 
-describe("formatLongDateTime", () => {
-  it(
-    "should format a date object to YYYY-MM-DD dow HH:mm string" +
-      " of the browser timezone.",
-    () => {
-      // Prepare
-      Date.prototype.getTimezoneOffset.mockReturnValue(-540); // UTC+9
-      const date = new Date("2000-01-01T00:00:00Z");
-      const dow = { short: () => "Sa" };
+describe("LocalizedDateTime.factory", () => {
+  const systemTz = process.env.TZ || "Asia/Tokyo";
 
-      // Execute and verify
-      expect(formatLongDateTime(date, dow)).toBe("2000-01-01(Sa)09:00");
-    },
-  );
-
-  it("should return null for invalid date", () => {
+  it("should set the given value: 'YYYY-MM-DD' as system timezone.", () => {
     // Prepare
-    const invalidDate = "invalid date";
-    const dow = { short: () => "Sa" };
-
-    // Execute and verify
-    expect(formatLongDateTime(invalidDate, dow)).toBe(null);
-  });
-});
-
-describe("getNextPreDefinedSchedule", () => {
-  it(
-    "should get the next schedule from the predefined schedules" +
-      " for delta:1 if base is later than now.",
-    () => {
-      // Prepare
-      const delta = 1;
-      const preDefined = {
-        wd: [0, 1, 2, 3, 4],
-        h: [9, 10],
-        m: [13, 31],
-      };
-      // new Date("2050-01-01T00:00:00.000+0900").getDay() -> 6
-
-      // Execute and verify #1
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-01T00:00:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2050-01-02T09:13:00.000+0900"));
-
-      // Execute and verify #2
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-02T09:11:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2050-01-02T09:13:00.000+0900"));
-
-      // Execute and verify #3
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-02T09:14:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2050-01-02T09:31:00.000+0900"));
-
-      // Execute and verify #4
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-02T09:32:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2050-01-02T10:13:00.000+0900"));
-
-      // Execute and verify #5
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-02T10:32:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2050-01-03T09:13:00.000+0900"));
-    },
-  );
-
-  it("should get nearly now for delta:1 if base is not later than now.", () => {
-    // Prepare
-    const delta = 1;
-    const preDefined = {
-      wd: [0, 1, 2, 3, 4],
-      h: [9, 10],
-      m: [13, 31],
-    };
-    const base = new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000);
+    const seed = "2020-01-01";
+    const iso = "2019-12-31T15:00:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
     // Execute
-    const ret = getNextPreDefinedSchedule(
-      preDefined,
-      base.toISOString(),
-      delta,
-    );
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
 
     // Verify
-    expect(ret.getTime()).toBeGreaterThanOrEqual(
-      new Date().getTime() - 60 * 1000,
-    );
-    expect(ret.getTime()).toBeLessThanOrEqual(
-      new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
-    );
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
   });
 
+  it("should set the given value: 'YYYY-MM-DD HH:mm' as system timezone.", () => {
+    // Prepare
+    const seed = "2020-01-01 12:00";
+    const iso = "2020-01-01T03:00:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
+
+  it("should set the given value: 1500000000000.", () => {
+    // Prepare
+    const seed = 1500000000000;
+    const iso = "2017-07-14T02:40:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
+
+  it("should set the given value: 1600000000.", () => {
+    // Prepare
+    const seed = 1600000000;
+    const iso = "2020-09-13T12:26:40.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
+
+  it("should set the given instance of Date.", () => {
+    // Prepare
+    const seed = new Date("2020-02-22T00:00:00.000Z");
+    const iso = "2020-02-22T00:00:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
+
+  it("should set the given instance of Timestamp.", () => {
+    // Prepare
+    const seed = Timestamp.fromDate(new Date("2020-02-22T00:00:00.000Z"));
+    const iso = "2020-02-22T00:00:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
+
+  it("should set current system timezone without given value.", () => {
+    // Prepare
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt.getTime()).toBeLessThanOrEqual(new Date().getTime());
+    expect(ldt.dt.getTime()).toBeGreaterThan(new Date().getTime() - 100);
+  });
+
+  it("should return undefined with invalid given value.", () => {
+    // Prepare
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", sch, {});
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toBeUndefined;
+  });
+});
+
+describe("formatDate()", () => {
+  it("should format date to YYYY-MM-DD.", () => {
+    // Prepare
+    const seed = "2020-02-22";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Execute
+    const result = ldt.formatDate();
+
+    // Verify
+    expect(result).toBe("2020-02-22");
+  });
+});
+
+describe("formatDateTime()", () => {
+  it("should format date and time to YYYY-MM-DD HH:mm.", () => {
+    // Prepare
+    const seed = "2020-02-22 00:00";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Execute
+    const result = ldt.formatDateTime();
+
+    // Verify
+    expect(result).toBe("2020-02-22 00:00");
+  });
+});
+
+describe("formatDateTimeLong()", () => {
+  it("should format date and time to YYYY-MM-DD(dd)HH:mm for locale: ja.", () => {
+    // Prepare
+    const seed = "2020-02-22 00:00";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+    // Execute
+    const result = ldt.formatDateTimeLong();
+
+    // Verify
+    expect(result).toBe("2020-02-22(土)00:00");
+  });
+  it("should format date and time to YYYY-MM-DD(dd)HH:mm for locale: en.", () => {
+    // Prepare
+    const seed = "2020-02-22 00:00";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const ldt = LocalizedDateTime.factory("en", sch, seed);
+
+    // Execute
+    const result = ldt.formatDateTimeLong();
+
+    // Verify
+    expect(result).toBe("2020-02-22(Sa)00:00");
+  });
+});
+
+describe("getNextOrPreviousSchedule()", () => {
   it(
-    "should get the next schedule from the predefined schedules" +
-      " for delta:-1 if base is later than now.",
+    "should not get the next schedule" +
+      " if any member of schedules object is empty.",
     () => {
       // Prepare
-      const delta = -1;
-      const preDefined = {
-        wd: [0, 1, 2, 3, 4],
-        h: [9, 10],
-        m: [13, 31],
-      };
-      // new Date("2050-01-01T00:00:00.000+0900").getDay() -> 6
+      const seed = add(new Date(), { days: 7 - new Date().getDay() });
+      console.log(seed.getDay());
 
-      // Execute and verify #1
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2050-01-01T00:00:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2049-12-30T10:31:00.000+0900"));
+      {
+        // Prepare #1
+        const sch = { wd: [], h: [4, 6, 8], m: [9, 11, 13] };
 
-      // Execute and verify #1
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2049-12-30T10:32:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2049-12-30T10:31:00.000+0900"));
+        // Execute #1
+        const ldt = LocalizedDateTime.factory("ja", sch, seed);
 
-      // Execute and verify #2
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2049-12-30T10:30:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2049-12-30T10:13:00.000+0900"));
+        // Verify #1
+        expect(ldt.getPrevSchedule()).toBe(ldt);
+        expect(ldt.getNextSchedule()).toBe(ldt);
+      }
 
-      // Execute and verify #3
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2049-12-30T10:12:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2049-12-30T09:31:00.000+0900"));
+      {
+        // Prepare #2
+        const sch = { wd: [1, 2, 3], h: [], m: [9, 11, 13] };
 
-      // Execute and verify #4
-      expect(
-        getNextPreDefinedSchedule(
-          preDefined,
-          "2049-12-30T09:12:00.000+0900",
-          delta,
-        ),
-      ).toEqual(new Date("2049-12-29T10:31:00.000+0900"));
+        // Execute #2
+        const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+        // Verify #2
+        expect(ldt.getPrevSchedule()).toBe(ldt);
+        expect(ldt.getNextSchedule()).toBe(ldt);
+      }
+
+      {
+        // Prepare #3
+        const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [] };
+
+        // Execute #3
+        const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+        // Verify #3
+        expect(ldt.getPrevSchedule()).toBe(ldt);
+        expect(ldt.getNextSchedule()).toBe(ldt);
+      }
     },
   );
 
-  it("should get nearly now for delta:-1 if base is not later than now.", () => {
+  it("should return the previous schedule.", () => {
     // Prepare
-    const delta = -1;
-    const preDefined = {
-      wd: [0, 1, 2, 3, 4],
-      h: [9, 10],
-      m: [13, 31],
-    };
-    const base = new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000);
+    const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
 
-    // Execute
-    const ret = getNextPreDefinedSchedule(
-      preDefined,
-      base.toISOString(),
-      delta,
-    );
+    {
+      // Prepare #1
+      const seed = add(new Date(), { days: -10 });
+      const ldt = LocalizedDateTime.factory("ja", sch, seed);
 
-    console.log("base", base);
-    console.log("ret", ret);
+      // Execute #1
+      const prv = ldt.getPrevSchedule();
 
-    // Verify
-    expect(ret.getTime()).toBeGreaterThanOrEqual(
-      new Date().getTime() - 60 * 1000,
-    );
-    expect(ret.getTime()).toBeLessThanOrEqual(
-      new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
-    );
+      // Verify #1
+      expect(prv.dt.getTime()).toBeLessThanOrEqual(
+        add(new Date(), { minutes: 1 }).getTime(),
+      );
+      expect(prv.dt.getTime()).toBeGreaterThanOrEqual(
+        add(new Date(), { minutes: -1 }).getTime(),
+      );
+    }
+
+    {
+      // Prepare #2
+      const seed = add(new Date(), { days: 14 - new Date().getDay() });
+      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+      // Execute #2-1
+      const prv1 = ldt.getPrevSchedule();
+
+      // Verify #2-1
+      expect(prv1.dt.getDay()).toBe(3);
+      expect(prv1.dt.getHours()).toBe(8);
+      expect(prv1.dt.getMinutes()).toBe(13);
+
+      // Execute #2-2
+      const prv2 = prv1.getPrevSchedule();
+
+      // Verify #2-2
+      expect(prv2.dt.getDay()).toBe(3);
+      expect(prv2.dt.getHours()).toBe(8);
+      expect(prv2.dt.getMinutes()).toBe(11);
+
+      // Execute #2-3
+      const prv3 = prv2.getPrevSchedule();
+
+      // Verify #2-3
+      expect(prv3.dt.getDay()).toBe(3);
+      expect(prv3.dt.getHours()).toBe(8);
+      expect(prv3.dt.getMinutes()).toBe(9);
+
+      // Execute #2-4
+      const prv4 = prv3.getPrevSchedule();
+
+      // Verify #2-4
+      expect(prv4.dt.getDay()).toBe(3);
+      expect(prv4.dt.getHours()).toBe(6);
+      expect(prv4.dt.getMinutes()).toBe(13);
+    }
+  });
+
+  it("should return the next schedule.", () => {
+    // Prepare
+    const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
+
+    {
+      // Prepare #1
+      const seed = add(new Date(), { days: -10 });
+      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+      // Execute #1
+      const nxt = ldt.getNextSchedule();
+
+      // Verify #1
+      expect(nxt.dt.getTime()).toBeLessThanOrEqual(
+        add(new Date(), { minutes: 1 }).getTime(),
+      );
+      expect(nxt.dt.getTime()).toBeGreaterThanOrEqual(
+        add(new Date(), { minutes: -1 }).getTime(),
+      );
+    }
+
+    {
+      // Prepare #2
+      const seed = add(new Date(), { days: 7 - new Date().getDay() });
+      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+
+      // Execute #2-1
+      const nxt1 = ldt.getNextSchedule();
+
+      // Verify #2-1
+      expect(nxt1.dt.getDay()).toBe(1);
+      expect(nxt1.dt.getHours()).toBe(4);
+      expect(nxt1.dt.getMinutes()).toBe(9);
+
+      // Execute #2-2
+      const nxt2 = nxt1.getNextSchedule();
+
+      // Verify #2-2
+      expect(nxt2.dt.getDay()).toBe(1);
+      expect(nxt2.dt.getHours()).toBe(4);
+      expect(nxt2.dt.getMinutes()).toBe(11);
+
+      // Execute #2-3
+      const nxt3 = nxt2.getNextSchedule();
+
+      // Verify #2-3
+      expect(nxt3.dt.getDay()).toBe(1);
+      expect(nxt3.dt.getHours()).toBe(4);
+      expect(nxt3.dt.getMinutes()).toBe(13);
+
+      // Execute #2-4
+      const nxt4 = nxt3.getNextSchedule();
+
+      // Verify #2-4
+      expect(nxt4.dt.getDay()).toBe(1);
+      expect(nxt4.dt.getHours()).toBe(6);
+      expect(nxt4.dt.getMinutes()).toBe(9);
+    }
   });
 });

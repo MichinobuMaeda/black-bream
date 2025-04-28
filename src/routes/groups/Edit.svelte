@@ -1,5 +1,6 @@
 <script>
   import { pop } from "svelte-spa-router";
+  import { serverTimestamp } from "firebase/firestore";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Fields from "../../lib/components/Fields.svelte";
@@ -66,7 +67,7 @@
     result = await updateDocument("groups", group.id, {
       name,
       users,
-      deletedAt: deleted ? new Date() : null,
+      deletedAt: deleted ? serverTimestamp() : null,
     });
 
     active = false;

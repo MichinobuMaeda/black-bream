@@ -1,4 +1,5 @@
 <script>
+  import { serverTimestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -10,8 +11,7 @@
   import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
-  import { t, store } from "../../lib/store.svelte.js";
-  import { formatDateTime } from "../../lib/datetime.js";
+  import { t, store, dt } from "../../lib/store.svelte.js";
   import { updateDocument } from "../../lib/firebase.js";
 
   let edit = $state(false);
@@ -95,8 +95,8 @@
         callBackUrl: threadsCallBackUrl,
         clientId: threadsClientId,
         clientSecret: threadsClientSecret,
-        updatedAt: new Date(),
-        deletedAt: threadsEnabled ? null : new Date(),
+        updatedAt: serverTimestamp(),
+        deletedAt: threadsEnabled ? null : serverTimestamp(),
       },
     });
     active = false;
@@ -160,7 +160,7 @@
             id="threadsAccessToken"
             label="Access Token"
             bind:value={threadsAccessToken}
-            message={`expired: ${formatDateTime(threadsExpiredAt?.toDate() || "--")}`}
+            message={`expired: ${threadsExpiredAt ? dt(threadsExpiredAt).formatDateTime() : "--"}`}
             readonly
           />
         {:else if threadsAccessTokenReady && !changed}

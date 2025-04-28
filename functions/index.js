@@ -13,11 +13,13 @@ import { getAuth } from "firebase-admin/auth";
 import { getFunctions } from "firebase-admin/functions";
 import { getStorage, getDownloadURL } from "firebase-admin/storage";
 import { Threads } from "./threads.js";
+import { Instagram } from "./instagram.js";
 import { Tumblr } from "./tumblr.js";
 import { Twitter } from "./twitter.js";
 import { Post } from "./post.js";
 import * as account from "./account.js";
 import * as deployment from "./deployment.js";
+import { handleError, handleOnCall } from "./utils.js";
 import { createUiTestData } from "./ui_test_data.js";
 
 const timeZone = "Asia/Tokyo";
@@ -29,6 +31,9 @@ const optOnCall = process.env.FUNCTIONS_EMULATOR
 const app = initializeApp();
 const db = getFirestore(app);
 const bucket = getStorage(app).bucket();
+
+const recordError = handleError(db);
+const recordOnCall = handleOnCall(db);
 
 // https://<region>-<project-id>.cloudfunctions.net/public
 export const media = onRequest({ region, cors: true }, async (req, res) => {
@@ -53,7 +58,7 @@ export const media = onRequest({ region, cors: true }, async (req, res) => {
 });
 
 export const post = onTaskDispatched({ region }, async ({ data }) =>
-  new Post(db, bucket, data).post(),
+  recordError(new Post(db, bucket, data).post()),
 );
 
 const getQueue = (project, location, name) =>
@@ -67,8 +72,10 @@ export const onPostCreated = onDocumentCreated(
     if (process.env.FUNCTIONS_EMULATOR) {
       logger.info("On emulator");
     } else {
-      await new Post(db, bucket, data).createPosts(
-        getQueue(project, location, "post"),
+      await recordError(
+        new Post(db, bucket, data).createPosts(
+          getQueue(project, location, "post"),
+        ),
       );
     }
   },
@@ -84,17 +91,23 @@ export const onPostUpdated = onDocumentUpdated(
       const queue = getQueue(project, location, "post");
 
       if (after.data().status === "posting") {
-        await new Post(db, bucket, after).checkCompleted();
+        await recordError(new Post(db, bucket, after).checkCompleted());
       } else if (before.data().deletedAt && !after.data().deletedAt) {
-        await new Post(db, bucket, after).createPosts(queue);
+        await recordError(new Post(db, bucket, after).createPosts(queue));
       } else if (!before.data().deletedAt && after.data().deletedAt) {
-        await new Post(db, bucket, before).deletePosts(queue, before);
+        await recordError(
+          new Post(db, bucket, before).deletePosts(queue, before),
+        );
       } else if (
         before.data().scheduledFor?.toDate().getTime() !==
         after.data().scheduledFor?.toDate().getTime()
       ) {
-        await new Post(db, bucket, before).deletePosts(queue, before);
-        await new Post(db, bucket, after).createPosts(queue, after);
+        await recordError(
+          new Post(db, bucket, before).deletePosts(queue, before),
+        );
+        await recordError(
+          new Post(db, bucket, after).createPosts(queue, after),
+        );
       } else if (
         Object.keys(before.data().targets ?? {}).length !==
           Object.keys(after.data().targets ?? {}).length ||
@@ -102,8 +115,12 @@ export const onPostUpdated = onDocumentUpdated(
           Object.keys(after.data().targets ?? {}).includes(item),
         )
       ) {
-        await new Post(db, bucket, before).deletePosts(queue, before);
-        await new Post(db, bucket, after).createPosts(queue, after);
+        await recordError(
+          new Post(db, bucket, before).deletePosts(queue, before),
+        );
+        await recordError(
+          new Post(db, bucket, after).createPosts(queue, after),
+        );
       }
     }
   },
@@ -112,72 +129,111 @@ export const onPostUpdated = onDocumentUpdated(
 export const onServiceAuthUpdated = onDocumentUpdated(
   { document: "service/auth", region },
   async ({ data }) => {
-    const { after } = data;
-    const confRef = db.collection("service").doc("conf");
-    await confRef.update({
-      postTargets: Object.entries(after.data())
-        .filter(
-          ([key]) => !["createdAt", "updatedAt", "deletedAt"].includes(key),
-        )
-        .filter(([, value]) => !value.deletedAt)
-        .map(([key]) => key),
-    });
+    try {
+      const { after } = data;
+      const confRef = db.collection("service").doc("conf");
+      await confRef.update({
+        postTargets: Object.entries(after.data())
+          .filter(
+            ([key]) => !["createdAt", "updatedAt", "deletedAt"].includes(key),
+          )
+          .filter(([, value]) => !value.deletedAt)
+          .map(([key]) => key),
+      });
+    } catch (err) {
+      await recordError({ err });
+    }
   },
 );
 
-export const addAuthUser = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "managers", () =>
-    account.addAuthUser(getAuth(app), db, data?.uid, data?.email),
+export const addAuthUser = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "addAuthUser",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "managers", () =>
+      account.addAuthUser(getAuth(app), db, data?.uid, data?.email),
+    ),
   ),
 );
 
-export const updateAuthEmail = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "managers", () =>
-    account.updateAuthEmail(getAuth(app), data?.uid, data?.email),
+export const updateAuthEmail = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "updateAuthEmail",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "managers", () =>
+      account.updateAuthEmail(getAuth(app), data?.uid, data?.email),
+    ),
   ),
 );
 
-export const removeAuthUser = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "managers", () =>
-    account.removeAuthUser(getAuth(app), data?.uid),
+export const removeAuthUser = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "removeAuthUser",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "managers", () =>
+      account.removeAuthUser(getAuth(app), data?.uid),
+    ),
   ),
 );
 
-export const getAuthUser = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "managers", () =>
-    account.getAuthUser(getAuth(app), data?.uid),
+export const getAuthUser = onCall(optOnCall, async ({ data, auth }) =>
+  recordError(
+    account.gateForGroupMembers(db, auth, "managers", () =>
+      account.getAuthUser(getAuth(app), data?.uid),
+    ),
   ),
 );
 
-export const setThreadsAccessToken = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "admins", () =>
-    new Threads(db, bucket).setAccessToken(data),
+export const setThreadsAccessToken = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "setThreadsAccessToken",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "admins", () =>
+      new Threads(db, bucket).setAccessToken(data),
+    ),
   ),
 );
 
-export const setTwitterAccessToken = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "admins", () =>
-    new Twitter(db, bucket).setAccessToken(data),
+export const setTwitterAccessToken = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "setTwitterAccessToken",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "admins", () =>
+      new Twitter(db, bucket).setAccessToken(data),
+    ),
   ),
 );
 
-export const setTumblrAccessToken = onCall(optOnCall, ({ data, auth }) =>
-  account.gateForGroupMembers(db, auth, "admins", () =>
-    new Tumblr(db, bucket).setAccessToken(data),
+export const setTumblrAccessToken = onCall(optOnCall, async ({ data, auth }) =>
+  recordOnCall(
+    "setTumblrAccessToken",
+    auth,
+    data,
+    account.gateForGroupMembers(db, auth, "admins", () =>
+      new Tumblr(db, bucket).setAccessToken(data),
+    ),
   ),
-);
-
-export const daily = onSchedule(
-  { schedule: "every day 00:11", timeZone, region },
-  async () => new Threads(db, bucket).refreshAccessToken(),
 );
 
 export const onDataVersionDeleted = onDocumentDeleted(
   { document: "service/dataVersion", region },
   async ({ data }) => {
     const auth = getAuth(app);
-    await deployment.updateDataV1(auth, db, data);
-    await deployment.updateDataV2(db, data);
+    recordError(deployment.updateDataV1(auth, db, data));
+    recordError(deployment.updateDataV2(db, data));
+  },
+);
+
+export const daily = onSchedule(
+  { schedule: "every day 00:11", timeZone, region },
+  async () => {
+    recordError(new Threads(db, bucket).refreshAccessToken());
+    recordError(new Instagram(db, bucket).refreshAccessToken());
   },
 );
 

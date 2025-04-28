@@ -37,9 +37,8 @@ describe("uploadImage", () => {
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = { id: mediaId };
-    getMediaAsBlob.mockResolvedValue({ err: undefined, data: new Blob() });
+    getMediaAsBlob.mockResolvedValue({ data: new Blob() });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: vi.fn(() => Promise.resolve(mediaResp)) },
     });
 
@@ -64,7 +63,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: undefined, data: mediaResp });
+    expect(result).toEqual({ data: mediaResp });
   });
 
   it("should upload image to Twitter with wait 10 sec.", async () => {
@@ -78,9 +77,8 @@ describe("uploadImage", () => {
       id: mediaId,
       processing_info: { state: "in_progress", check_after_secs: 10 },
     };
-    getMediaAsBlob.mockResolvedValue({ err: undefined, data: new Blob() });
+    getMediaAsBlob.mockResolvedValue({ data: new Blob() });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: vi.fn(() => Promise.resolve(mediaResp)) },
     });
 
@@ -105,7 +103,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep.mock.calls).toEqual([[10]]);
-    expect(result).toEqual({ err: undefined, data: mediaResp });
+    expect(result).toEqual({ data: mediaResp });
   });
 
   it("should return error when getMediaAsBlob returns error.", async () => {
@@ -116,7 +114,8 @@ describe("uploadImage", () => {
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = { id: mediaId };
-    getMediaAsBlob.mockResolvedValue({ err: "get-media-error" });
+    const err = new Error("test error");
+    getMediaAsBlob.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.uploadImage(accessToken, id, file);
@@ -126,7 +125,7 @@ describe("uploadImage", () => {
     expect(FormData.prototype.append).not.toHaveBeenCalled();
     expect(httpRequest).not.toHaveBeenCalled();
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "get-media-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when httpRequest returns error.", async () => {
@@ -137,8 +136,9 @@ describe("uploadImage", () => {
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = { id: mediaId };
-    getMediaAsBlob.mockResolvedValue({ err: undefined, data: new Blob() });
-    httpRequest.mockResolvedValue({ err: "http-request-error" });
+    getMediaAsBlob.mockResolvedValue({ data: new Blob() });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.uploadImage(accessToken, id, file);
@@ -161,7 +161,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "http-request-error" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -174,8 +174,8 @@ describe("post", () => {
     const data = { text };
     const params = { accessToken };
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
-    httpRequest.mockResolvedValue({ err: undefined, data: {} });
+    mockGetParams.mockResolvedValue({ data: params });
+    httpRequest.mockResolvedValue({ data: {} });
 
     // Execute
     const result = await twitter.post(id, data);
@@ -190,7 +190,7 @@ describe("post", () => {
       },
       body: JSON.stringify({ text }),
     });
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should post to Twitter with media.", async () => {
@@ -202,13 +202,12 @@ describe("post", () => {
     const data = { text, files };
     const params = { accessToken };
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     const mockUploadImage = vi.spyOn(twitter, "uploadImage");
     mockUploadImage.mockResolvedValue({
-      err: undefined,
       data: { id: "media-id" },
     });
-    httpRequest.mockResolvedValue({ err: undefined, data: {} });
+    httpRequest.mockResolvedValue({ data: {} });
 
     // Execute
     const result = await twitter.post(id, data);
@@ -224,7 +223,7 @@ describe("post", () => {
       },
       body: JSON.stringify({ text, media: { media_ids: ["media-id"] } }),
     });
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error when getParams returns error.", async () => {
@@ -234,7 +233,8 @@ describe("post", () => {
     const text = "Hello, world!";
     const data = { text };
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: "get-params-error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.post(id, data);
@@ -242,7 +242,7 @@ describe("post", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "get-params-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when uploadImage returns error.", async () => {
@@ -254,9 +254,10 @@ describe("post", () => {
     const data = { text, files };
     const params = { accessToken };
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     const mockUploadImage = vi.spyOn(twitter, "uploadImage");
-    mockUploadImage.mockResolvedValue({ err: "upload-image-error" });
+    const err = new Error("test error");
+    mockUploadImage.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.post(id, data);
@@ -265,7 +266,7 @@ describe("post", () => {
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(mockUploadImage.mock.calls).toEqual([[accessToken, id, files[0]]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "upload-image-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when httpRequest returns error.", async () => {
@@ -278,7 +279,8 @@ describe("post", () => {
     const params = { accessToken };
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ err: undefined, data: params });
-    httpRequest.mockResolvedValue({ err: "http-request-error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.post(id, data);
@@ -293,7 +295,7 @@ describe("post", () => {
       },
       body: JSON.stringify({ text }),
     });
-    expect(result).toEqual({ err: "http-request-error" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -316,13 +318,12 @@ describe("refreshAccessToken", () => {
   it("should refresh access token.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await twitter.refreshAccessToken();
@@ -360,7 +361,6 @@ describe("refreshAccessToken", () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({
-      err: undefined,
       data: {
         ...params,
         expiredAt: {
@@ -375,13 +375,14 @@ describe("refreshAccessToken", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error when getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: "get-params-error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.refreshAccessToken();
@@ -389,14 +390,15 @@ describe("refreshAccessToken", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "get-params-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when httpRequest returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
-    httpRequest.mockResolvedValue({ err: "http-request-error" });
+    mockGetParams.mockResolvedValue({ data: params });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.refreshAccessToken();
@@ -414,15 +416,14 @@ describe("refreshAccessToken", () => {
         body: expect.any(URLSearchParams),
       },
     );
-    expect(result).toEqual({ err: "/2/oauth2/token: http-request-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when access_token is not returned.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: () => Promise.resolve({}) },
     });
 
@@ -442,22 +443,23 @@ describe("refreshAccessToken", () => {
         body: expect.any(URLSearchParams),
       },
     );
-    expect(result).toEqual({ err: "Failed to get new access_token" });
+    expect(result).toEqual({
+      err: new Error("Failed to get new access_token"),
+    });
   });
 
   it("should skip update refreshToke or expiredAt without new values.", async () => {
     // Prepare
     const access_token = "new-access-token";
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: {
         json: () => Promise.resolve({ access_token }),
       },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await twitter.refreshAccessToken();
@@ -484,13 +486,13 @@ describe("refreshAccessToken", () => {
   it("should return error when updateParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: undefined, data: params });
+    mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: "update-params-error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.refreshAccessToken();
@@ -517,7 +519,7 @@ describe("refreshAccessToken", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: "update-params-error" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -546,11 +548,10 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await twitter.setAccessToken(data);
@@ -583,7 +584,7 @@ describe("setAccessToken", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error when status is empty.", async () => {
@@ -593,7 +594,7 @@ describe("setAccessToken", () => {
     const result = await twitter.setAccessToken({ ...data, status: undefined });
 
     // Verify
-    expect(result).toEqual({ err: "invalid status: undefined" });
+    expect(result).toEqual({ err: new Error("invalid status: undefined") });
   });
 
   it("should return error when status is 'ng'.", async () => {
@@ -603,7 +604,7 @@ describe("setAccessToken", () => {
     const result = await twitter.setAccessToken({ ...data, status: "ng" });
 
     // Verify
-    expect(result).toEqual({ err: "invalid status: ng" });
+    expect(result).toEqual({ err: new Error("invalid status: ng") });
   });
 
   it("should return error when code is empty.", async () => {
@@ -613,7 +614,7 @@ describe("setAccessToken", () => {
     const result = await twitter.setAccessToken({ ...data, code: undefined });
 
     // Verify
-    expect(result).toEqual({ err: "invalid code: undefined" });
+    expect(result).toEqual({ err: new Error("invalid code: undefined") });
   });
 
   it("should return error when code is 'error'.", async () => {
@@ -623,7 +624,7 @@ describe("setAccessToken", () => {
     const result = await twitter.setAccessToken({ ...data, code: "error" });
 
     // Verify
-    expect(result).toEqual({ err: "invalid code: error" });
+    expect(result).toEqual({ err: new Error("invalid code: error") });
   });
 
   it("should return error when challenge is empty.", async () => {
@@ -636,13 +637,14 @@ describe("setAccessToken", () => {
     });
 
     // Verify
-    expect(result).toEqual({ err: "invalid challenge: undefined" });
+    expect(result).toEqual({ err: new Error("invalid challenge: undefined") });
   });
 
   it("should return error when getParams returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
-    mockGetParams.mockResolvedValue({ err: "get-params-error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.setAccessToken(data);
@@ -650,14 +652,15 @@ describe("setAccessToken", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "get-params-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when httpRequest returns error.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
-    httpRequest.mockResolvedValue({ err: "http-request-error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.setAccessToken(data);
@@ -675,7 +678,7 @@ describe("setAccessToken", () => {
         body: expect.any(URLSearchParams),
       },
     );
-    expect(result).toEqual({ err: "/2/oauth2/token: http-request-error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error when access_token is not returned.", async () => {
@@ -683,7 +686,6 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: {
         json: () => Promise.resolve({ ...respData, access_token: undefined }),
       },
@@ -705,7 +707,9 @@ describe("setAccessToken", () => {
         body: expect.any(URLSearchParams),
       },
     );
-    expect(result).toEqual({ err: "Failed to get new access_token" });
+    expect(result).toEqual({
+      err: new Error("Failed to get new access_token"),
+    });
   });
 
   it("should skip update refreshToke or expiredAt without new values.", async () => {
@@ -713,7 +717,6 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: {
         json: () =>
           Promise.resolve({
@@ -724,7 +727,7 @@ describe("setAccessToken", () => {
       },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: undefined });
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await twitter.setAccessToken(data);
@@ -751,7 +754,7 @@ describe("setAccessToken", () => {
     expect(mockUpdateParams.mock.calls).toEqual([
       [{ accessToken: respData.access_token }],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error when updateParams returns error.", async () => {
@@ -759,11 +762,11 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(twitter, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     httpRequest.mockResolvedValue({
-      err: undefined,
       data: { json: () => Promise.resolve(respData) },
     });
     const mockUpdateParams = vi.spyOn(twitter, "updateParams");
-    mockUpdateParams.mockResolvedValue({ err: "update-params-error" });
+    const err = new Error("test error");
+    mockUpdateParams.mockResolvedValue({ err });
 
     // Execute
     const result = await twitter.setAccessToken(data);
@@ -790,6 +793,6 @@ describe("setAccessToken", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: "update-params-error" });
+    expect(result).toEqual({ err });
   });
 });

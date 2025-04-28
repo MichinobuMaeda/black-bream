@@ -19,7 +19,7 @@ export class Twitter extends Provider {
    * @param {string} accessToken
    * @param {string} id
    * @param {string} file
-   * @returns Promise<{err: undefined|string, data: string|undefined}>
+   * @returns Promise<{err: undefined|Error, data: string|undefined}>
    */
   async uploadImage(accessToken, id, file) {
     const timeout = Number(process.env.IMAGE_UPLOAD_TIMEOUT || 5);
@@ -42,8 +42,7 @@ export class Twitter extends Provider {
     });
 
     if (resp.err) {
-      logger.error(resp.err);
-      return resp;
+      return { err: resp.err };
     }
 
     const data = await resp.data.json();
@@ -62,7 +61,7 @@ export class Twitter extends Provider {
       await new sleep(wait);
     }
 
-    return { err: undefined, data };
+    return { data };
   }
 
   /**
@@ -70,13 +69,12 @@ export class Twitter extends Provider {
    *
    * @param {string} id
    * @param {{ text:string, files: array|undefined }} data
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async post(id, { text, files }) {
     const params = await this.getParams();
 
     if (params.err) {
-      logger.error(params.err);
       return params;
     }
 
@@ -107,8 +105,7 @@ export class Twitter extends Provider {
     });
 
     if (resp.err) {
-      logger.error(resp.err);
-      return resp;
+      return { err: resp.err };
     }
 
     return { err: undefined };
@@ -117,7 +114,7 @@ export class Twitter extends Provider {
   /**
    * Refresh access token
    *
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async refreshAccessToken() {
     const params = await this.getParams();
@@ -129,7 +126,7 @@ export class Twitter extends Provider {
     const { clientId, clientSecret, refreshToken, expiredAt } = params.data;
 
     if (expiredAt.toDate() > new Date(new Date().getTime() + 60 * 1000)) {
-      return { err: undefined };
+      return {};
     }
 
     logger.info(JSON.stringify(params));
@@ -150,17 +147,13 @@ export class Twitter extends Provider {
     });
 
     if (resp.err) {
-      const err = `/2/oauth2/token: ${resp.err}`;
-      logger.error(err);
-      return { err };
+      return { err: resp.err };
     }
 
     const oauthData = await resp.data.json();
 
     if (!oauthData.access_token) {
-      const err = "Failed to get new access_token";
-      logger.error(err);
-      return { err };
+      return { err: new Error("Failed to get new access_token") };
     }
 
     const updated = await this.updateParams({
@@ -172,38 +165,31 @@ export class Twitter extends Provider {
     });
 
     if (updated.err) {
-      logger.error(`updateParams ${updated.err}`);
       return updated;
     }
 
-    return { err: undefined, data: oauthData.access_token };
+    return { data: oauthData.access_token };
   }
 
   /**
    * Set access token
    *
    * @param {{status:string, code:string, challenge:string}} data
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async setAccessToken({ status, code, challenge }) {
     logger.log(JSON.stringify({ status, code, challenge }));
 
     if (!status || status === "ng") {
-      const err = `invalid status: ${status}`;
-      logger.error(err);
-      return { err };
+      return { err: new Error(`invalid status: ${status}`) };
     }
 
     if (!code || code === "error") {
-      const err = `invalid code: ${code}`;
-      logger.error(err);
-      return { err };
+      return { err: new Error(`invalid code: ${code}`) };
     }
 
     if (!challenge) {
-      const err = `invalid challenge: ${challenge}`;
-      logger.error(err);
-      return { err };
+      return { err: new Error(`invalid challenge: ${challenge}`) };
     }
 
     const params = await this.getParams();
@@ -232,18 +218,14 @@ export class Twitter extends Provider {
     });
 
     if (resp.err) {
-      const err = `/2/oauth2/token: ${resp.err}`;
-      logger.error(err);
-      return { err };
+      return { err: resp.err };
     }
 
     const oauthData = await resp.data.json();
     logger.log(JSON.stringify(oauthData));
 
     if (!oauthData.access_token) {
-      const err = "Failed to get new access_token";
-      logger.error(err);
-      return { err };
+      return { err: new Error("Failed to get new access_token") };
     }
 
     const updated = await this.updateParams({
@@ -258,6 +240,6 @@ export class Twitter extends Provider {
       return updated;
     }
 
-    return { err: undefined };
+    return {};
   }
 }

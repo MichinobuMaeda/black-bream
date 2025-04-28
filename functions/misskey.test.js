@@ -38,7 +38,7 @@ describe("getMediaList", () => {
     const result = await misskey.getMediaList(url, token, id, []);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: [] });
+    expect(result).toEqual({ data: [] });
   });
 
   it("should return empty media list for undefined files.", async () => {
@@ -46,28 +46,24 @@ describe("getMediaList", () => {
     const result = await misskey.getMediaList(url, token, id, undefined);
 
     // Verify
-    expect(result).toEqual({ err: undefined, data: [] });
+    expect(result).toEqual({ data: [] });
   });
 
   it("should return error, if failed to get media as blob.", async () => {
     // Prepare
-    getMediaAsBlob.mockResolvedValueOnce({ err: "500 Server error" });
+    const err = new Error("500 Server error");
+    getMediaAsBlob.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await misskey.getMediaList(url, token, id, files);
 
     // Verify
-    expect(result).toEqual({ err: "500 Server error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return media list.", async () => {
     // Prepare
-    getMediaAsBlob.mockImplementation(() =>
-      Promise.resolve({
-        err: undefined,
-        data: blob,
-      }),
-    );
+    getMediaAsBlob.mockImplementation(() => Promise.resolve({ data: blob }));
     httpRequest.mockResolvedValueOnce({
       data: {
         status: 200,
@@ -95,16 +91,16 @@ describe("getMediaList", () => {
       ["name", "1.jpg"],
       ["isSensitive", false],
     ]);
-    expect(result).toEqual({ err: undefined, data: ["media-id"] });
+    expect(result).toEqual({ data: ["media-id"] });
   });
 
   it("should return error, if httpRequest returns error.", async () => {
     // Prepare
     getMediaAsBlob.mockResolvedValueOnce({
-      err: undefined,
       data: blob,
     });
-    httpRequest.mockImplementation(() => Promise.resolve({ err: "error" }));
+    const err = new Error("500 Server error");
+    httpRequest.mockImplementation(() => Promise.resolve({ err }));
     FormData.prototype.append = vi.fn();
 
     // Execute
@@ -126,7 +122,7 @@ describe("getMediaList", () => {
       ["name", "1.jpg"],
       ["isSensitive", false],
     ]);
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -144,19 +140,20 @@ describe("post", () => {
 
   it("should return error, if getParams returns error.", async () => {
     // Prepare
-    mockGetParams.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await misskey.post(id, dataText);
 
     // Verify
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 
   it("should post to Misskey.", async () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
-    mockGetMediaList.mockResolvedValueOnce({ err: undefined, data: [] });
+    mockGetMediaList.mockResolvedValueOnce({ data: [] });
     httpRequest.mockResolvedValueOnce({ data: { status: 200 } });
 
     // Execute
@@ -180,16 +177,13 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should post with image to Misskey.", async () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
-    mockGetMediaList.mockResolvedValueOnce({
-      err: undefined,
-      data: ["media-id"],
-    });
+    mockGetMediaList.mockResolvedValueOnce({ data: ["media-id"] });
     httpRequest.mockResolvedValueOnce({ data: { status: 200 } });
 
     // Execute
@@ -217,27 +211,29 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error, if failed to get image ids.", async () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
-    mockGetMediaList.mockResolvedValueOnce({ err: "500 Server error" });
+    const err = new Error("500 Server error");
+    mockGetMediaList.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await misskey.post(id, dataImage);
 
     // Verify
     expect(httpRequest).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "500 Server error" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error, if fetch raises an exception for Misskey.", async () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({ data: [] });
-    httpRequest.mockResolvedValueOnce({ err: "error" });
+    const err = new Error("test error");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await misskey.post(id, dataText);
@@ -260,6 +256,6 @@ describe("post", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: "error" });
+    expect(result).toEqual({ err });
   });
 });

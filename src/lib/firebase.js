@@ -32,6 +32,7 @@ import {
   query,
   orderBy,
   limit,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   getFunctions,
@@ -261,6 +262,22 @@ export class FirebaseState {
         },
         ["admin"],
       ),
+      new UserData(
+        "logs",
+        query(
+          collection(this.db, "logs"),
+          orderBy("createdAt", "desc"),
+          limit(1000),
+        ),
+        [],
+        (snap) => {
+          this.store.logs = this.castQuerySnapshot(snap, "logs");
+        },
+        (error) => {
+          this.unsubscribeUserDataAll(`onSnapshot logs: ${error}`);
+        },
+        ["admin"],
+      ),
     ];
   }
 
@@ -412,7 +429,7 @@ export const updateDocument = async (col, id, data) => {
   try {
     await updateDoc(doc(fb.db, col, id), {
       ...data,
-      updatedAt: new Date(),
+      updatedAt: serverTimestamp(),
     });
 
     return { err: undefined };
@@ -441,14 +458,14 @@ export const createDocument = async (col, data, setId = false) => {
           .slice(2) + nanoid(6);
       await setDoc(doc(fb.db, col, ret.id), {
         ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     } else {
       ret = await addDoc(collection(fb.db, col), {
         ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     }
     return { err: undefined, data: ret };

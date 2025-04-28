@@ -62,6 +62,7 @@ describe("store", () => {
       groups: [],
       posts: [],
       templates: [],
+      logs: [],
       me: undefined,
       admin: false,
       manager: false,

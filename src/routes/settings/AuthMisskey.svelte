@@ -1,4 +1,5 @@
 <script>
+  import { serverTimestamp } from "firebase/firestore";
   import TargetIcon from "../../lib/components/TargetIcon.svelte";
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgUnfoldLess from "../../lib/icons/SvgUnfoldLess.svelte";
@@ -58,8 +59,8 @@
       misskey: {
         token: misskeyToken,
         url: misskeyUrl,
-        updatedAt: new Date(),
-        deletedAt: misskeyEnabled ? null : new Date(),
+        updatedAt: serverTimestamp(),
+        deletedAt: misskeyEnabled ? null : serverTimestamp(),
       },
     });
     active = false;

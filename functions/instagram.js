@@ -1,4 +1,3 @@
-import { logger } from "firebase-functions/v2";
 import { Provider } from "./provider.js";
 import { getPublicMediaUrl, httpRequest } from "./utils.js";
 
@@ -18,65 +17,86 @@ export class Instagram extends Provider {
    *
    * @param {string } id
    * @param {{ text:string, files: array|undefined }} data
-   * @returns {Promise<{err: undefined|string}>}
+   * @returns {Promise<{err: undefined|Error}>}
    */
   async post(id, { text, files }) {
-    const params = await this.getParams();
+    return !files?.length
+      ? { err: new Error("No media files") }
+      : this.getParams().then(({ err, data }) =>
+          err
+            ? { err }
+            : { then: (fn) => fn(data) }.then(({ clientId, accessToken }) =>
+                httpRequest(
+                  `https://graph.instagram.com/v22.0/${clientId}/media`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      caption: text,
+                      image_url: getPublicMediaUrl(id, files[0]),
+                    }),
+                  },
+                ).then(({ err, data }) =>
+                  err
+                    ? { err }
+                    : data.json().then((media) =>
+                        httpRequest(
+                          `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
+                          {
+                            method: "POST",
+                            headers: {
+                              Authorization: `Bearer ${accessToken}`,
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ creation_id: media.id }),
+                          },
+                        ).then(({ err }) => (err ? { err } : {})),
+                      ),
+                ),
+              ),
+        );
+  }
 
-    if (params.err) {
-      logger.error(params.err);
-      return params;
-    }
-
-    const { clientId, accessToken } = params.data;
-
-    if (!files?.length) {
-      return { err: "No media files" };
-    }
-
-    let uploaded = await httpRequest(
-      `https://graph.instagram.com/v22.0/${clientId}/media`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          caption: text,
-          image_url: getPublicMediaUrl(id, files[0]),
-        }),
-      },
+  /**
+   * Refresh access token
+   *
+   * @returns {Promise<{err: undefined|Error}>}
+   */
+  async refreshAccessToken() {
+    return this.getParams().then(({ err, data }) =>
+      err
+        ? { err }
+        : { then: (fn) => fn(data) }.then(({ accessToken, expiredAt }) =>
+            !accessToken
+              ? { err: new Error("No access token") }
+              : !expiredAt
+                ? { err: new Error("No expiredAt") }
+                : expiredAt.toDate().getTime() >
+                    new Date().getTime() + 1000 * 60 * 60 * 24 * 10
+                  ? {}
+                  : httpRequest(
+                      "https://graph.instagram.com/refresh_access_token" +
+                        "?grant_type=ig_refresh_token" +
+                        `&access_token=${accessToken}`,
+                    ).then(({ err, data }) =>
+                      err
+                        ? { err }
+                        : data
+                            .json()
+                            .then((json) =>
+                              this.updateParams({
+                                accessToken: json.access_token,
+                                expiredAt: new Date(
+                                  new Date().getTime() + json.expires_in * 1000,
+                                ),
+                              }).then(({ err }) => ({ err })),
+                            )
+                            .catch((err) => ({ err })),
+                    ),
+          ),
     );
-
-    if (uploaded.err) {
-      const err = `Failed to create container: ${uploaded.err}`;
-      logger.error(err);
-      return { err };
-    }
-
-    const media = await uploaded.data.json();
-
-    logger.info(`Created container: ${media.id}`);
-
-    const posted = await httpRequest(
-      `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ creation_id: media.id }),
-      },
-    );
-
-    if (posted.err) {
-      const err = `Failed to publish: ${posted.err}`;
-      logger.error(err);
-      return { err };
-    }
-
-    return { err: undefined };
   }
 }

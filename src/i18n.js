@@ -236,6 +236,12 @@ export class I18n {
       en: "Recent posts",
     }[this.locale];
   }
+  recentLogs() {
+    return {
+      ja: "最近のログ",
+      en: "Recent logs",
+    }[this.locale];
+  }
   text() {
     return {
       ja: "文面",

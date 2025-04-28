@@ -58,6 +58,14 @@ export const createUiTestData = async (auth, db) => {
         },
       });
 
+    const err = new Error("Test error");
+    await db.collection("logs").add({
+      level: "error",
+      message: err.message || err.toString() || "Unknown error",
+      stack: err.stack || "",
+      createdAt: new Date(),
+    });
+
     logger.info("END  : createUiTestData");
     return { result: "ok" };
   } catch (e) {

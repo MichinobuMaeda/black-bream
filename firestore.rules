@@ -22,6 +22,9 @@ service cloud.firestore {
     match /service/auth {
       allow read, update: if isAdmin();
     }
+    match /logs/{log} {
+      allow read: if isAdmin();
+    }
     match /users/{user} {
       allow read, create, update: if isManager();
       allow read, update: if isActiveAccount() && request.auth.uid == user;

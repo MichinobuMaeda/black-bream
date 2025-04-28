@@ -34,6 +34,7 @@ describe("Mastodon object", () => {
 
 describe("waitMediaUpload", () => {
   const medias = ["media-id"];
+  sleep.mockResolvedValue();
 
   it("should wait default timeout * 1000 for media upload.", async () => {
     // Prepare
@@ -51,7 +52,7 @@ describe("waitMediaUpload", () => {
       ],
     ]);
     expect(sleep.mock.calls).toEqual([[5]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should wait timeout * 1000 for media upload.", async () => {
@@ -69,7 +70,7 @@ describe("waitMediaUpload", () => {
       ],
     ]);
     expect(sleep.mock.calls).toEqual([[2]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should wait timeout * timeout * 1000 for media upload.", async () => {
@@ -87,12 +88,13 @@ describe("waitMediaUpload", () => {
       ],
     ]);
     expect(sleep.mock.calls).toEqual([[2], [2 * 2]]);
-    expect(result).toEqual({ err: undefined });
+    expect(result).toEqual({});
   });
 
   it("should return error if get media status failed.", async () => {
     // Prepare
-    httpRequest.mockResolvedValueOnce({ err: "get media status failed" });
+    const err = new Error("get media status failed");
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.waitMediaUpload(url, token, medias);
@@ -105,7 +107,7 @@ describe("waitMediaUpload", () => {
       ],
     ]);
     expect(sleep.mock.calls).toEqual([[2]]);
-    expect(result).toEqual({ err: "get media status failed" });
+    expect(result).toEqual({ err });
   });
 });
 
@@ -113,8 +115,7 @@ describe("getMediaList", () => {
   const id = "post-id";
   const files = ["file1.png", "file2.png"];
   const blob = { data: "blob" };
-  const mediaId = "media-id";
-  const medias = [mediaId];
+  const medias = ["media-id"];
 
   it("should return empty media list if files is empty.", async () => {
     // Prepare
@@ -138,20 +139,22 @@ describe("getMediaList", () => {
 
   it("should return error if getMediaAsBlob failed.", async () => {
     // Prepare
-    getMediaAsBlob.mockResolvedValueOnce({ err: "get media as blob failed" });
+    const err = new Error("get media as blob failed");
+    getMediaAsBlob.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.getMediaList(url, token, id, files);
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "file1.png"]]);
-    expect(result).toEqual({ err: "get media as blob failed" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if post media failed.", async () => {
     // Prepare
+    const err = new Error("post media failed");
     getMediaAsBlob.mockResolvedValueOnce(blob);
-    httpRequest.mockResolvedValueOnce({ err: "post media failed" });
+    httpRequest.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.getMediaList(url, token, id, files);
@@ -171,7 +174,7 @@ describe("getMediaList", () => {
         },
       ],
     ]);
-    expect(result).toEqual({ err: "post media failed" });
+    expect(result).toEqual({ err });
   });
 
   it("should return error if wait media upload failed.", async () => {
@@ -180,13 +183,12 @@ describe("getMediaList", () => {
     httpRequest.mockResolvedValueOnce({
       data: {
         status: 202,
-        json: () => Promise.resolve({ id: "media-id" }),
+        json: () => Promise.resolve({ id: medias[0] }),
       },
     });
     const mockWaitMediaUpload = vi.spyOn(mastodon, "waitMediaUpload");
-    mockWaitMediaUpload.mockResolvedValueOnce({
-      err: "wait media upload failed",
-    });
+    const err = new Error("wait media upload failed");
+    mockWaitMediaUpload.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.getMediaList(url, token, id, files);
@@ -207,7 +209,7 @@ describe("getMediaList", () => {
       ],
     ]);
     expect(mockWaitMediaUpload.mock.calls).toEqual([[url, token, medias]]);
-    expect(result).toEqual({ err: "wait media upload failed" });
+    expect(result).toEqual({ err });
   });
 
   it("should return media list with wait.", async () => {
@@ -216,7 +218,7 @@ describe("getMediaList", () => {
     httpRequest.mockResolvedValueOnce({
       data: {
         status: 202,
-        json: () => Promise.resolve({ id: "media-id" }),
+        json: () => Promise.resolve({ id: medias[0] }),
       },
     });
     const mockWaitMediaUpload = vi.spyOn(mastodon, "waitMediaUpload");
@@ -244,11 +246,46 @@ describe("getMediaList", () => {
     expect(result).toEqual({ data: medias });
   });
 
+  it("should return error if data.json failed.", async () => {
+    // Prepare
+    getMediaAsBlob.mockResolvedValueOnce(blob);
+    const err = new Error("json failed");
+    httpRequest.mockResolvedValueOnce({
+      data: {
+        status: 202,
+        json: () => Promise.reject(err),
+      },
+    });
+    const mockWaitMediaUpload = vi.spyOn(mastodon, "waitMediaUpload");
+    mockWaitMediaUpload.mockResolvedValueOnce({});
+
+    // Execute
+    const result = await mastodon.getMediaList(url, token, id, files);
+
+    // Verify
+    expect(getMediaAsBlob.mock.calls).toEqual([[bucket, id, "file1.png"]]);
+    expect(global.FormData.prototype.append.mock.calls).toEqual([
+      ["file", "blob", "file1.png"],
+    ]);
+    expect(httpRequest.mock.calls).toEqual([
+      [
+        `${url}/v2/media`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: expect.any(FormData),
+        },
+      ],
+    ]);
+    expect(mockWaitMediaUpload).not.toHaveBeenCalled();
+    expect(result).toEqual({ err });
+  });
+
   it("should return media list without wait.", async () => {
     // Prepare
     getMediaAsBlob.mockResolvedValueOnce(blob);
     httpRequest.mockResolvedValueOnce({
-      data: { status: 200, json: () => Promise.resolve({ id: "media-id" }) },
+      data: { status: 200, json: () => Promise.resolve({ id: medias[0] }) },
     });
 
     // Execute
@@ -363,14 +400,15 @@ describe("post", () => {
 
   it("should return error if getParams returns error.", async () => {
     // Prepare
-    mockGetParams.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockGetParams.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.post(id, { text, files });
 
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
-    expect(result).toEqual({ err: "Error" });
+    expect(result).toEqual({ err });
   });
 
   it("should post with media.", async () => {
@@ -411,7 +449,8 @@ describe("post", () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(mastodon, "getMediaList");
     const mockRequestPost = vi.spyOn(mastodon, "requestPost");
-    mockGetMediaList.mockResolvedValueOnce({ err: "Error" });
+    const err = new Error("test error");
+    mockGetMediaList.mockResolvedValueOnce({ err });
 
     // Execute
     const result = await mastodon.post(id, { text, files });
@@ -419,6 +458,6 @@ describe("post", () => {
     // Verify
     expect(mockGetMediaList.mock.calls).toEqual([[url, token, id, files]]);
     expect(mockRequestPost).not.toHaveBeenCalled();
-    expect(result).toEqual({ err: "Error" });
+    expect(result).toEqual({ err });
   });
 });
