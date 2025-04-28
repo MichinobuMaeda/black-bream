@@ -88,7 +88,7 @@ export class Threads extends Provider {
                     new Date().getTime() + 1000 * 60 * 60 * 24 * 10
                   ? {}
                   : httpRequest(
-                      "https://https://graph.threads.net/refresh_access_token" +
+                      "https://graph.threads.net/refresh_access_token" +
                         "?grant_type=th_refresh_token" +
                         `&access_token=${accessToken}`,
                     ).then(({ err, data }) =>

@@ -230,7 +230,7 @@ describe("post", () => {
 
 describe("refreshAccessToken", () => {
   const refreshTokenUrl =
-    "https://https://graph.threads.net/refresh_access_token" +
+    "https://graph.threads.net/refresh_access_token" +
     "?grant_type=th_refresh_token" +
     "&access_token=threads-access-token";
   const respNewAccessToken = {
