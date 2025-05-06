@@ -20,6 +20,18 @@
     }
   });
 
+  $effect(() => {
+    store.me =
+      store.authUser && store.users.length && store.groups.length
+        ? store.users.find(
+            (user) =>
+              user.id === store.authUser.uid &&
+              !user.restrictedAt &&
+              !user.deletedAt,
+          )
+        : undefined;
+  });
+
   // On locale changed
   $effect(() => {
     if (store.locale !== localstorage.locale.load()) {

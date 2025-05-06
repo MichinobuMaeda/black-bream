@@ -1,4 +1,5 @@
 import { logger } from "firebase-functions/v2";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { getDoc, updateDoc } from "./utils.js";
 import { Twitter } from "./twitter.js";
 import { Mastodon } from "./mastodon.js";
@@ -7,6 +8,7 @@ import { Tumblr } from "./tumblr.js";
 import { Bluesky } from "./bluesky.js";
 import { Threads } from "./threads.js";
 import { Instagram } from "./instagram.js";
+import { nanoid } from "nanoid";
 
 const providers = [
   Twitter,
@@ -41,23 +43,36 @@ export class Post {
   }
 
   /**
+   * Generate the schedule time for posts
+   * @returns {number} milliseconds
+   */
+  generateScheduleTime() {
+    return Timestamp.fromMillis(
+      Math.max(
+        Timestamp.now().toMillis(),
+        this.data.scheduledFor?.toMillis() || Timestamp.now().toMillis(),
+        ...Object.values(this.data.targets || {})
+          .filter((params) => params.scheduleTime)
+          .map((params) => params.scheduleTime.toMillis()),
+      ) +
+        9 * 1000,
+    );
+  }
+
+  /**
    * Create posts
    *
    * @param {Object} queue
    * @returns {Promise<{err: undefined|Error, data: string|undefined}>}
    */
   async createPosts(queue) {
-    const delay = 9 * 1000;
-    const { id, targets, scheduledFor } = this.data;
+    const { id, targets } = this.data;
     logger.info(`Enqueue posts: ${id}`);
 
-    let scheduleTime = new Date(
-      Math.max(scheduledFor.toDate().getTime(), new Date().getTime()),
-    );
-
-    Object.keys(targets).forEach((target, index) => {
+    Object.keys(targets).forEach((target) => {
       targets[target] = {
-        scheduleTime: new Date(scheduleTime.getTime() + delay * (index + 1)),
+        scheduleTime: this.generateScheduleTime(),
+        queueId: nanoid(),
       };
     });
 
@@ -68,13 +83,13 @@ export class Post {
             { id, target },
             {
               scheduleTime: params.scheduleTime,
-              id: `${id}-${target}`,
+              id: params.queueId,
             },
           )
           .then(() => {
             params.status = "enqueued";
-            params.enqueuedAt = new Date();
-            params.updatedAt = new Date();
+            params.enqueuedAt = FieldValue.serverTimestamp;
+            params.updatedAt = FieldValue.serverTimestamp;
             params.deletedAt = null;
           })
           .catch((err) => {
@@ -82,7 +97,7 @@ export class Post {
             params.status = "failed";
             params.err = err.message;
             params.enqueuedAt = null;
-            params.updatedAt = new Date();
+            params.updatedAt = FieldValue.serverTimestamp;
             params.deletedAt = null;
           }),
       ),
@@ -91,7 +106,7 @@ export class Post {
     const updated = await updateDoc(this.ref, {
       status: "enqueued",
       targets,
-      updatedAt: new Date(),
+      updatedAt: FieldValue.serverTimestamp,
       deletedAt: null,
     });
 
@@ -113,18 +128,18 @@ export class Post {
     logger.info(`Delete posts: ${id}`);
 
     await Promise.all(
-      Object.entries(targets).map(async ([target, params]) =>
+      Object.values(targets).map(async (params) =>
         queue
-          .delete(`${id}-${target}`)
+          .delete(params.queueId)
           .then(() => {
             params.status = "deleted";
-            params.deletedAt = new Date();
-            params.updatedAt = new Date();
+            params.deletedAt = FieldValue.serverTimestamp;
+            params.updatedAt = FieldValue.serverTimestamp;
           })
           .catch((err) => {
             logger.error(err);
             params.err = err.message;
-            params.updatedAt = new Date();
+            params.updatedAt = FieldValue.serverTimestamp;
           }),
       ),
     );
@@ -132,8 +147,8 @@ export class Post {
     const updated = await updateDoc(this.ref, {
       status: "deleted",
       targets,
-      updatedAt: new Date(),
-      deletedAt: new Date(),
+      updatedAt: FieldValue.serverTimestamp,
+      deletedAt: FieldValue.serverTimestamp,
     });
 
     if (updated.err) {
@@ -157,9 +172,9 @@ export class Post {
       [`targets.${target}`]: {
         status: "failed",
         err: err.message,
-        updatedAt: new Date(),
+        updatedAt: FieldValue.serverTimestamp,
       },
-      updatedAt: new Date(),
+      updatedAt: FieldValue.serverTimestamp,
     });
 
     if (updated.err) {
@@ -254,8 +269,11 @@ export class Post {
 
     const posting = await updateDoc(this.ref, {
       status: "posting",
-      [`targets.${target}`]: { status: "posting", updatedAt: new Date() },
-      updatedAt: new Date(),
+      [`targets.${target}`]: {
+        status: "posting",
+        updatedAt: FieldValue.serverTimestamp,
+      },
+      updatedAt: FieldValue.serverTimestamp,
     });
 
     if (posting.err) {
@@ -276,8 +294,11 @@ export class Post {
 
     const completed = await updateDoc(this.ref, {
       status: "posting",
-      [`targets.${target}`]: { status: "completed", updatedAt: new Date() },
-      updatedAt: new Date(),
+      [`targets.${target}`]: {
+        status: "completed",
+        updatedAt: FieldValue.serverTimestamp,
+      },
+      updatedAt: FieldValue.serverTimestamp,
     });
 
     if (completed.err) {
@@ -306,7 +327,7 @@ export class Post {
 
     const updated = await updateDoc(this.ref, {
       status,
-      updatedAt: new Date(),
+      updatedAt: FieldValue.serverTimestamp,
     });
 
     if (updated.err) {

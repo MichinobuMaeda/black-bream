@@ -1,4 +1,5 @@
 import { logger } from "firebase-functions/v2";
+import { FieldValue } from "firebase-admin/firestore";
 import sharp from "sharp";
 import { WritableStream } from "htmlparser2/WritableStream";
 import { getDownloadURL } from "firebase-admin/storage";
@@ -309,7 +310,7 @@ const onError = async (db, err) => {
     level: "error",
     message: err.message || err.toString() || "Unknown error",
     stack: err.stack || "",
-    createdAt: new Date(),
+    createdAt: FieldValue.serverTimestamp,
   });
 };
 
@@ -340,7 +341,7 @@ export const handleOnCall =
       .add({
         level: "info",
         message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-        createdAt: new Date(),
+        createdAt: FieldValue.serverTimestamp,
       })
       .then(() => handleError(db)(f))
       .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));

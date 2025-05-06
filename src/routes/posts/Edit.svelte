@@ -1,5 +1,5 @@
 <script>
-  import { pop, push } from "svelte-spa-router";
+  import { pop } from "svelte-spa-router";
   import { serverTimestamp, Timestamp } from "firebase/firestore";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import Content from "../../lib/components/Content.svelte";
@@ -17,7 +17,6 @@
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store, dt } from "../../lib/store.svelte.js";
   import {
-    createDocument,
     updateDocument,
     savePostedImage,
     getSavedImageUrl,
@@ -98,20 +97,15 @@
   let valid = $derived(!errorText && !errorTargets && !errorSchedule);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
-  const onCancel = async (next = null) => {
+  const onCancel = async () => {
     text = post?.text;
     checkedTargets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
     schedule = dt(post?.scheduledFor).formatDateTime();
-    if (next) {
-      await push(`/posts/${next}`);
-    } else {
-      await pop();
-    }
+    await pop();
   };
 
   const onSave = async () => {
-    let next = null;
     const status = post.status;
     active = true;
     text = text.trim();
@@ -136,25 +130,12 @@
     const data = { text, files, targets, scheduledFor };
 
     if (!deleted && !!post?.deletedAt) {
-      data.status = "requested";
-      result = await createDocument("posts", data);
-      next = result.data?.id;
-    } else if (
-      !deleted &&
-      new Date(schedule).getTime() !== post?.scheduledFor?.toDate().getTime()
-    ) {
-      await updateDocument("posts", post?.id, { deletedAt: serverTimestamp() });
-      data.status = "requested";
-      result = await createDocument("posts", data);
-      next = result.data?.id;
+      data.deletedAt = null;
     } else if (deleted && !post?.deletedAt) {
       data.deletedAt = serverTimestamp();
-      result = await updateDocument("posts", post?.id, data);
-    } else if (deleted && !!post?.deletedAt) {
-      result = await updateDocument("posts", post?.id, data);
-    } else {
-      result = await updateDocument("posts", post?.id, data);
     }
+
+    result = await updateDocument("posts", post?.id, data);
 
     if (!result.err && selectedImages && selectedImages[0]) {
       result = await savePostedImage(post.id, selectedImages[0], document);
@@ -162,7 +143,9 @@
 
     active = false;
     if (!result.err) {
-      await onCancel(next);
+      await onCancel();
+    } else {
+      await pop();
     }
   };
 </script>

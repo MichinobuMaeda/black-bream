@@ -19,15 +19,7 @@ let groups = $state([]);
 let posts = $state([]);
 let templates = $state([]);
 let logs = $state([]);
-
-let me = $derived(
-  authUser && users.length && groups.length
-    ? users.find(
-        (user) =>
-          user.id === authUser.uid && !user.restrictedAt && !user.deletedAt,
-      )
-    : undefined,
-);
+let me = $state(undefined);
 let admin = $derived(isMemberOf(me?.id, "admins"));
 let manager = $derived(isMemberOf(me?.id, "managers"));
 let operator = $derived(isMemberOf(me?.id, "operators"));
@@ -98,6 +90,9 @@ export const store = {
   },
   get me() {
     return me;
+  },
+  set me(value) {
+    me = value;
   },
   get admin() {
     return admin;

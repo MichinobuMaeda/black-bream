@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Readable from "node:stream";
 import { getDownloadURL } from "firebase-admin/storage";
+import { FieldValue } from "firebase-admin/firestore";
 import { BskyAgent } from "@atproto/api";
 import sharp from "sharp";
 import {
@@ -686,7 +687,7 @@ describe("handleError", () => {
           level: "error",
           message: "test",
           stack: "",
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -712,7 +713,7 @@ describe("handleError", () => {
           level: "error",
           message: "Unknown error",
           stack: "",
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -738,7 +739,7 @@ describe("handleError", () => {
           level: "error",
           message: err.message,
           stack: err.stack,
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -767,7 +768,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -795,7 +796,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
       [
@@ -803,7 +804,7 @@ describe("handleOnCall", () => {
           level: "error",
           message: "test",
           stack: "",
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -833,7 +834,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
       [
@@ -841,7 +842,7 @@ describe("handleOnCall", () => {
           level: "error",
           message: "test error",
           stack: err.stack,
-          createdAt: expect.any(Date),
+          createdAt: FieldValue.serverTimestamp,
         },
       ],
     ]);

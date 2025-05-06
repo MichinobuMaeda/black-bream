@@ -10,8 +10,11 @@ import { getDoc, updateDoc } from "./utils.js";
 import { Post } from "./post.js";
 import { jsonToLex, mock } from "@atproto/api";
 import { error } from "firebase-functions/logger";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import { nanoid } from "nanoid";
 
 vi.mock("firebase-functions/logger");
+vi.mock("nanoid");
 vi.mock("./utils.js");
 
 vi.mock("./mastodon.js");
@@ -93,6 +96,83 @@ describe("constructor", () => {
   });
 });
 
+describe("generateScheduleTime", () => {
+  it(
+    "should return system time + delay time" +
+      " without scheduledFor and scheduleTime of targets.",
+    () => {
+      // Prepare
+      const delay = 9 * 1000;
+      const expectedTime = new Date(new Date().getTime() + delay);
+      const postData = { text, files };
+      const snap = { id, ref, data: () => postData };
+      const post = new Post(db, bucket, snap);
+
+      // Execute
+      const ret = post.generateScheduleTime();
+
+      // Verify
+      expect(ret.toMillis()).toBeGreaterThanOrEqual(expectedTime.getTime());
+      expect(ret.toMillis()).toBeLessThan(expectedTime.getTime() + delay);
+    },
+  );
+
+  it(
+    "should returns system time + delay time" +
+      " with scheduledFor and scheduleTime of targets before system time.",
+    () => {
+      // Prepare
+      const delay = 9 * 1000;
+      const expectedTime = new Date(new Date().getTime() + delay);
+      const scheduledFor = Timestamp.fromDate(
+        new Date(new Date().getTime() - 1000),
+      );
+      const targets = {
+        mastodon: {
+          scheduleTime: Timestamp.fromDate(
+            new Date(new Date().getTime() - 1000),
+          ),
+        },
+        misskey: {
+          scheduleTime: Timestamp.fromDate(
+            new Date(new Date().getTime() - 1000),
+          ),
+        },
+      };
+      const postData = { text, files, targets, scheduledFor };
+      const snap = { id, ref, data: () => postData };
+      const post = new Post(db, bucket, snap);
+
+      // Execute
+      const ret = post.generateScheduleTime();
+
+      // Verify
+      expect(ret.toMillis()).toBeGreaterThanOrEqual(expectedTime.getTime());
+      expect(ret.toMillis()).toBeLessThan(expectedTime.getTime() + delay);
+    },
+  );
+
+  it(
+    "should returns scheduledFor + delay time" +
+      " with scheduledFor after system time.",
+    () => {
+      // Prepare
+      const delay = 9 * 1000;
+      const scheduledFor = Timestamp.fromMillis(new Date().getTime() + 1000);
+      const targets = {};
+      const postData = { text, files, targets, scheduledFor };
+      const snap = { id, ref, data: () => postData };
+      const post = new Post(db, bucket, snap);
+
+      // Execute
+      const ret = post.generateScheduleTime();
+
+      // Verify
+      expect(ret.toMillis()).toEqual(scheduledFor.toMillis() + delay);
+    },
+  );
+});
+
 describe("createPosts", () => {
   it("should create posts.", async () => {
     // Prepare
@@ -100,15 +180,16 @@ describe("createPosts", () => {
     const mastodon = {};
     const misskey = {};
     const targets = { mastodon, misskey };
-    const scheduledFor = {
-      toDate: () => new Date(new Date().getTime() + 60 * 1000),
-    };
+    const scheduledFor = Timestamp.fromMillis(new Date().getTime() + 60 * 1000);
     const postData = { text, files, targets, scheduledFor };
     const snap = { id, ref, data: () => postData };
     const post = new Post(db, bucket, snap);
     const err = new Error("test error");
     queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce(err);
     updateDoc.mockResolvedValueOnce({});
+    nanoid
+      .mockImplementationOnce(() => "mastodon-id")
+      .mockImplementationOnce(() => "misskey-id");
 
     // Execute
     const ret = await post.createPosts(queue);
@@ -118,43 +199,43 @@ describe("createPosts", () => {
       [
         { id, target: "mastodon" },
         {
-          id: `${id}-mastodon`,
-          scheduleTime: expect.any(Date),
+          id: "mastodon-id",
+          scheduleTime: expect.any(Timestamp),
         },
       ],
       [
         { id, target: "misskey" },
         {
-          id: `${id}-misskey`,
-          scheduleTime: expect.any(Date),
+          id: "misskey-id",
+          scheduleTime: expect.any(Timestamp),
         },
       ],
     ]);
     expect(targets).toEqual({
       mastodon: {
+        queueId: "mastodon-id",
         status: "enqueued",
-        enqueuedAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        enqueuedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp,
         deletedAt: null,
-        scheduleTime: expect.any(Date),
+        scheduleTime: expect.any(Timestamp),
       },
       misskey: {
+        queueId: "misskey-id",
         status: "failed",
         err: err.message,
         enqueuedAt: null,
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
         deletedAt: null,
-        scheduleTime: expect.any(Date),
+        scheduleTime: expect.any(Timestamp),
       },
     });
-    expect(scheduledFor.toDate().getTime()).toBeGreaterThan(
-      new Date().getTime(),
+    expect(scheduledFor.toMillis()).toBeGreaterThan(new Date().getTime());
+    expect(targets.mastodon.scheduleTime.toMillis()).toBeGreaterThan(
+      scheduledFor.toMillis(),
     );
-    expect(targets.mastodon.scheduleTime.getTime()).toBeGreaterThan(
-      scheduledFor.toDate().getTime(),
-    );
-    expect(targets.misskey.scheduleTime.getTime()).toBeGreaterThan(
-      targets.mastodon.scheduleTime.getTime(),
+    expect(targets.misskey.scheduleTime.toMillis()).toBeGreaterThan(
+      targets.mastodon.scheduleTime.toMillis(),
     );
     expect(updateDoc.mock.calls).toEqual([
       [
@@ -162,7 +243,7 @@ describe("createPosts", () => {
         {
           status: "enqueued",
           targets,
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
           deletedAt: null,
         },
       ],
@@ -176,9 +257,7 @@ describe("createPosts", () => {
     const mastodon = {};
     const misskey = {};
     const targets = { mastodon, misskey };
-    const scheduledFor = {
-      toDate: () => new Date(new Date().getTime() - 60 * 1000),
-    };
+    const scheduledFor = Timestamp.fromMillis(new Date().getTime() - 60 * 1000);
     const postData = { text, files, targets, scheduledFor };
     const snap = { id, ref, data: () => postData };
     const post = new Post(db, bucket, snap);
@@ -186,6 +265,9 @@ describe("createPosts", () => {
     const err2 = new Error("test error 2");
     queue.enqueue.mockResolvedValueOnce().mockRejectedValueOnce(err1);
     updateDoc.mockResolvedValueOnce({ err: err2 });
+    nanoid
+      .mockImplementationOnce(() => "mastodon-id")
+      .mockImplementationOnce(() => "misskey-id");
 
     // Execute
     const ret = await post.createPosts(queue);
@@ -195,41 +277,43 @@ describe("createPosts", () => {
       [
         { id, target: "mastodon" },
         {
-          id: `${id}-mastodon`,
-          scheduleTime: expect.any(Date),
+          id: "mastodon-id",
+          scheduleTime: expect.any(Timestamp),
         },
       ],
       [
         { id, target: "misskey" },
         {
-          id: `${id}-misskey`,
-          scheduleTime: expect.any(Date),
+          id: "misskey-id",
+          scheduleTime: expect.any(Timestamp),
         },
       ],
     ]);
     expect(targets).toEqual({
       mastodon: {
+        queueId: "mastodon-id",
         status: "enqueued",
-        enqueuedAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        enqueuedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp,
         deletedAt: null,
-        scheduleTime: expect.any(Date),
+        scheduleTime: expect.any(Timestamp),
       },
       misskey: {
+        queueId: "misskey-id",
         status: "failed",
         err: err1.message,
         enqueuedAt: null,
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
         deletedAt: null,
-        scheduleTime: expect.any(Date),
+        scheduleTime: expect.any(Timestamp),
       },
     });
-    expect(scheduledFor.toDate().getTime()).toBeLessThan(new Date().getTime());
-    expect(targets.mastodon.scheduleTime.getTime()).toBeGreaterThan(
-      scheduledFor.toDate().getTime(),
+    expect(scheduledFor.toMillis()).toBeLessThan(new Date().getTime());
+    expect(targets.mastodon.scheduleTime.toMillis()).toBeGreaterThan(
+      scheduledFor.toMillis(),
     );
-    expect(targets.misskey.scheduleTime.getTime()).toBeGreaterThan(
-      targets.mastodon.scheduleTime.getTime(),
+    expect(targets.misskey.scheduleTime.toMillis()).toBeGreaterThan(
+      targets.mastodon.scheduleTime.toMillis(),
     );
     expect(updateDoc.mock.calls).toEqual([
       [
@@ -237,7 +321,7 @@ describe("createPosts", () => {
         {
           status: "enqueued",
           targets,
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
           deletedAt: null,
         },
       ],
@@ -250,12 +334,14 @@ describe("deletePosts", () => {
   it("should delete posts.", async () => {
     // Prepare
     const mastodon = {
+      queueId: "mastodon-id",
       status: "enqueued",
-      scheduleTime: new Date("2025-01-01T00:00:00.000Z"),
+      scheduleTime: Timestamp.fromDate(new Date("2025-01-01T00:00:00.000Z")),
     };
     const misskey = {
+      queueId: "misskey-id",
       status: "enqueued",
-      scheduleTime: new Date("2025-01-01T00:11:11.111Z"),
+      scheduleTime: Timestamp.fromDate(new Date("2025-01-01T00:11:11.111Z")),
     };
     const targets = { mastodon, misskey };
     const snap = { id, ref, data: () => ({ text, files, targets }) };
@@ -268,21 +354,20 @@ describe("deletePosts", () => {
     const ret = await post.deletePosts(queue);
 
     // Verify
-    expect(queue.delete.mock.calls).toEqual([
-      [`${id}-mastodon`],
-      [`${id}-misskey`],
-    ]);
+    expect(queue.delete.mock.calls).toEqual([["mastodon-id"], ["misskey-id"]]);
     expect(targets).toEqual({
       mastodon: {
+        queueId: "mastodon-id",
         status: "deleted",
-        deletedAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        deletedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp,
         scheduleTime: mastodon.scheduleTime,
       },
       misskey: {
+        queueId: "misskey-id",
         status: "enqueued",
         err: err.message,
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
         scheduleTime: misskey.scheduleTime,
       },
     });
@@ -292,12 +377,14 @@ describe("deletePosts", () => {
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
     const mastodon = {
+      queueId: "mastodon-id",
       status: "enqueued",
-      scheduleTime: new Date("2025-01-01T00:00:00.000Z"),
+      scheduleTime: Timestamp.fromDate(new Date("2025-01-01T00:00:00.000Z")),
     };
     const misskey = {
+      queueId: "misskey-id",
       status: "enqueued",
-      scheduleTime: new Date("2025-01-01T00:11:11.111Z"),
+      scheduleTime: Timestamp.fromDate(new Date("2025-01-01T00:11:11.111Z")),
     };
     const targets = { mastodon, misskey };
     const snap = { id, ref, data: () => ({ text, files, targets }) };
@@ -311,21 +398,20 @@ describe("deletePosts", () => {
     const ret = await post.deletePosts(queue);
 
     // Verify
-    expect(queue.delete.mock.calls).toEqual([
-      [`${id}-mastodon`],
-      [`${id}-misskey`],
-    ]);
+    expect(queue.delete.mock.calls).toEqual([["mastodon-id"], ["misskey-id"]]);
     expect(targets).toEqual({
       mastodon: {
+        queueId: "mastodon-id",
         status: "deleted",
-        deletedAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        deletedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp,
         scheduleTime: mastodon.scheduleTime,
       },
       misskey: {
+        queueId: "misskey-id",
         status: "enqueued",
         err: err1.message,
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
         scheduleTime: misskey.scheduleTime,
       },
     });
@@ -353,9 +439,9 @@ describe("setPostStatusError", () => {
           ["targets.mastodon"]: {
             status: "failed",
             err: err.message,
-            updatedAt: expect.any(Date),
+            updatedAt: FieldValue.serverTimestamp,
           },
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -381,9 +467,9 @@ describe("setPostStatusError", () => {
           ["targets.misskey"]: {
             status: "failed",
             err: "error",
-            updatedAt: expect.any(Date),
+            updatedAt: FieldValue.serverTimestamp,
           },
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -534,9 +620,9 @@ describe("post", () => {
       status: "posting",
       ["targets.mastodon"]: {
         status: "posting",
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
       },
-      updatedAt: expect.any(Date),
+      updatedAt: FieldValue.serverTimestamp,
     },
   ];
   const updateData02 = [
@@ -545,9 +631,9 @@ describe("post", () => {
       status: "posting",
       ["targets.mastodon"]: {
         status: "completed",
-        updatedAt: expect.any(Date),
+        updatedAt: FieldValue.serverTimestamp,
       },
-      updatedAt: expect.any(Date),
+      updatedAt: FieldValue.serverTimestamp,
     },
   ];
 
@@ -770,7 +856,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "completed",
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -797,7 +883,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "failed",
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
@@ -824,7 +910,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "completed",
-          updatedAt: expect.any(Date),
+          updatedAt: FieldValue.serverTimestamp,
         },
       ],
     ]);
