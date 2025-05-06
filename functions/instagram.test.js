@@ -159,13 +159,13 @@ describe("refreshAccessToken", () => {
       json: () =>
         Promise.resolve({
           access_token: "new-access-token",
-          expiredIn: 3600,
+          expires_in: 3600,
         }),
     },
   };
   const updateDataNewAccessToken = {
     accessToken: "new-access-token",
-    expiredAt: expect.any(Date),
+    expiredAt: expect.any(Timestamp),
   };
 
   it("should return error, if getParams returns error.", async () => {
@@ -266,8 +266,8 @@ describe("refreshAccessToken", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(httpRequest.mock.calls).toEqual([[refreshTokenUrl]]);
-    expect(mockUpdateParams.mock.calls).toEqual([[updateDataNewAccessToken]]);
     expect(result).toEqual({});
+    expect(mockUpdateParams.mock.calls).toEqual([[updateDataNewAccessToken]]);
   });
 
   it("should return error, if updateParams returns error.", async () => {

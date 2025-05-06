@@ -17,33 +17,29 @@ afterEach(() => {
 });
 
 describe("LocalizedDateTime's constructor", () => {
-  const systemTz = process.env.TZ || "Asia/Tokyo";
+  it("should set given value, locale and schedule.", () => {
+    // Prepare
+    const iso = "2020-01-01T00:00:00.000Z";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
-  it(
-    "should set system timezone, given value," + " locale and schedule.",
-    () => {
-      // Prepare
-      const iso = "2020-01-01T00:00:00.000Z";
-      const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    // Execute
+    const ldt = new LocalizedDateTime(new Date(iso), "ja", sch);
 
-      // Execute
-      const ldt = new LocalizedDateTime(new Date(iso), "ja", sch);
-
-      // Verify
-      expect(ldt.locale).toBe("ja");
-      expect(ldt.sch).toEqual(sch);
-      expect(ldt.dt).toEqual(new Date(iso));
-    },
-  );
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt).toEqual(new Date(iso));
+  });
 });
 
 describe("LocalizedDateTime.factory", () => {
-  const systemTz = process.env.TZ || "Asia/Tokyo";
-
   it("should set the given value: 'YYYY-MM-DD' as system timezone.", () => {
     // Prepare
     const seed = "2020-01-01";
-    const iso = "2019-12-31T15:00:00.000Z";
+    const expected = new Date(
+      new Date("2020-01-01T00:00:00.000Z").getTime() +
+        new Date().getTimezoneOffset() * 60 * 1000,
+    );
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
     // Execute
@@ -52,13 +48,16 @@ describe("LocalizedDateTime.factory", () => {
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt).toEqual(expected);
   });
 
   it("should set the given value: 'YYYY-MM-DD HH:mm' as system timezone.", () => {
     // Prepare
     const seed = "2020-01-01 12:00";
-    const iso = "2020-01-01T03:00:00.000Z";
+    const expected = new Date(
+      new Date("2020-01-01T12:00:00.000Z").getTime() +
+        new Date().getTimezoneOffset() * 60 * 1000,
+    );
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
     // Execute
@@ -67,13 +66,13 @@ describe("LocalizedDateTime.factory", () => {
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt).toEqual(expected);
   });
 
   it("should set the given value: 1500000000000.", () => {
     // Prepare
     const seed = 1500000000000;
-    const iso = "2017-07-14T02:40:00.000Z";
+    const expected = new Date(seed);
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
     // Execute
@@ -82,13 +81,13 @@ describe("LocalizedDateTime.factory", () => {
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt).toEqual(expected);
   });
 
   it("should set the given value: 1600000000.", () => {
     // Prepare
-    const seed = 1600000000;
-    const iso = "2020-09-13T12:26:40.000Z";
+    const seed = 1500000000000;
+    const expected = new Date(seed);
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
 
     // Execute
@@ -97,7 +96,7 @@ describe("LocalizedDateTime.factory", () => {
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt).toEqual(expected);
   });
 
   it("should set the given instance of Date.", () => {

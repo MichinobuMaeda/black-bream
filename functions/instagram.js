@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase-admin/firestore";
 import { Provider } from "./provider.js";
 import { getPublicMediaUrl, httpRequest } from "./utils.js";
 
@@ -74,7 +75,7 @@ export class Instagram extends Provider {
               ? { err: new Error("No access token") }
               : !expiredAt
                 ? { err: new Error("No expiredAt") }
-                : expiredAt.toDate().getTime() >
+                : expiredAt.toMillis() >
                     new Date().getTime() + 1000 * 60 * 60 * 24 * 10
                   ? {}
                   : httpRequest(
@@ -89,7 +90,7 @@ export class Instagram extends Provider {
                             .then((json) =>
                               this.updateParams({
                                 accessToken: json.access_token,
-                                expiredAt: new Date(
+                                expiredAt: Timestamp.fromMillis(
                                   new Date().getTime() + json.expires_in * 1000,
                                 ),
                               }).then(({ err }) => ({ err })),
