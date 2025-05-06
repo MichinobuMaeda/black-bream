@@ -2,6 +2,7 @@
   import { link } from "svelte-spa-router";
   import TargetIcon from "./TargetIcon.svelte";
   import StatusIcon from "./StatusIcon.svelte";
+  import SvgDelete from "../icons/SvgDelete.svelte";
   import { postTargets } from "../firebase.js";
   import { store, dt } from "../store.svelte.js";
 
@@ -20,10 +21,21 @@
 
 <div class="flex flex-col lg:flex-row gap-0.5 lg:gap-4">
   <div class="flex flex-row gap-2">
-    <a class="flex flex-row gap-1 font-mono" href="/posts/{post.id}" use:link>
-      <span class="size-6"><StatusIcon status={post.status} /></span>
-      {dt(post.scheduledFor).formatDateTimeLong()}
-    </a>
+    {#if post.deletedAt}
+      <a
+        class="flex flex-row gap-1 font-mono deleted"
+        href="/posts/{post.id}"
+        use:link
+      >
+        <span class="size-6"><SvgDelete /></span>
+        {dt(post.scheduledFor).formatDateTimeLong()}
+      </a>
+    {:else}
+      <a class="flex flex-row gap-1 font-mono" href="/posts/{post.id}" use:link>
+        <span class="size-6"><StatusIcon status={post.status} /></span>
+        {dt(post.scheduledFor).formatDateTimeLong()}
+      </a>
+    {/if}
     <span class="flex flex-row gap-1">
       {#each targets as target (target)}
         {#if Object.keys(post.targets ?? {}).includes(target)}

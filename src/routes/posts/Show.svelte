@@ -3,6 +3,7 @@
   import IconButtonOutlined from "../../lib/coarse-paper/IconButtonOutlined.svelte";
   import SvgEdit from "../../lib/icons/SvgEdit.svelte";
   import StatusIcon from "../../lib/components/StatusIcon.svelte";
+  import SvgDelete from "../../lib/icons/SvgDelete.svelte";
   import Content from "../../lib/components/Content.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
@@ -31,7 +32,13 @@
 {#if post}
   <h3>
     <span class="flex grow gap-2">
-      <span class="size-7"><StatusIcon status={post?.status} /></span>
+      <span class="size-7">
+        {#if post.deletedAt}
+          <SvgDelete />
+        {:else}
+          <StatusIcon status={post.status} />
+        {/if}
+      </span>
       {dt(post.scheduledFor).formatDateTime()}
     </span>
     {#if store.operator && post.status !== "completed"}

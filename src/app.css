@@ -48,6 +48,9 @@ a,
 a {
   @apply text-light-link dark:text-dark-link underline;
 }
+a.deleted {
+  @apply text-light-secondary dark:text-dark-secondary;
+}
 :not(.markdown) > h2 {
   @apply flex px-2 sm:px-4 lg:px-6 py-0.5 sm:py-1 lg:py-2 gap-2
     text-3xl items-center

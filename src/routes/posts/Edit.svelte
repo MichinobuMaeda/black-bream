@@ -19,7 +19,7 @@
   import {
     createDocument,
     updateDocument,
-    savePostImage,
+    savePostedImage,
     getSavedImageUrl,
     postTargets,
     imageRequiredTargets,
@@ -137,7 +137,7 @@
 
     if (!deleted && !!post?.deletedAt) {
       data.status = "requested";
-      result = await createDocument("posts", data, true);
+      result = await createDocument("posts", data);
       next = result.data?.id;
     } else if (
       !deleted &&
@@ -145,14 +145,19 @@
     ) {
       await updateDocument("posts", post?.id, { deletedAt: serverTimestamp() });
       data.status = "requested";
-      result = await createDocument("posts", data, true);
+      result = await createDocument("posts", data);
       next = result.data?.id;
+    } else if (deleted && !post?.deletedAt) {
+      data.deletedAt = serverTimestamp();
+      result = await updateDocument("posts", post?.id, data);
+    } else if (deleted && !!post?.deletedAt) {
+      result = await updateDocument("posts", post?.id, data);
     } else {
       result = await updateDocument("posts", post?.id, data);
     }
 
     if (!result.err && selectedImages && selectedImages[0]) {
-      result = await savePostImage(post.id, selectedImages[0], document);
+      result = await savePostedImage(post.id, selectedImages[0], document);
     }
 
     active = false;

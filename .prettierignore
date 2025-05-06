@@ -7,4 +7,3 @@ src/i18n.js
 src/sw.js
 src/vite-env.d.ts
 src/lib/coarse-paper/*
-src/lib/icons/*

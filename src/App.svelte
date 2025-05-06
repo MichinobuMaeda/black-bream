@@ -1,10 +1,10 @@
 <script module>
   import { CallbackHandler } from "./lib/callback.js";
   import { store } from "./lib/store.svelte.js";
-  import { fb } from "./lib/firebase.js";
+  import { fbs } from "./lib/firebase.js";
 
   new CallbackHandler(window.location).handle();
-  fb.initFirebase(window.location, store);
+  fbs.initFirebase(window.location, store);
 </script>
 
 <script>
@@ -16,7 +16,7 @@
   // On auth state changed
   $effect(() => {
     if (store.conf?.id && store.authUser?.uid) {
-      fb.subscribeUserDataAll();
+      fbs.subscribeUserDataAll();
     }
   });
 
@@ -24,7 +24,7 @@
   $effect(() => {
     if (store.locale !== localstorage.locale.load()) {
       saveLocale();
-      fb.setAuthLocale();
+      fbs.setAuthLocale();
     }
   });
 </script>

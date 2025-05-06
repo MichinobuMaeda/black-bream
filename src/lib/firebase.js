@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid";
 import { initializeApp } from "firebase/app";
 import {
   initializeAppCheck,
@@ -27,7 +26,6 @@ import {
   doc,
   updateDoc,
   addDoc,
-  setDoc,
   onSnapshot,
   query,
   orderBy,
@@ -87,6 +85,16 @@ export const socialLoginProviders = [
     label: "GitHub",
   },
 ];
+
+/** @typedef {import("firebase/firestore").DocumentReference|import("firebase/firestore").CollectionReference|import("firebase/firestore").Query} FirebaseQuery */
+
+/**
+ * @typedef {Object} UserData
+ * @property {string} name
+ * @property {FirebaseQuery} query
+ * @property {Function} setData
+ * @property {Array} requires
+ */
 
 export class FirebaseState {
   /**
@@ -176,7 +184,7 @@ export class FirebaseState {
   subscribeServiceConf() {
     console.log("Subscribe service/conf");
     onSnapshot(doc(this.db, "service", "conf"), (snap) => {
-      this.store.conf = this.castDocSnapshot(snap);
+      this.store.conf = this.castSnapshot(snap, "conf", {});
     });
   }
 
@@ -201,83 +209,64 @@ export class FirebaseState {
    * @returns {void}
    */
   initUserDataAll() {
+    /* @type {UserData[]} */
     this.userData = [
-      new UserData(
-        "users",
-        collection(this.db, "users"),
-        [],
-        (snap) => {
-          this.store.users = this.castQuerySnapshot(snap, "users");
+      {
+        name: "users",
+        query: collection(this.db, "users"),
+        setData: (snap) => {
+          this.store.users = this.castSnapshot(snap, "users", []);
         },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot users: ${error}`);
+        requires: [],
+      },
+      {
+        name: "groups",
+        query: collection(this.db, "groups"),
+        setData: (snap) => {
+          this.store.groups = this.castSnapshot(snap, "groups", []);
         },
-      ),
-      new UserData(
-        "groups",
-        collection(this.db, "groups"),
-        [],
-        (snap) => {
-          this.store.groups = this.castQuerySnapshot(snap, "groups");
-        },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot groups: ${error}`);
-        },
-      ),
-      new UserData(
-        "posts",
-        query(
+        requires: [],
+      },
+      {
+        name: "posts",
+        query: query(
           collection(this.db, "posts"),
           orderBy("scheduledFor", "desc"),
           limit(1000),
         ),
-        [],
-        (snap) => {
-          this.store.posts = this.castQuerySnapshot(snap, "posts");
+        setData: (snap) => {
+          this.store.posts = this.castSnapshot(snap, "posts", []);
         },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot posts: ${error}`);
+        requires: [],
+      },
+      {
+        name: "templates",
+        query: query(collection(this.db, "templates"), orderBy("name", "asc")),
+        setData: (snap) => {
+          this.store.templates = this.castSnapshot(snap, "templates", []);
         },
-      ),
-      new UserData(
-        "templates",
-        query(collection(this.db, "templates"), orderBy("name", "asc")),
-        [],
-        (snap) => {
-          this.store.templates = this.castQuerySnapshot(snap, "templates");
+        requires: [],
+      },
+      {
+        name: "auth",
+        query: doc(this.db, "service", "auth"),
+        setData: (snap) => {
+          this.store.auth = this.castSnapshot(snap, "auth", undefined);
         },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot templates: ${error}`);
-        },
-      ),
-      new UserData(
-        "auth",
-        doc(this.db, "service", "auth"),
-        undefined,
-        (snap) => {
-          this.store.auth = this.castDocSnapshot(snap);
-        },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot auth: ${error}`);
-        },
-        ["admin"],
-      ),
-      new UserData(
-        "logs",
-        query(
+        requires: ["admin"],
+      },
+      {
+        name: "logs",
+        query: query(
           collection(this.db, "logs"),
           orderBy("createdAt", "desc"),
           limit(1000),
         ),
-        [],
-        (snap) => {
-          this.store.logs = this.castQuerySnapshot(snap, "logs");
+        setData: (snap) => {
+          this.store.logs = this.castSnapshot(snap, "logs", []);
         },
-        (error) => {
-          this.unsubscribeUserDataAll(`onSnapshot logs: ${error}`);
-        },
-        ["admin"],
-      ),
+        requires: ["admin"],
+      },
     ];
   }
 
@@ -290,8 +279,17 @@ export class FirebaseState {
     console.log("subscribeUserDataAll()");
 
     this.userData
-      .filter((data) => this.store.admin || !data.require.includes("admin"))
-      .forEach((data) => data.subscribe());
+      .filter((data) => this.store.admin || !data.requires.includes("admin"))
+      .filter((data) => !data.unsub)
+      .forEach((data) => {
+        console.log(`Subscribe ${data.name}`);
+        data.unsub = onSnapshot(
+          data.query,
+          (snap) => data.setData(snap),
+          (error) =>
+            this.unsubscribeUserDataAll(`onSnapshot ${data.name}: ${error}`),
+        );
+      });
   }
 
   /**
@@ -303,10 +301,17 @@ export class FirebaseState {
   async unsubscribeUserDataAll(cause = "") {
     console.log(`unsubscribeUserDataAll(${cause})`);
     try {
-      this.userData.forEach((data) => data.unsubscribe());
+      this.userData
+        .filter((data) => data.unsub)
+        .forEach((data) => {
+          console.log(`Unsubscribe ${data.name}`);
+          data.unsub();
+          data.unsub = null;
+          data.setData(undefined);
+        });
 
       if (this.store.authUser) {
-        await signOut(fb.auth);
+        await signOut(fbs.auth);
       }
 
       return { err: undefined };
@@ -327,95 +332,32 @@ export class FirebaseState {
   }
 
   /**
-   * Cast document snapshot to data
+   * Cast snapshot to data
    *
-   * @param {DocumentSnapshot} snap
-   * @returns {Object}
-   */
-  castDocSnapshot(snap) {
-    console.log(`${snap.id}: ${snap.exists ? "loaded" : "not found"}`);
-    return snap.exists ? { id: snap.id, ...snap.data() } : undefined;
-  }
-
-  /**
-   * Cast query snapshot to data
-   *
-   * @param {QuerySnapshot} snap
+   * @param {DocumentSnapshot|QuerySnapshot} snap
    * @param {string} name
+   * @param {any} emptyData
    * @returns {Object}
    */
-  castQuerySnapshot(snap, name) {
-    console.log(`${name}: ${snap.docs.length}`);
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  castSnapshot(snap, name, emptyData) {
+    console.log(
+      snap
+        ? snap.docs
+          ? `${name}: ${snap.docs.length}`
+          : `${snap.id}: ${snap.exists ? "loaded" : "not found"}`
+        : `${name}: undefined`,
+    );
+    return snap
+      ? snap.docs
+        ? snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        : snap.exists
+          ? { id: snap.id, ...snap.data() }
+          : emptyData
+      : emptyData;
   }
 }
 
-export const fb = new FirebaseState(firebaseConfig);
-
-/** @typedef {import("firebase/firestore").DocumentReference|import("firebase/firestore").CollectionReference|import("firebase/firestore").Query} FirebaseQuery */
-/** @typedef {import("firebase/firestore").DocumentSnapshot|import("firebase/firestore").QuerySnapshot} FirestoreSnapshot */
-
-export class UserData {
-  /**
-   * @constructor
-   * @param {string} name
-   * @param {FirebaseQuery} query
-   * @param {Array|null} initialData
-   * @param {Function} setData
-   * @param {Function} onError
-   * @param {array} [require]
-   */
-  constructor(name, query, initialData, setData, onError, require = []) {
-    /** @type {string} */
-    this.name = name;
-    /** @type {FirebaseQuery} */
-    this.query = query;
-    /** @type {Array|null} */
-    this.initialData = initialData;
-    /** @type {import("firebase/firestore").Unsubscribe|null} */
-    this.unsub = null;
-    /** @type {Function} */
-    this.setData = setData;
-    /** @type {Function} */
-    this.onError = onError;
-    /** @type {array} */
-    this.require = require;
-  }
-
-  /**
-   * Subscribe and set data to the store
-   *
-   * @returns {void}
-   */
-  subscribe() {
-    if (!this.unsub) {
-      console.log(`Subscribe ${this.name}`);
-      this.unsub = onSnapshot(
-        this.query,
-        (snap) => {
-          this.setData(snap);
-        },
-        (error) => {
-          this.onError(error);
-        },
-      );
-    }
-  }
-
-  /**
-   * Unsubscribe and clear data to the store
-   *
-   * @returns {void}
-   */
-  unsubscribe() {
-    if (this.unsub) {
-      console.log(`Unsubscribe ${this.name}`);
-      this.unsub();
-      this.unsub = null;
-      this.setData(this.initialData);
-    }
-  }
-}
+export const fbs = new FirebaseState(firebaseConfig);
 
 /**
  * Update document
@@ -427,7 +369,7 @@ export class UserData {
  */
 export const updateDocument = async (col, id, data) => {
   try {
-    await updateDoc(doc(fb.db, col, id), {
+    await updateDoc(doc(fbs.db, col, id), {
       ...data,
       updatedAt: serverTimestamp(),
     });
@@ -447,27 +389,14 @@ export const updateDocument = async (col, id, data) => {
  * @param {boolean} [setId]
  * @returns {Promise<Object>}
  */
-export const createDocument = async (col, data, setId = false) => {
+export const createDocument = async (col, data) => {
   try {
     let ret = {};
-    if (setId) {
-      ret.id =
-        new Date()
-          .toISOString()
-          .replace(/[^0-9]/g, "")
-          .slice(2) + nanoid(6);
-      await setDoc(doc(fb.db, col, ret.id), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      ret = await addDoc(collection(fb.db, col), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    }
+    ret = await addDoc(collection(fbs.db, col), {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
     return { err: undefined, data: ret };
   } catch (error) {
     console.error(`createDocument: ${error}`);
@@ -483,17 +412,17 @@ export const createDocument = async (col, data, setId = false) => {
  * @returns
  */
 export const getSavedImageUrl = async (id, name) =>
-  getDownloadURL(ref(fb.storage, `${imageBasePath}/${id}/${name}`));
+  getDownloadURL(ref(fbs.storage, `${imageBasePath}/${id}/${name}`));
 
 /**
- * Save image to storage
+ * Save posted image to storage
  *
  * @param {string} id
  * @param {File} file
  * @param {Document} document
  */
-export const savePostImage = async (id, file, document) => {
-  console.log(`savePostImage: ${file.name} ${file.size}`);
+export const savePostedImage = async (id, file, document) => {
+  console.log(`savePostedImage: ${file.name} ${file.size}`);
 
   const ext = getFileExtension(file.name);
   const mimeType = getMimeTypeFromExtension(ext);
@@ -502,7 +431,7 @@ export const savePostImage = async (id, file, document) => {
 
   try {
     const metadata = { contentType: mimeType };
-    const imageRef = ref(fb.storage, `${imageBasePath}/${id}/1.${ext}`);
+    const imageRef = ref(fbs.storage, `${imageBasePath}/${id}/1.${ext}`);
     await uploadBytes(imageRef, blog, metadata);
     return { err: undefined };
   } catch (e) {
@@ -520,7 +449,10 @@ export const savePostImage = async (id, file, document) => {
  */
 export const loginWithEmailLink = async (email, url) => {
   try {
-    await sendSignInLinkToEmail(fb.auth, email, { url, handleCodeInApp: true });
+    await sendSignInLinkToEmail(fbs.auth, email, {
+      url,
+      handleCodeInApp: true,
+    });
     localstorage.email.save(email);
 
     return { err: undefined };
@@ -546,7 +478,7 @@ export const loginWithEmailLink = async (email, url) => {
  */
 export const loginWithPassword = async (email, password) => {
   try {
-    await signInWithEmailAndPassword(fb.auth, email, password);
+    await signInWithEmailAndPassword(fbs.auth, email, password);
 
     return { err: undefined };
   } catch (error) {
@@ -572,7 +504,7 @@ export const loginWithPassword = async (email, password) => {
  */
 export const logout = async (store, next = null) => {
   try {
-    await fb.unsubscribeUserDataAll("logout");
+    await fbs.unsubscribeUserDataAll("logout");
 
     if (next) {
       await next();
@@ -593,7 +525,7 @@ export const logout = async (store, next = null) => {
  */
 export const sendPasswordResetLink = async (email) => {
   try {
-    await sendPasswordResetEmail(fb.auth, email);
+    await sendPasswordResetEmail(fbs.auth, email);
 
     return { err: undefined };
   } catch (error) {
@@ -621,7 +553,7 @@ export const changeEmail = async (store, currentPassword, email) => {
   try {
     await store.authUser.reload();
     await signInWithEmailAndPassword(
-      fb.auth,
+      fbs.auth,
       store.authUser.email,
       currentPassword,
     );
@@ -647,7 +579,7 @@ export const changePassword = async (store, currentPassword, newPassword) => {
   try {
     await store.authUser.reload();
     await signInWithEmailAndPassword(
-      fb.auth,
+      fbs.auth,
       store.authUser.email,
       currentPassword,
     );
@@ -680,7 +612,7 @@ export const socialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await signInWithPopup(fb.auth, provider);
+    await signInWithPopup(fbs.auth, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -704,7 +636,7 @@ export const registerSocialLogin = async (id) => {
       default:
         return { err: "error" };
     }
-    await linkWithPopup(fb.auth.currentUser, provider);
+    await linkWithPopup(fbs.auth.currentUser, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -720,7 +652,7 @@ export const registerSocialLogin = async (id) => {
  */
 export const callFunction = async (name, param) => {
   try {
-    const f = httpsCallable(fb.functions, name);
+    const f = httpsCallable(fbs.functions, name);
     const { data } = await f(param);
     return data;
   } catch (e) {

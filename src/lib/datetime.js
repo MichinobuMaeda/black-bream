@@ -3,7 +3,8 @@ import { enUS, ja } from "date-fns/locale";
 import { toZonedTime } from "date-fns-tz";
 import { Timestamp } from "firebase/firestore";
 
-export const SYSTEM_TZ = process.env.TZ || "Asia/Tokyo";
+export const SYSTEM_TZ =
+  Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
 
 const DT_SHORT = "yyyy-MM-dd";
 const DT_MIDDLE = "yyyy-MM-dd HH:mm";

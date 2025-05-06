@@ -17,7 +17,7 @@
   import { t, store, dt } from "../../lib/store.svelte.js";
   import {
     createDocument,
-    savePostImage,
+    savePostedImage,
     postTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
@@ -83,14 +83,15 @@
       );
     const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
 
-    result = await createDocument(
-      "posts",
-      { text, files, targets, scheduledFor, status },
-      true,
-    );
+    const data = { text, files, targets, scheduledFor, status };
+    result = await createDocument("posts", data);
 
     if (!result.err && result.data.id && selectedImages && selectedImages[0]) {
-      result = await savePostImage(result.data.id, selectedImages[0], document);
+      result = await savePostedImage(
+        result.data.id,
+        selectedImages[0],
+        document,
+      );
     }
 
     active = false;
