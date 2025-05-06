@@ -200,14 +200,14 @@ describe("createPosts", () => {
         { id, target: "mastodon" },
         {
           id: "mastodon-id",
-          scheduleTime: expect.any(Timestamp),
+          scheduleTime: expect.any(Date),
         },
       ],
       [
         { id, target: "misskey" },
         {
           id: "misskey-id",
-          scheduleTime: expect.any(Timestamp),
+          scheduleTime: expect.any(Date),
         },
       ],
     ]);
@@ -278,14 +278,14 @@ describe("createPosts", () => {
         { id, target: "mastodon" },
         {
           id: "mastodon-id",
-          scheduleTime: expect.any(Timestamp),
+          scheduleTime: expect.any(Date),
         },
       ],
       [
         { id, target: "misskey" },
         {
           id: "misskey-id",
-          scheduleTime: expect.any(Timestamp),
+          scheduleTime: expect.any(Date),
         },
       ],
     ]);

@@ -82,7 +82,7 @@ export class Post {
           .enqueue(
             { id, target },
             {
-              scheduleTime: params.scheduleTime,
+              scheduleTime: params.scheduleTime.toDate(),
               id: params.queueId,
             },
           )
