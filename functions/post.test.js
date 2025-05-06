@@ -215,8 +215,8 @@ describe("createPosts", () => {
       mastodon: {
         queueId: "mastodon-id",
         status: "enqueued",
-        enqueuedAt: FieldValue.serverTimestamp,
-        updatedAt: FieldValue.serverTimestamp,
+        enqueuedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         deletedAt: null,
         scheduleTime: expect.any(Timestamp),
       },
@@ -225,7 +225,7 @@ describe("createPosts", () => {
         status: "failed",
         err: err.message,
         enqueuedAt: null,
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
         deletedAt: null,
         scheduleTime: expect.any(Timestamp),
       },
@@ -243,7 +243,7 @@ describe("createPosts", () => {
         {
           status: "enqueued",
           targets,
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
           deletedAt: null,
         },
       ],
@@ -293,8 +293,8 @@ describe("createPosts", () => {
       mastodon: {
         queueId: "mastodon-id",
         status: "enqueued",
-        enqueuedAt: FieldValue.serverTimestamp,
-        updatedAt: FieldValue.serverTimestamp,
+        enqueuedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         deletedAt: null,
         scheduleTime: expect.any(Timestamp),
       },
@@ -303,7 +303,7 @@ describe("createPosts", () => {
         status: "failed",
         err: err1.message,
         enqueuedAt: null,
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
         deletedAt: null,
         scheduleTime: expect.any(Timestamp),
       },
@@ -321,7 +321,7 @@ describe("createPosts", () => {
         {
           status: "enqueued",
           targets,
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
           deletedAt: null,
         },
       ],
@@ -359,15 +359,15 @@ describe("deletePosts", () => {
       mastodon: {
         queueId: "mastodon-id",
         status: "deleted",
-        deletedAt: FieldValue.serverTimestamp,
-        updatedAt: FieldValue.serverTimestamp,
+        deletedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         scheduleTime: mastodon.scheduleTime,
       },
       misskey: {
         queueId: "misskey-id",
         status: "enqueued",
         err: err.message,
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
         scheduleTime: misskey.scheduleTime,
       },
     });
@@ -403,15 +403,15 @@ describe("deletePosts", () => {
       mastodon: {
         queueId: "mastodon-id",
         status: "deleted",
-        deletedAt: FieldValue.serverTimestamp,
-        updatedAt: FieldValue.serverTimestamp,
+        deletedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         scheduleTime: mastodon.scheduleTime,
       },
       misskey: {
         queueId: "misskey-id",
         status: "enqueued",
         err: err1.message,
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
         scheduleTime: misskey.scheduleTime,
       },
     });
@@ -439,9 +439,9 @@ describe("setPostStatusError", () => {
           ["targets.mastodon"]: {
             status: "failed",
             err: err.message,
-            updatedAt: FieldValue.serverTimestamp,
+            updatedAt: FieldValue.serverTimestamp(),
           },
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -467,9 +467,9 @@ describe("setPostStatusError", () => {
           ["targets.misskey"]: {
             status: "failed",
             err: "error",
-            updatedAt: FieldValue.serverTimestamp,
+            updatedAt: FieldValue.serverTimestamp(),
           },
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -620,9 +620,9 @@ describe("post", () => {
       status: "posting",
       ["targets.mastodon"]: {
         status: "posting",
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
       },
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     },
   ];
   const updateData02 = [
@@ -631,9 +631,9 @@ describe("post", () => {
       status: "posting",
       ["targets.mastodon"]: {
         status: "completed",
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
       },
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     },
   ];
 
@@ -856,7 +856,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "completed",
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -883,7 +883,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "failed",
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -910,7 +910,7 @@ describe("checkCompleted", () => {
         ref,
         {
           status: "completed",
-          updatedAt: FieldValue.serverTimestamp,
+          updatedAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);

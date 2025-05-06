@@ -1,4 +1,5 @@
 import { logger } from "firebase-functions/v2";
+import { FieldValue } from "firebase-admin/firestore";
 import { addAuthUser } from "./account.js";
 
 /**
@@ -33,15 +34,15 @@ site.manager@example.com
 `,
           webAppUrl: process.env.WEB_APP_URL,
           autoSendEmail: process.env.AUTO_SEND_EMAIL,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       logger.info("Created 'service/conf'");
 
       const user = await db.collection("users").add({
         name: "Primary User",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       const uid = user.id;
 
@@ -56,8 +57,8 @@ site.manager@example.com
         .set({
           name: "System Administrators",
           users: [uid],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
 
       await db
@@ -66,8 +67,8 @@ site.manager@example.com
         .set({
           name: "Managers",
           users: [uid],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
 
       await db
@@ -76,14 +77,14 @@ site.manager@example.com
         .set({
           name: "Operators",
           users: [uid],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
 
       await deleted.ref.set({
         ver: 1,
         err: err ?? null,
-        updatedAt: new Date(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     } catch (err) {
       return { err, data: ver };
@@ -108,14 +109,14 @@ export const updateDataV2 = async (db, deleted) => {
 
     try {
       await db.collection("service").doc("auth").set({
-        createdAt: new Date(),
+        createdAt: FieldValue.serverTimestamp(),
       });
       logger.info("Created 'service/auth'");
 
       await deleted.ref.set({
         ver: 2,
         err: err ?? null,
-        updatedAt: new Date(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     } catch (err) {
       return { err, data: ver };

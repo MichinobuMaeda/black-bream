@@ -687,7 +687,7 @@ describe("handleError", () => {
           level: "error",
           message: "test",
           stack: "",
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -713,7 +713,7 @@ describe("handleError", () => {
           level: "error",
           message: "Unknown error",
           stack: "",
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -739,7 +739,7 @@ describe("handleError", () => {
           level: "error",
           message: err.message,
           stack: err.stack,
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -768,7 +768,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -796,7 +796,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
       [
@@ -804,7 +804,7 @@ describe("handleOnCall", () => {
           level: "error",
           message: "test",
           stack: "",
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);
@@ -834,7 +834,7 @@ describe("handleOnCall", () => {
         {
           level: "info",
           message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
       [
@@ -842,7 +842,7 @@ describe("handleOnCall", () => {
           level: "error",
           message: "test error",
           stack: err.stack,
-          createdAt: FieldValue.serverTimestamp,
+          createdAt: FieldValue.serverTimestamp(),
         },
       ],
     ]);

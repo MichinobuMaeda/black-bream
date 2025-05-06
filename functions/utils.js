@@ -310,7 +310,7 @@ const onError = async (db, err) => {
     level: "error",
     message: err.message || err.toString() || "Unknown error",
     stack: err.stack || "",
-    createdAt: FieldValue.serverTimestamp,
+    createdAt: FieldValue.serverTimestamp(),
   });
 };
 
@@ -341,7 +341,7 @@ export const handleOnCall =
       .add({
         level: "info",
         message: `${uid} calls ${name} with ${JSON.stringify(params)}`,
-        createdAt: FieldValue.serverTimestamp,
+        createdAt: FieldValue.serverTimestamp(),
       })
       .then(() => handleError(db)(f))
       .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));

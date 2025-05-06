@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+import { FieldValue } from "firebase-admin/firestore";
 import { addAuthUser } from "./account.js";
 import { updateDataV1, updateDataV2 } from "./deployment.js";
 
@@ -31,8 +32,8 @@ describe("updateDataV1", () => {
   };
   const webAppUrl = process.env.WEB_APP_URL;
   const autoSendEmail = process.env.AUTO_SEND_EMAIL;
-  const createdAt = expect.any(Date);
-  const updatedAt = expect.any(Date);
+  const createdAt = FieldValue.serverTimestamp();
+  const updatedAt = FieldValue.serverTimestamp();
 
   it("should update data ver.0 to ver.1.", async () => {
     // Prepare
@@ -236,8 +237,8 @@ describe("updateDataV2", () => {
     get: vi.fn(),
     ref: { set: vi.fn() },
   };
-  const createdAt = expect.any(Date);
-  const updatedAt = expect.any(Date);
+  const createdAt = FieldValue.serverTimestamp();
+  const updatedAt = FieldValue.serverTimestamp();
 
   it("should update data ver.0 to ver.2.", async () => {
     // Prepare

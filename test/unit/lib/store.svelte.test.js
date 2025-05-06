@@ -117,61 +117,11 @@ describe("store", () => {
     store.templates = [{ id: "template1" }, { id: "template2" }];
     expect(store.templates).toEqual([{ id: "template1" }, { id: "template2" }]);
   });
-});
 
-describe("store.me", () => {
-  afterEach(() => {
-    store.authUser = undefined;
-    store.users = [];
-    store.groups = [];
-  });
-
-  it("should be the correct user.", () => {
-    // Prepare
-    const user1 = { id: "user1" };
-    const user2 = { id: "user2" };
-    store.users = [user1, user2];
-
-    const group1 = { id: "group1", users: ["user1"] };
-    const group2 = { id: "group2", users: ["user1", "user2"] };
-    store.groups = [group1, group2];
-
-    store.authUser = { uid: user1.id };
-
+  it("should return the correct me.", () => {
     // Execute and Verify
-    expect(store.me).toEqual(user1);
-  });
-
-  it("should be undefined if the user is not found.", () => {
-    // Prepare
-    const user1 = { id: "user1" };
-    const user2 = { id: "user2" };
-    store.users = [user2];
-
-    const group1 = { id: "group1", users: ["user1"] };
-    const group2 = { id: "group2", users: ["user1", "user2"] };
-    store.groups = [group1, group2];
-
-    store.authUser = { uid: user1.id };
-
-    // Execute and Verify
-    expect(store.me).toEqual(undefined);
-  });
-
-  it("should be undefined if the authUser is undefined.", () => {
-    // Prepare
-    const user1 = { id: "user1" };
-    const user2 = { id: "user2" };
-    store.users = [user1, user2];
-
-    const group1 = { id: "group1", users: ["user1"] };
-    const group2 = { id: "group2", users: ["user1", "user2"] };
-    store.groups = [group1, group2];
-
-    store.authUser = undefined;
-
-    // Execute and Verify
-    expect(store.me).toEqual(undefined);
+    store.me = { id: "my-id" };
+    expect(store.me).toEqual({ id: "my-id" });
   });
 });
 
@@ -219,12 +169,14 @@ describe("store.admin", () => {
 
     // Prepare #1
     store.authUser = { uid: user1.id };
+    store.me = user1;
 
     // Execute and Verify #1
     expect(store.admin).toEqual(true);
 
     // Prepare #2
     store.authUser = { uid: user2.id };
+    store.me = user2;
 
     // Execute and Verify #2
     expect(store.admin).toEqual(false);
@@ -251,12 +203,14 @@ describe("store.manager", () => {
 
     // Prepare #1
     store.authUser = { uid: user1.id };
+    store.me = user1;
 
     // Execute and Verify #1
     expect(store.manager).toEqual(true);
 
     // Prepare #2
     store.authUser = { uid: user2.id };
+    store.me = user2;
 
     // Execute and Verify #2
     expect(store.manager).toEqual(false);
@@ -283,12 +237,14 @@ describe("store.operator", () => {
 
     // Prepare #1
     store.authUser = { uid: user1.id };
+    store.me = user1;
 
     // Execute and Verify #1
     expect(store.operator).toEqual(true);
 
     // Prepare #2
     store.authUser = { uid: user2.id };
+    store.me = user2;
 
     // Execute and Verify #2
     expect(store.operator).toEqual(false);
@@ -394,6 +350,7 @@ describe("groupsOfUser", () => {
       store.groups = [group1, group2, group3, managers];
 
       store.authUser = { uid: user1.id };
+      store.me = user1;
 
       // Execute and Verify
       expect(groupsOfUser(user1.id)).toEqual([group1]);
@@ -417,6 +374,7 @@ describe("groupsOfUser", () => {
       store.groups = [group1, group2, group3, managers];
 
       store.authUser = { uid: user1.id };
+      store.me = user1;
 
       // Execute and Verify
       expect(groupsOfUser(user1.id)).toEqual([group1, group3, managers]);

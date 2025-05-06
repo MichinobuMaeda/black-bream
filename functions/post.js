@@ -88,8 +88,8 @@ export class Post {
           )
           .then(() => {
             params.status = "enqueued";
-            params.enqueuedAt = FieldValue.serverTimestamp;
-            params.updatedAt = FieldValue.serverTimestamp;
+            params.enqueuedAt = FieldValue.serverTimestamp();
+            params.updatedAt = FieldValue.serverTimestamp();
             params.deletedAt = null;
           })
           .catch((err) => {
@@ -97,7 +97,7 @@ export class Post {
             params.status = "failed";
             params.err = err.message;
             params.enqueuedAt = null;
-            params.updatedAt = FieldValue.serverTimestamp;
+            params.updatedAt = FieldValue.serverTimestamp();
             params.deletedAt = null;
           }),
       ),
@@ -106,7 +106,7 @@ export class Post {
     const updated = await updateDoc(this.ref, {
       status: "enqueued",
       targets,
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
       deletedAt: null,
     });
 
@@ -133,13 +133,13 @@ export class Post {
           .delete(params.queueId)
           .then(() => {
             params.status = "deleted";
-            params.deletedAt = FieldValue.serverTimestamp;
-            params.updatedAt = FieldValue.serverTimestamp;
+            params.deletedAt = FieldValue.serverTimestamp();
+            params.updatedAt = FieldValue.serverTimestamp();
           })
           .catch((err) => {
             logger.error(err);
             params.err = err.message;
-            params.updatedAt = FieldValue.serverTimestamp;
+            params.updatedAt = FieldValue.serverTimestamp();
           }),
       ),
     );
@@ -147,8 +147,8 @@ export class Post {
     const updated = await updateDoc(this.ref, {
       status: "deleted",
       targets,
-      updatedAt: FieldValue.serverTimestamp,
-      deletedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
+      deletedAt: FieldValue.serverTimestamp(),
     });
 
     if (updated.err) {
@@ -172,9 +172,9 @@ export class Post {
       [`targets.${target}`]: {
         status: "failed",
         err: err.message,
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
       },
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     if (updated.err) {
@@ -271,9 +271,9 @@ export class Post {
       status: "posting",
       [`targets.${target}`]: {
         status: "posting",
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
       },
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     if (posting.err) {
@@ -296,9 +296,9 @@ export class Post {
       status: "posting",
       [`targets.${target}`]: {
         status: "completed",
-        updatedAt: FieldValue.serverTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
       },
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     if (completed.err) {
@@ -327,7 +327,7 @@ export class Post {
 
     const updated = await updateDoc(this.ref, {
       status,
-      updatedAt: FieldValue.serverTimestamp,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     if (updated.err) {
