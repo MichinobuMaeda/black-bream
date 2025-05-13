@@ -85,7 +85,7 @@
           label={t().text()}
           type="text"
           bind:value={text}
-          lines={4}
+          lines={6}
           message={t().required()}
           error={errorText}
         />

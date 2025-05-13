@@ -43,6 +43,10 @@
             <span class="size-5 text-light-error dark:text-dark-error">
               <TargetIcon {target} />
             </span>
+          {:else if post.deletedAt}
+            <span class="size-5 text-light-secondary dark:text-dark-secondary">
+              <TargetIcon {target} />
+            </span>
           {:else}
             <span class="size-5 text-light-primary dark:text-dark-primary">
               <TargetIcon {target} />
