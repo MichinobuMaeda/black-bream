@@ -75,7 +75,7 @@
       <TextFieldOutlined
         id="text"
         label="Text"
-        lines={4}
+        lines={6}
         value={post.text}
         readonly
       />
@@ -89,5 +89,16 @@
         <div>Error loading image</div>
       {/await}
     </Fields>
+    {#if store.admin}
+      <div class="flex flex-col gap-0.5">
+        {#each targets as target (target)}
+          <pre>{target}: {targets[target]?.status || "--"}</pre>
+          {#if targets[target]?.err}
+            <pre class="text-light-error dark:text-dark-error">{targets[target]
+                ?.err}</pre>
+          {/if}
+        {/each}
+      </div>
+    {/if}
   </Content>
 {/if}
