@@ -1,3 +1,4 @@
+import { FieldValue } from "firebase-admin/firestore";
 import { docRef, getDoc, updateDoc } from "./utils.js";
 
 export class Provider {
@@ -47,7 +48,7 @@ export class Provider {
     Object.entries(data).forEach(([key, value]) => {
       update[`${this.id}.${key}`] = value;
     });
-    update.updatedAt = new Date();
+    update[`${this.id}.updatedAt`] = FieldValue.serverTimestamp();
 
     const updated = await updateDoc(docRef(this.db, "service", "auth"), update);
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+import { FieldValue } from "firebase-admin/firestore";
 import { docRef, getDoc, updateDoc } from "./utils.js";
 import { Provider } from "./provider.js";
 
@@ -148,7 +149,7 @@ describe("Provider.updateParams", () => {
   const update = {
     "target-name.key1": "value1",
     "target-name.key2": "value2",
-    updatedAt: expect.any(Date),
+    "target-name.updatedAt": FieldValue.serverTimestamp(),
   };
   updateDoc.mockResolvedValue({ err: undefined });
   const provider = new Provider(db, bucket);
