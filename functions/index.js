@@ -19,7 +19,7 @@ import { Twitter } from "./twitter.js";
 import { Post } from "./post.js";
 import * as account from "./account.js";
 import * as deployment from "./deployment.js";
-import { handleError, handleOnCall } from "./utils.js";
+import { handleError, handleUpdate, handleOnCall } from "./utils.js";
 import { createUiTestData } from "./ui_test_data.js";
 
 const timeZone = "Asia/Tokyo";
@@ -33,6 +33,7 @@ const db = getFirestore(app);
 const bucket = getStorage(app).bucket();
 
 const recordError = handleError(db);
+const recordUpdate = handleUpdate(db);
 const recordOnCall = handleOnCall(db);
 
 // https://<region>-<project-id>.cloudfunctions.net/public
@@ -126,6 +127,17 @@ export const onPostUpdated = onDocumentUpdated(
   },
 );
 
+export const onServiceConfUpdated = onDocumentUpdated(
+  { document: "service/conf", region },
+  async () => {
+    try {
+      await recordUpdate("service/conf");
+    } catch (err) {
+      await recordError({ err });
+    }
+  },
+);
+
 export const onServiceAuthUpdated = onDocumentUpdated(
   { document: "service/auth", region },
   async ({ data }) => {
@@ -140,6 +152,7 @@ export const onServiceAuthUpdated = onDocumentUpdated(
           .filter(([, value]) => !value.deletedAt)
           .map(([key]) => key),
       });
+      await recordUpdate("service/auth");
     } catch (err) {
       await recordError({ err });
     }

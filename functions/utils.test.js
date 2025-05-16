@@ -18,6 +18,7 @@ import {
   getDoc,
   updateDoc,
   handleError,
+  handleUpdate,
   handleOnCall,
 } from "./utils.js";
 
@@ -739,6 +740,66 @@ describe("handleError", () => {
           level: "error",
           message: err.message,
           stack: err.stack,
+          createdAt: FieldValue.serverTimestamp(),
+        },
+      ],
+    ]);
+    expect(ret).toEqual({ err: err.toString() });
+  });
+});
+
+describe("handleUpdate", () => {
+  it("should record update log.", async () => {
+    // Prepare
+    const add = vi.fn(() => Promise.resolve({}));
+    const db = { collection: vi.fn(() => ({ add })) };
+    const path = "test/path";
+    const updateDoc = vi.fn(() => Promise.resolve({}));
+    db.collection.mockReturnValueOnce({ add });
+
+    // Execute
+    const ret = await handleUpdate(db)(path);
+
+    // Verify
+    expect(db.collection.mock.calls).toEqual([["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "info",
+          message: `Updated: ${path}`,
+          createdAt: FieldValue.serverTimestamp(),
+        },
+      ],
+    ]);
+  });
+
+  it("should record error, if add() raises an exception.", async () => {
+    // Prepare
+    const err = new Error("test error");
+    const add = vi.fn();
+    const db = { collection: vi.fn(() => ({ add })) };
+    const path = "test/path";
+    db.collection.mockReturnValueOnce({ add });
+    add.mockRejectedValueOnce(err).mockResolvedValueOnce({});
+
+    // Execute
+    const ret = await handleUpdate(db)(path);
+
+    // Verify
+    expect(db.collection.mock.calls).toEqual([["logs"], ["logs"]]);
+    expect(add.mock.calls).toEqual([
+      [
+        {
+          level: "info",
+          message: `Updated: ${path}`,
+          createdAt: FieldValue.serverTimestamp(),
+        },
+      ],
+      [
+        {
+          level: "error",
+          message: "test error",
+          stack: expect.any(String),
           createdAt: FieldValue.serverTimestamp(),
         },
       ],

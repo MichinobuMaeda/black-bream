@@ -328,6 +328,22 @@ export const handleError = (db) => async (f) =>
     .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));
 
 /**
+ * Handle update
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @returns {Function}
+ */
+export const handleUpdate = (db) => async (path) =>
+  db
+    .collection("logs")
+    .add({
+      level: "info",
+      message: `Updated: ${path}`,
+      createdAt: FieldValue.serverTimestamp(),
+    })
+    .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));
+
+/**
  * Handle onCall
  *
  * @param {FirebaseFirestore.Firestore} db
