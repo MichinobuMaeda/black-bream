@@ -19,6 +19,7 @@ import { Twitter } from "./twitter.js";
 import { Post } from "./post.js";
 import * as account from "./account.js";
 import * as deployment from "./deployment.js";
+import { FeedReader } from "./feedReader.js";
 import { handleError, handleUpdate, handleOnCall } from "./utils.js";
 import { createUiTestData } from "./ui_test_data.js";
 
@@ -247,6 +248,7 @@ export const daily = onSchedule(
   async () => {
     recordError(new Threads(db, bucket).refreshAccessToken());
     recordError(new Instagram(db, bucket).refreshAccessToken());
+    recordError(new FeedReader(db).readAll());
   },
 );
 

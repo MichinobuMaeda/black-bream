@@ -15,8 +15,10 @@
   "main": "index.js",
   "dependencies": {
     "@atproto/api": "^0.14.7",
+    "fast-xml-parser": "^5.2.3",
     "firebase-admin": "^13.2.0",
     "firebase-functions": "^6.3.2",
+    "html-entities": "^2.6.0",
     "htmlparser2": "^10.0.0",
     "nanoid": "^5.1.5",
     "sharp": "^0.33.5"

@@ -516,6 +516,24 @@ export class I18n {
       en: `Current: ${value}`,
     }[this.locale];
   }
+  feeds() {
+    return {
+      ja: "フィード",
+      en: "Feeds",
+    }[this.locale];
+  }
+  urlOfFeeds() {
+    return {
+      ja: "フィードの URL",
+      en: "URL of feeds",
+    }[this.locale];
+  }
+  oneItemPerLine() {
+    return {
+      ja: "1行に 1個の値を入力してください",
+      en: "Enter one item per line",
+    }[this.locale];
+  }
 
   // Validation
   errorPasswordStrength() {
