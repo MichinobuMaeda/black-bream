@@ -21,12 +21,13 @@ export class FeedReader {
       return { err: `${url} ${err}` };
     }
 
+    const xml = await data.text();
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
       allowBooleanAttributes: true,
     });
-    const output = parser.parse(data);
+    const output = parser.parse(xml);
     let items = [];
 
     if (output.rss) {

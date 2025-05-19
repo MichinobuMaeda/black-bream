@@ -87,7 +87,9 @@ describe("readFeed()", () => {
       },
     ];
 
-    httpRequest.mockResolvedValue({ data: xml });
+    httpRequest.mockResolvedValue({
+      data: { text: () => Promise.resolve(xml) },
+    });
     refMock.get
       .mockResolvedValueOnce({ exists: false })
       .mockResolvedValueOnce({ exists: true });
@@ -170,7 +172,9 @@ describe("readFeed()", () => {
       },
     ];
 
-    httpRequest.mockResolvedValue({ data: xml });
+    httpRequest.mockResolvedValue({
+      data: { text: () => Promise.resolve(xml) },
+    });
     refMock.get
       .mockResolvedValueOnce({ exists: false })
       .mockResolvedValueOnce({ exists: true });
@@ -195,7 +199,9 @@ describe("readFeed()", () => {
     // Prepare
     const url = "http://example.com/invalid";
     const xml = "<invalid></invalid>";
-    httpRequest.mockResolvedValue({ data: xml });
+    httpRequest.mockResolvedValue({
+      data: { text: () => Promise.resolve(xml) },
+    });
     const feedReader = new FeedReader(db);
 
     // Execute
