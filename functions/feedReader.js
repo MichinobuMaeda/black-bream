@@ -1,3 +1,4 @@
+import { logger } from "firebase-functions/v2";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { XMLParser } from "fast-xml-parser";
 import { decode } from "html-entities";
@@ -13,8 +14,10 @@ export class FeedReader {
   }
 
   async readFeed(url) {
+    logger.info(`Reading feed: ${url}`);
     const { data, err } = await httpRequest(url);
     if (err) {
+      logger.error(`${url} ${err}`);
       return { err: `${url} ${err}` };
     }
 
@@ -58,6 +61,7 @@ export class FeedReader {
           updatedAt: FieldValue.serverTimestamp(),
         };
         const doc = await ref.get();
+        logger.info(`Feed item ${item.link}`);
 
         if (doc.exists) {
           await ref.update(data);
