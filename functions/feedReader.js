@@ -83,7 +83,7 @@ export class FeedReader {
     const ret = await Promise.all(
       (conf.data().feeds || []).map((feed) => this.readFeed(feed)),
     );
-    const err = ret.filter((r) => r.err).map((r) => r.err);
+    const err = ret?.filter((r) => r?.err)?.map((r) => r?.err);
     return { err: err.length ? JSON.stringify(err) : undefined };
   }
 }
