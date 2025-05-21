@@ -102,8 +102,8 @@ describe("readFeed()", () => {
     expect(httpRequest.mock.calls).toEqual([[url]]);
     expect(db.collection.mock.calls).toEqual([["feeds"], ["feeds"]]);
     expect(collectionMock.doc.mock.calls).toEqual([
-      [Buffer.from(expectedData[0].link).toString("base64")],
-      [Buffer.from(expectedData[1].link).toString("base64")],
+      [Buffer.from(expectedData[0].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
+      [Buffer.from(expectedData[1].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
     ]);
     expect(refMock.get.mock.calls).toEqual([[], []]);
     expect(refMock.set.mock.calls).toEqual([[expectedData[0]]]);
@@ -187,8 +187,8 @@ describe("readFeed()", () => {
     expect(httpRequest.mock.calls).toEqual([[url]]);
     expect(db.collection.mock.calls).toEqual([["feeds"], ["feeds"]]);
     expect(collectionMock.doc.mock.calls).toEqual([
-      [Buffer.from(expectedData[0].link).toString("base64")],
-      [Buffer.from(expectedData[1].link).toString("base64")],
+      [Buffer.from(expectedData[0].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
+      [Buffer.from(expectedData[1].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
     ]);
     expect(refMock.get.mock.calls).toEqual([[], []]);
     expect(refMock.set.mock.calls).toEqual([[expectedData[0]]]);
