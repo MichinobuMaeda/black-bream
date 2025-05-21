@@ -54,7 +54,7 @@ export class FeedReader {
 
     await Promise.all(
       items.map(async (item) => {
-        const id = Buffer.from(item.link).toString("base64");
+        const id = Buffer.from(item.link).toString("base64").replace(/[^0-9a-zA-Z]/,"");
         const ref = this.db.collection("feeds").doc(id);
         const data = {
           ...item,
