@@ -66,7 +66,16 @@ export class Post {
    * @returns {Promise<{err: undefined|Error, data: string|undefined}>}
    */
   async createPosts(queue) {
-    const { id, targets } = this.data;
+    const { id, scheduledFor, targets } = this.data;
+    if (!scheduledFor) {
+      return { err: new Error("scheduledFor is required") };
+    }
+    if (
+      Timestamp.now().toMillis() + 3 * 24 * 3600 * 1000 <
+      scheduledFor.toMillis()
+    ) {
+      return { warn: "scheduledFor is too far in the future" };
+    }
     logger.info(`Enqueue posts: ${id}`);
 
     Object.keys(targets).forEach((target) => {
@@ -337,3 +346,23 @@ export class Post {
     return { data: status };
   }
 }
+
+export const postAll = async (db, bucket, queue) =>
+  db
+    .collection("posts")
+    .where("status", "==", "requested")
+    .get()
+    .then((snapshot) =>
+      Promise.all(
+        snapshot.docs.map((doc) =>
+          new Post(db, bucket, { id: doc.id, data: doc.data() }).createPosts(
+            queue,
+          ),
+        ),
+      ).then((results) => {
+        const errors = results
+          .filter((result) => result.err)
+          .map((result) => result.err);
+        return errors.length ? { err: JSON.stringify(errors) } : {};
+      }),
+    );

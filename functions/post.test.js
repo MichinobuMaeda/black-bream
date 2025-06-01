@@ -7,11 +7,11 @@ import { Instagram } from "./instagram.js";
 import { Twitter } from "./twitter.js";
 import { Tumblr } from "./tumblr.js";
 import { getDoc, updateDoc } from "./utils.js";
-import { Post } from "./post.js";
 import { jsonToLex, mock } from "@atproto/api";
 import { error } from "firebase-functions/logger";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { nanoid } from "nanoid";
+import { Post, postAll } from "./post.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("nanoid");
@@ -49,7 +49,9 @@ Tumblr.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
 const id = "postsId";
 const ref = { id, get: vi.fn() };
 const doc = vi.fn((id) => ref);
-const collection = vi.fn(() => ({ doc }));
+const get = vi.fn(() => ref);
+const where = vi.fn(() => ({ get }));
+const collection = vi.fn(() => ({ doc, where }));
 const db = { collection };
 const bucket = {};
 const text = "Text";
@@ -327,6 +329,43 @@ describe("createPosts", () => {
       ],
     ]);
     expect(ret).toEqual({ err: err2 });
+  });
+
+  it("should return error without data.scheduledFor.", async () => {
+    // Prepare
+    const postData = { text, files };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+
+    // Execute
+    const ret = await post.createPosts(queue);
+
+    // Verify
+    expect(queue.enqueue).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ err: new Error("scheduledFor is required") });
+  });
+
+  it("should return error if scheduledFor is too far in the future.", async () => {
+    // Prepare
+    const delay = 9 * 1000;
+    const mastodon = {};
+    const misskey = {};
+    const targets = { mastodon, misskey };
+    const scheduledFor = Timestamp.fromMillis(
+      new Date().getTime() + 4 * 24 * 3600 * 1000,
+    );
+    const postData = { text, files, targets, scheduledFor };
+    const snap = { id, ref, data: () => postData };
+    const post = new Post(db, bucket, snap);
+
+    // Execute
+    const ret = await post.createPosts(queue);
+
+    // Verify
+    expect(queue.enqueue).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ warn: "scheduledFor is too far in the future" });
   });
 });
 
@@ -933,5 +972,81 @@ describe("checkCompleted", () => {
     // Verify
     expect(updateDoc).not.toHaveBeenCalled();
     expect(ret).toEqual({});
+  });
+});
+
+describe("postAll", () => {
+  it("should post to all targets.", async () => {
+    // Prepare
+    const snapshot = {
+      docs: [
+        {
+          id: "post1",
+          data: () => ({
+            scheduledFor: Timestamp.now(),
+            targets: { mastodon: {}, misskey: {} },
+          }),
+        },
+        {
+          id: "post2",
+          data: () => ({
+            scheduledFor: Timestamp.fromMillis(
+              new Date().getTime() + 24 * 3600 * 1000,
+            ),
+            targets: { mastodon: {} },
+          }),
+        },
+      ],
+    };
+    get.mockResolvedValueOnce(snapshot);
+    Post.prototype.createPosts = vi.fn(() => Promise.resolve({}));
+
+    // Execute
+    const ret = await postAll(db, bucket, queue);
+
+    // Verify
+    expect(db.collection.mock.calls).toEqual([["posts"], ["posts"], ["posts"]]);
+    expect(where.mock.calls).toEqual([["status", "==", "requested"]]);
+    expect(get.mock.calls).toEqual([[]]);
+    expect(doc.mock.calls).toEqual([["post1"], ["post2"]]);
+    expect(Post.prototype.createPosts.mock.calls).toEqual([[queue], [queue]]);
+    expect(ret).toEqual({});
+  });
+
+  it("should return error if get returns error.", async () => {
+    // Prepare
+    const snapshot = {
+      docs: [
+        {
+          id: "post1",
+          data: () => ({
+            scheduledFor: Timestamp.now(),
+            targets: { mastodon: {}, misskey: {} },
+          }),
+        },
+        {
+          id: "post2",
+          data: () => ({
+            scheduledFor: Timestamp.fromMillis(
+              new Date().getTime() + 24 * 3600 * 1000,
+            ),
+            targets: { mastodon: {} },
+          }),
+        },
+      ],
+    };
+    get.mockResolvedValueOnce(snapshot);
+    Post.prototype.createPosts = vi.fn(() => Promise.resolve({ err: "error" }));
+
+    // Execute
+    const ret = await postAll(db, bucket, queue);
+
+    // Verify
+    expect(db.collection.mock.calls).toEqual([["posts"], ["posts"], ["posts"]]);
+    expect(where.mock.calls).toEqual([["status", "==", "requested"]]);
+    expect(get.mock.calls).toEqual([[]]);
+    expect(doc.mock.calls).toEqual([["post1"], ["post2"]]);
+    expect(Post.prototype.createPosts.mock.calls).toEqual([[queue], [queue]]);
+    expect(ret).toEqual({ err: JSON.stringify(["error", "error"]) });
   });
 });

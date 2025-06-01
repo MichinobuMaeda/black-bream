@@ -16,7 +16,7 @@ import { Threads } from "./threads.js";
 import { Instagram } from "./instagram.js";
 import { Tumblr } from "./tumblr.js";
 import { Twitter } from "./twitter.js";
-import { Post } from "./post.js";
+import { Post, postAll } from "./post.js";
 import * as account from "./account.js";
 import * as deployment from "./deployment.js";
 import { FeedReader } from "./feedReader.js";
@@ -235,21 +235,21 @@ export const setTumblrAccessToken = onCall(optOnCall, async ({ data, auth }) =>
   ),
 );
 
-export const runDaily = onCall({ region }, async () => {
+const dailyJob = async ({ project }) => {
   await recordError(new Threads(db, bucket).refreshAccessToken());
   await recordError(new Instagram(db, bucket).refreshAccessToken());
   await recordError(new FeedReader(db).readAll());
   await recordError(new FeedHandler(db).handleFeeds());
-});
+  await recordError(postAll(db, bucket, getQueue(project, location, "post")));
+};
+
+export const runDaily = onCall({ region }, async ({ project }) =>
+  dailyJob(project),
+);
 
 export const daily = onSchedule(
   { schedule: "every day 00:11", timeZone, region },
-  async () => {
-    await recordError(new Threads(db, bucket).refreshAccessToken());
-    await recordError(new Instagram(db, bucket).refreshAccessToken());
-    await recordError(new FeedReader(db).readAll());
-    await recordError(new FeedHandler(db).handleFeeds());
-  },
+  async ({ project }) => dailyJob(project),
 );
 
 export const onDataVersionDeleted = onDocumentDeleted(
