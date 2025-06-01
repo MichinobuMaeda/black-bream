@@ -535,7 +535,7 @@ describe("handleFeedAndCategory()", () => {
     const template = {
       name: "Template 1",
       text: "Text for template",
-      targets: [{}],
+      targets: ["twitter", "mastodon"],
     };
     const sysTz = "Asia/Tokyo";
     const preDefined = {};
@@ -565,7 +565,16 @@ describe("handleFeedAndCategory()", () => {
         {
           text: template.text,
           files: [],
-          targets: [{}],
+          targets: {
+            twitter: {
+              status: "requested",
+              createdAt: FieldValue.serverTimestamp(),
+            },
+            mastodon: {
+              status: "requested",
+              createdAt: FieldValue.serverTimestamp(),
+            },
+          },
           scheduledFor: new Date("2023-01-01T00:00:00Z"),
           status: "requested",
           createdAt: FieldValue.serverTimestamp(),

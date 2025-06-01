@@ -203,7 +203,16 @@ export class FeedHandler {
       await this.db.collection("posts").add({
         text: this.applyTemplate(text, feeds),
         files: [],
-        targets,
+        targets: targets.reduce(
+          (acc, cur) => ({
+            ...acc,
+            [cur]: {
+              status: "requested",
+              createdAt: FieldValue.serverTimestamp(),
+            },
+          }),
+          {},
+        ),
         scheduledFor,
         status: "requested",
         createdAt: FieldValue.serverTimestamp(),
