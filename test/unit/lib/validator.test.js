@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { validateEmail, validatePassword } from "../../../src/lib/validator.js";
+import {
+  validateEmail,
+  validatePassword,
+  validateTimeZone,
+} from "../../../src/lib/validator.js";
 
 describe("validateEmail", () => {
   it("should return false if given value is undefined.", () => {
@@ -75,5 +79,34 @@ describe("validatePassword", () => {
 
   it("should return true if given value is a valid password.", () => {
     expect(validatePassword("Aa12345#")).toBeTruthy();
+  });
+});
+
+describe("validateTimeZone", () => {
+  it("should return false if given value is undefined.", () => {
+    expect(validateTimeZone(undefined)).toBeFalsy();
+  });
+
+  it("should return false if given value is not a string.", () => {
+    expect(validateTimeZone(1)).toBeFalsy();
+    expect(validateTimeZone(null)).toBeFalsy();
+    expect(validateTimeZone({})).toBeFalsy();
+    expect(validateTimeZone([])).toBeFalsy();
+  });
+
+  it("should return false if given value is empty.", () => {
+    expect(validateTimeZone("")).toBeFalsy();
+  });
+
+  it("should return false if given value is not a valid time zone.", () => {
+    expect(validateTimeZone("Invalid/Timezone")).toBeFalsy();
+    expect(validateTimeZone("UTC")).toBeFalsy();
+    expect(validateTimeZone("JST")).toBeFalsy();
+  });
+
+  it("should return true if given value is a valid time zone.", () => {
+    expect(validateTimeZone("America/New_York")).toBeTruthy();
+    expect(validateTimeZone("Europe/London")).toBeTruthy();
+    expect(validateTimeZone("Asia/Tokyo")).toBeTruthy();
   });
 });

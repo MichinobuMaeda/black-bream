@@ -8,6 +8,7 @@ import {
   vi,
 } from "vitest";
 import { add } from "date-fns";
+import { TZDate } from "@date-fns/tz";
 import { Timestamp } from "firebase/firestore";
 
 import { LocalizedDateTime } from "../../../src/lib/datetime.js";
@@ -21,14 +22,16 @@ describe("LocalizedDateTime's constructor", () => {
     // Prepare
     const iso = "2020-01-01T00:00:00.000Z";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const tz = "Asia/Bangkok";
 
     // Execute
-    const ldt = new LocalizedDateTime(new Date(iso), "ja", sch);
+    const ldt = new LocalizedDateTime(new Date(iso), "ja", tz, sch);
 
     // Verify
     expect(ldt.locale).toBe("ja");
+    expect(ldt.tz).toBe(tz);
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt.getTime()).toEqual(new Date(iso).getTime());
   });
 });
 
@@ -36,37 +39,55 @@ describe("LocalizedDateTime.factory", () => {
   it("should set the given value: 'YYYY-MM-DD' as system timezone.", () => {
     // Prepare
     const seed = "2020-01-01";
-    const expected = new Date(
-      new Date("2020-01-01T00:00:00.000Z").getTime() +
-        new Date().getTimezoneOffset() * 60 * 1000,
-    );
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Bangkok",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(expected);
+    expect(ldt.dt.toISOString()).toEqual("2020-01-01T00:00:00.000+07:00");
   });
 
   it("should set the given value: 'YYYY-MM-DD HH:mm' as system timezone.", () => {
     // Prepare
     const seed = "2020-01-01 12:00";
-    const expected = new Date(
-      new Date("2020-01-01T12:00:00.000Z").getTime() +
-        new Date().getTimezoneOffset() * 60 * 1000,
-    );
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Bangkok",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(expected);
+    expect(ldt.dt.toISOString()).toEqual("2020-01-01T12:00:00.000+07:00");
+  });
+
+  it("should set the given value: 'YYYY-MM-DD HH:mm' as system timezone.", () => {
+    // Prepare
+    const seed = "2020-01-01 12:00:01";
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Bangkok",
+      preDefinedSchedules: sch,
+    };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt.toISOString()).toEqual("2020-01-01T12:00:01.000+07:00");
   });
 
   it("should set the given value: 1500000000000.", () => {
@@ -74,14 +95,18 @@ describe("LocalizedDateTime.factory", () => {
     const seed = 1500000000000;
     const expected = new Date(seed);
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(expected);
+    expect(ldt.dt.getTime()).toEqual(expected.getTime());
   });
 
   it("should set the given value: 1600000000.", () => {
@@ -89,14 +114,37 @@ describe("LocalizedDateTime.factory", () => {
     const seed = 1500000000000;
     const expected = new Date(seed);
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(expected);
+    expect(ldt.dt.getTime()).toEqual(expected.getTime());
+  });
+
+  it("should set the given value: 99999999999.", () => {
+    // Prepare
+    const seed = 99999999999;
+    const expected = new Date(seed * 1000);
+    const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
+
+    // Execute
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
+
+    // Verify
+    expect(ldt.locale).toBe("ja");
+    expect(ldt.sch).toEqual(sch);
+    expect(ldt.dt.getTime()).toEqual(expected.getTime());
   });
 
   it("should set the given instance of Date.", () => {
@@ -104,9 +152,13 @@ describe("LocalizedDateTime.factory", () => {
     const seed = new Date("2020-02-22T00:00:00.000Z");
     const iso = "2020-02-22T00:00:00.000Z";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
@@ -119,22 +171,30 @@ describe("LocalizedDateTime.factory", () => {
     const seed = Timestamp.fromDate(new Date("2020-02-22T00:00:00.000Z"));
     const iso = "2020-02-22T00:00:00.000Z";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toEqual(new Date(iso));
+    expect(ldt.dt.getTime()).toEqual(new Date(iso).getTime());
   });
 
   it("should set current system timezone without given value.", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch);
+    const ldt = LocalizedDateTime.factory("ja", conf);
 
     // Verify
     expect(ldt.locale).toBe("ja");
@@ -146,14 +206,18 @@ describe("LocalizedDateTime.factory", () => {
   it("should return undefined with invalid given value.", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     // Execute
-    const ldt = LocalizedDateTime.factory("ja", sch, {});
+    const ldt = LocalizedDateTime.factory("ja", conf, {});
 
     // Verify
     expect(ldt.locale).toBe("ja");
     expect(ldt.sch).toEqual(sch);
-    expect(ldt.dt).toBeUndefined;
+    expect(ldt.dt).toBeUndefined();
   });
 });
 
@@ -162,7 +226,11 @@ describe("formatDate()", () => {
     // Prepare
     const seed = "2020-02-22";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Execute
     const result = ldt.formatDate();
@@ -192,7 +260,11 @@ describe("formatDateTimeLong()", () => {
     // Prepare
     const seed = "2020-02-22 00:00";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
-    const ldt = LocalizedDateTime.factory("ja", sch, seed);
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
+    const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
     // Execute
     const result = ldt.formatDateTimeLong();
@@ -204,7 +276,11 @@ describe("formatDateTimeLong()", () => {
     // Prepare
     const seed = "2020-02-22 00:00";
     const sch = { wd: [1, 2, 3], h: [4, 5, 6], m: [7, 8, 9] };
-    const ldt = LocalizedDateTime.factory("en", sch, seed);
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
+    const ldt = LocalizedDateTime.factory("en", conf, seed);
 
     // Execute
     const result = ldt.formatDateTimeLong();
@@ -226,9 +302,13 @@ describe("getNextOrPreviousSchedule()", () => {
       {
         // Prepare #1
         const sch = { wd: [], h: [4, 6, 8], m: [9, 11, 13] };
+        const conf = {
+          tz: "Asia/Tokyo",
+          preDefinedSchedules: sch,
+        };
 
         // Execute #1
-        const ldt = LocalizedDateTime.factory("ja", sch, seed);
+        const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
         // Verify #1
         expect(ldt.getPrevSchedule()).toBe(ldt);
@@ -238,9 +318,13 @@ describe("getNextOrPreviousSchedule()", () => {
       {
         // Prepare #2
         const sch = { wd: [1, 2, 3], h: [], m: [9, 11, 13] };
+        const conf = {
+          tz: "Asia/Tokyo",
+          preDefinedSchedules: sch,
+        };
 
         // Execute #2
-        const ldt = LocalizedDateTime.factory("ja", sch, seed);
+        const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
         // Verify #2
         expect(ldt.getPrevSchedule()).toBe(ldt);
@@ -250,9 +334,13 @@ describe("getNextOrPreviousSchedule()", () => {
       {
         // Prepare #3
         const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [] };
+        const conf = {
+          tz: "Asia/Tokyo",
+          preDefinedSchedules: sch,
+        };
 
         // Execute #3
-        const ldt = LocalizedDateTime.factory("ja", sch, seed);
+        const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
         // Verify #3
         expect(ldt.getPrevSchedule()).toBe(ldt);
@@ -264,11 +352,15 @@ describe("getNextOrPreviousSchedule()", () => {
   it("should return the previous schedule.", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     {
       // Prepare #1
       const seed = add(new Date(), { days: -10 });
-      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+      const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
       // Execute #1
       const prv = ldt.getPrevSchedule();
@@ -285,7 +377,7 @@ describe("getNextOrPreviousSchedule()", () => {
     {
       // Prepare #2
       const seed = add(new Date(), { days: 14 - new Date().getDay() });
-      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+      const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
       // Execute #2-1
       const prv1 = ldt.getPrevSchedule();
@@ -324,11 +416,15 @@ describe("getNextOrPreviousSchedule()", () => {
   it("should return the next schedule.", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
+    const conf = {
+      tz: "Asia/Tokyo",
+      preDefinedSchedules: sch,
+    };
 
     {
       // Prepare #1
       const seed = add(new Date(), { days: -10 });
-      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+      const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
       // Execute #1
       const nxt = ldt.getNextSchedule();
@@ -345,7 +441,7 @@ describe("getNextOrPreviousSchedule()", () => {
     {
       // Prepare #2
       const seed = add(new Date(), { days: 7 - new Date().getDay() });
-      const ldt = LocalizedDateTime.factory("ja", sch, seed);
+      const ldt = LocalizedDateTime.factory("ja", conf, seed);
 
       // Execute #2-1
       const nxt1 = ldt.getNextSchedule();

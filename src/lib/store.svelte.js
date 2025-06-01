@@ -30,8 +30,7 @@ let operator = $derived(isMemberOf(me?.id, "operators"));
  * @param {number|string|Date|Timestamp} [seed]
  * @returns {LocalizedDateTime}
  */
-export const dt = (seed) =>
-  LocalizedDateTime.factory(locale, conf?.preDefinedSchedules || {}, seed);
+export const dt = (seed) => LocalizedDateTime.factory(locale, conf ?? {}, seed);
 
 export const store = {
   get locale() {

@@ -24,3 +24,13 @@ export const validatePassword = (str) =>
   !!str.match(/[A-Z]/) &&
   !!str.match(/[0-9]/) &&
   !!str.match(/[^a-zA-Z0-9]/);
+
+/**
+ * Validate TimeZone
+ *
+ * @param {any} str
+ * @returns {boolean}
+ */
+export const validateTimeZone = (str) =>
+  (typeof str === "string" || str instanceof String) &&
+  Intl.supportedValuesOf("timeZone").includes(str);

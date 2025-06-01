@@ -1,8 +1,16 @@
 import { logger } from "firebase-functions/v2";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import crypto from "crypto";
 import { XMLParser } from "fast-xml-parser";
 import { decode } from "html-entities";
 import { httpRequest } from "./utils.js";
+
+const linkToId = (link) =>
+  crypto
+    .createHash("sha256")
+    .update(link)
+    .digest("base64")
+    .replace(/[^0-9A-Za-z]/g, "");
 
 export class FeedReader {
   /**
@@ -13,6 +21,30 @@ export class FeedReader {
     this.db = db;
   }
 
+  /**
+   * Returns a promise that resolves to an array of unique feed URLs.
+   * @returns {Promise<Array<string>>}
+   */
+  async getFeedUrls() {
+    return this.db
+      .collection("templates")
+      .get()
+      .then((snapshot) =>
+        snapshot.docs
+          .map((doc) => doc.get("feed"))
+          .filter(
+            (feed, index, self) =>
+              !self.some((f, i) => f === feed && i < index),
+          ),
+      );
+  }
+
+  /**
+   * Reads an RSS feed from a URL.
+   *
+   * @param {string} url - The URL of the RSS feed.
+   * @returns {Promise<{err: undefined|string}>}
+   */
   async readFeed(url) {
     logger.info(`Reading feed: ${url}`);
     const { data, err } = await httpRequest(url);
@@ -54,11 +86,12 @@ export class FeedReader {
 
     await Promise.all(
       items.map(async (item) => {
-        const id = Buffer.from(item.link).toString("base64").replace(/[^0-9a-zA-Z]/,"");
+        const id = linkToId(item.link);
         const ref = this.db.collection("feeds").doc(id);
         const data = {
           ...item,
-          url: url,
+          feed: url,
+          status: "new",
           updatedAt: FieldValue.serverTimestamp(),
         };
         const doc = await ref.get();
@@ -81,12 +114,8 @@ export class FeedReader {
    * @returns {Promise<{err: undefined|string}>}
    */
   async readAll() {
-    const conf = await this.db.collection("service").doc("conf").get();
-    if (!conf.exists) {
-      return { err: "missing-service-conf" };
-    }
     const ret = await Promise.all(
-      (conf.data().feeds || []).map((feed) => this.readFeed(feed)),
+      (await this.getFeedUrls()).map((feed) => this.readFeed(feed)),
     );
     const err = ret?.filter((r) => r?.err)?.map((r) => r?.err);
     return { err: err.length ? JSON.stringify(err) : undefined };

@@ -3,6 +3,7 @@ import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import { localstorage } from "../../../src/lib/localstorage.js";
 import {
   t,
+  dt,
   dow,
   store,
   isMemberOf,
@@ -33,6 +34,25 @@ describe("t", () => {
 
     // Execute and Verify #2
     expect(t().send()).toEqual("Send");
+  });
+});
+
+describe("dt", () => {
+  it("should return the correct date format.", () => {
+    // Prepare
+    store.locale = "ja";
+    const iso = "2023-10-01 00:00:00";
+
+    // Execute and Verify
+    expect(dt(iso).formatDateTimeLong()).toEqual("2023-10-01(日)00:00");
+  });
+  it("should return the correct date format in English.", () => {
+    // Prepare
+    store.locale = "en";
+    const iso = "2023-10-01 00:00:00";
+
+    // Execute and Verify
+    expect(dt(iso).formatDateTimeLong()).toEqual("2023-10-01(Su)00:00");
   });
 });
 
@@ -116,6 +136,12 @@ describe("store", () => {
     // Execute and Verify
     store.templates = [{ id: "template1" }, { id: "template2" }];
     expect(store.templates).toEqual([{ id: "template1" }, { id: "template2" }]);
+  });
+
+  it("should return the correct logs.", () => {
+    // Execute and Verify
+    store.logs = [{ id: "log1" }, { id: "log2" }];
+    expect(store.logs).toEqual([{ id: "log1" }, { id: "log2" }]);
   });
 
   it("should return the correct me.", () => {

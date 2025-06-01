@@ -6,6 +6,8 @@ import { getDownloadURL } from "firebase-admin/storage";
 
 const mediaSizeLimit = 1000 * 1000;
 
+export const DEFAULT_TZ = "Asia/Tokyo";
+
 /**
  * @typedef {Object} LinkCard
  * @property {string} uri

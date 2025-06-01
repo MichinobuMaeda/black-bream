@@ -15,6 +15,9 @@
   "main": "index.js",
   "dependencies": {
     "@atproto/api": "^0.14.7",
+    "@date-fns/tz": "^1.2.0",
+    "@date-fns/utc": "^2.1.0",
+    "date-fns": "^4.1.0",
     "fast-xml-parser": "^5.2.3",
     "firebase-admin": "^13.2.0",
     "firebase-functions": "^6.3.2",

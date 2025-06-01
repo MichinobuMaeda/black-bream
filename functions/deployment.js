@@ -1,6 +1,7 @@
 import { logger } from "firebase-functions/v2";
 import { FieldValue } from "firebase-admin/firestore";
 import { addAuthUser } from "./account.js";
+import { DEFAULT_TZ } from "./utils.js";
 
 /**
  * Update data to version 1
@@ -124,4 +125,37 @@ export const updateDataV2 = async (db, deleted) => {
   }
 
   return { data: 2 };
+};
+
+/**
+ * Update data to version 3
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
+ * @returns {Promise<{err: undefined|Error, data: number}>}
+ */
+export const updateDataV3 = async (db, deleted) => {
+  let ver = Number(deleted.get("ver")) || 0;
+
+  if (ver < 3) {
+    var err = undefined;
+
+    try {
+      await db.collection("service").doc("conf").update({
+        tz: DEFAULT_TZ,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      logger.info("Created 'service/auth'");
+
+      await deleted.ref.set({
+        ver: 3,
+        err: err ?? null,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      return { err, data: ver };
+    }
+  }
+
+  return { data: 3 };
 };

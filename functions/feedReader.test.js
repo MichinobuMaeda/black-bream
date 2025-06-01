@@ -1,7 +1,15 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+import crypto from "crypto";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { httpRequest } from "./utils";
-import { FeedReader } from "./feedReader";
+import { FeedReader } from "./feedReader.js";
+
+const linkToId = (link) =>
+  crypto
+    .createHash("sha256")
+    .update(link)
+    .digest("base64")
+    .replace(/[^0-9A-Za-z]/g, "");
 
 vi.mock("./utils.js");
 
@@ -12,11 +20,43 @@ const refMock = {
 };
 const collectionMock = {
   doc: vi.fn(() => refMock),
+  get: vi.fn(),
 };
 const db = { collection: vi.fn(() => collectionMock) };
 
 afterEach(() => {
   vi.clearAllMocks();
+});
+
+describe("getFeedUrls()", () => {
+  it("should return unique feed URLs from templates", async () => {
+    // Prepare
+    const feedUrls = [
+      "http://example.com/feed1",
+      "http://example.com/feed2",
+      "http://example.com/feed1", // Duplicate
+      "http://example.com/feed3",
+    ];
+    const mockGet = vi.fn();
+    mockGet
+      .mockReturnValueOnce(feedUrls[0])
+      .mockReturnValueOnce(feedUrls[1])
+      .mockReturnValueOnce(feedUrls[2]);
+    mockGet.mockReturnValueOnce(feedUrls[3]);
+    const snapshot = {
+      docs: feedUrls.map(() => ({ get: mockGet })),
+    };
+    collectionMock.get.mockResolvedValueOnce(snapshot);
+    const feedReader = new FeedReader(db);
+
+    // Execute
+    const urls = await feedReader.getFeedUrls();
+
+    // Verify
+    expect(db.collection.mock.calls).toEqual([["templates"]]);
+    expect(db.collection().get.mock.calls).toEqual([[]]);
+    expect(urls).toEqual([feedUrls[0], feedUrls[1], feedUrls[3]]);
+  });
 });
 
 describe("readFeed()", () => {
@@ -71,7 +111,8 @@ describe("readFeed()", () => {
           "職種 SE 契約額 〜70万円 期間 ’25年7月〜中長期 業務内容 詳細設計から参画いただきます。 管理番号:3829",
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:23:34.000Z")),
         category: "しごと情報",
-        url,
+        feed: url,
+        status: "new",
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
@@ -82,7 +123,8 @@ describe("readFeed()", () => {
           "職種 コンサルタント 契約額 〜110万円 期間 ’25年5月〜 業務内容 大手企業向けに導入されるERPパッケージ […]",
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:20:43.000Z")),
         category: "しごと情報",
-        url,
+        feed: url,
+        status: "new",
         updatedAt: FieldValue.serverTimestamp(),
       },
     ];
@@ -102,8 +144,8 @@ describe("readFeed()", () => {
     expect(httpRequest.mock.calls).toEqual([[url]]);
     expect(db.collection.mock.calls).toEqual([["feeds"], ["feeds"]]);
     expect(collectionMock.doc.mock.calls).toEqual([
-      [Buffer.from(expectedData[0].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
-      [Buffer.from(expectedData[1].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
+      [linkToId(expectedData[0].link)],
+      [linkToId(expectedData[1].link)],
     ]);
     expect(refMock.get.mock.calls).toEqual([[], []]);
     expect(refMock.set.mock.calls).toEqual([[expectedData[0]]]);
@@ -156,7 +198,8 @@ describe("readFeed()", () => {
           "職種 SE 契約額 〜70万円 期間 ’25年7月〜中長期 業務内容 詳細設計から参画いただきます。 管理番号:3829",
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:23:34.000Z")),
         category: "しごと情報",
-        url,
+        feed: url,
+        status: "new",
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
@@ -167,7 +210,8 @@ describe("readFeed()", () => {
           "職種 コンサルタント 契約額 〜110万円 期間 ’25年5月〜 業務内容 大手企業向けに導入されるERPパッケージ […]",
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:20:43.000Z")),
         category: "しごと情報",
-        url,
+        feed: url,
+        status: "new",
         updatedAt: FieldValue.serverTimestamp(),
       },
     ];
@@ -187,8 +231,8 @@ describe("readFeed()", () => {
     expect(httpRequest.mock.calls).toEqual([[url]]);
     expect(db.collection.mock.calls).toEqual([["feeds"], ["feeds"]]);
     expect(collectionMock.doc.mock.calls).toEqual([
-      [Buffer.from(expectedData[0].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
-      [Buffer.from(expectedData[1].link).toString("base64").replace(/[^0-9a-zA-Z]/,"")],
+      [linkToId(expectedData[0].link)],
+      [linkToId(expectedData[1].link)],
     ]);
     expect(refMock.get.mock.calls).toEqual([[], []]);
     expect(refMock.set.mock.calls).toEqual([[expectedData[0]]]);
@@ -234,21 +278,16 @@ describe("readAll()", () => {
 
   it("should read all feeds.", async () => {
     // Prepare
+    FeedReader.prototype.getFeedUrls = vi.fn(() => Promise.resolve(feeds));
     FeedReader.prototype.readFeed = vi.fn();
     FeedReader.prototype.readFeed.mockResolvedValue({});
-    refMock.get.mockResolvedValueOnce({
-      exists: true,
-      data: () => ({ feeds }),
-    });
 
     // Execute
     const feedReader = new FeedReader(db);
     const ret = await feedReader.readAll();
 
     // Verify
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(collectionMock.doc.mock.calls).toEqual([["conf"]]);
-    expect(refMock.get.mock.calls).toEqual([[]]);
+    expect(FeedReader.prototype.getFeedUrls.mock.calls).toEqual([[]]);
     expect(FeedReader.prototype.readFeed.mock.calls).toEqual([
       [feeds[0]],
       [feeds[1]],
@@ -272,46 +311,10 @@ describe("readAll()", () => {
     const ret = await feedReader.readAll();
 
     // Verify
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(collectionMock.doc.mock.calls).toEqual([["conf"]]);
-    expect(refMock.get.mock.calls).toEqual([[]]);
     expect(FeedReader.prototype.readFeed.mock.calls).toEqual([
       [feeds[0]],
       [feeds[1]],
     ]);
     expect(ret).toEqual({ err: `["${feeds[1]} test error"]` });
-  });
-
-  it("should handle missing service conf", async () => {
-    // Prepare
-    refMock.get.mockResolvedValueOnce({ exists: false });
-    const feedReader = new FeedReader(db);
-
-    // Execute
-    const ret = await feedReader.readAll();
-
-    // Verify
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(collectionMock.doc.mock.calls).toEqual([["conf"]]);
-    expect(refMock.get.mock.calls).toEqual([[]]);
-    expect(ret).toEqual({ err: "missing-service-conf" });
-  });
-
-  it("should handle no feeds in service conf", async () => {
-    // Prepare
-    refMock.get.mockResolvedValueOnce({
-      exists: true,
-      data: () => ({}),
-    });
-
-    // Execute
-    const feedReader = new FeedReader(db);
-    const ret = await feedReader.readAll();
-
-    // Verify
-    expect(db.collection.mock.calls).toEqual([["service"]]);
-    expect(collectionMock.doc.mock.calls).toEqual([["conf"]]);
-    expect(refMock.get.mock.calls).toEqual([[]]);
-    expect(ret).toEqual({});
   });
 });

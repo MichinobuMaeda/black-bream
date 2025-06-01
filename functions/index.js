@@ -20,6 +20,7 @@ import { Post } from "./post.js";
 import * as account from "./account.js";
 import * as deployment from "./deployment.js";
 import { FeedReader } from "./feedReader.js";
+import { FeedHandler } from "./feedHandler.js";
 import { handleError, handleUpdate, handleOnCall } from "./utils.js";
 import { createUiTestData } from "./ui_test_data.js";
 
@@ -234,21 +235,30 @@ export const setTumblrAccessToken = onCall(optOnCall, async ({ data, auth }) =>
   ),
 );
 
-export const onDataVersionDeleted = onDocumentDeleted(
-  { document: "service/dataVersion", region },
-  async ({ data }) => {
-    const auth = getAuth(app);
-    recordError(deployment.updateDataV1(auth, db, data));
-    recordError(deployment.updateDataV2(db, data));
-  },
-);
+export const runDaily = onCall({ region }, async () => {
+  await recordError(new Threads(db, bucket).refreshAccessToken());
+  await recordError(new Instagram(db, bucket).refreshAccessToken());
+  await recordError(new FeedReader(db).readAll());
+  await recordError(new FeedHandler(db).handleFeeds());
+});
 
 export const daily = onSchedule(
   { schedule: "every day 00:11", timeZone, region },
   async () => {
-    recordError(new Threads(db, bucket).refreshAccessToken());
-    recordError(new Instagram(db, bucket).refreshAccessToken());
-    recordError(new FeedReader(db).readAll());
+    await recordError(new Threads(db, bucket).refreshAccessToken());
+    await recordError(new Instagram(db, bucket).refreshAccessToken());
+    await recordError(new FeedReader(db).readAll());
+    await recordError(new FeedHandler(db).handleFeeds());
+  },
+);
+
+export const onDataVersionDeleted = onDocumentDeleted(
+  { document: "service/dataVersion", region },
+  async ({ data }) => {
+    const auth = getAuth(app);
+    await recordError(deployment.updateDataV1(auth, db, data));
+    await recordError(deployment.updateDataV2(db, data));
+    await recordError(deployment.updateDataV3(db, data));
   },
 );
 

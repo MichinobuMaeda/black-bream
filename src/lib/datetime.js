@@ -1,10 +1,9 @@
-import { format, set, add, max } from "date-fns";
+import { format, startOfMinute, add, max } from "date-fns";
 import { enUS, ja } from "date-fns/locale";
-import { toZonedTime } from "date-fns-tz";
+import { TZDate } from "@date-fns/tz";
 import { Timestamp } from "firebase/firestore";
 
-export const SYSTEM_TZ =
-  Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
+export const DEFAULT_TZ = "Asia/Tokyo";
 
 const DT_SHORT = "yyyy-MM-dd";
 const DT_MIDDLE = "yyyy-MM-dd HH:mm";
@@ -12,39 +11,75 @@ const DT_LONG = "yyyy-MM-dd(cccccc)HH:mm";
 
 export class LocalizedDateTime {
   /**
-   * @param {Date} dt
+   * @param {TZDate} dt
    * @param {string} locale
-   * @param {Object} schedules
+   * @param {string} tz
+   * @param {Object} sch
    * @constructor
    */
-  constructor(dt, locale, schedules) {
+  constructor(dt, locale, tz, sch) {
+    /** @type {TZDate} */
     this.dt = dt;
+    /** @type {string} */
     this.locale = locale;
-    this.sch = schedules;
+    /** @type {string} */
+    this.tz = tz;
+    /** @type {Object} */
+    this.sch = sch;
   }
 
   /**
    * @param {string} locale
-   * @param {Object} schedules
+   * @param {Object} conf
    * @param {number|string|Date|Timestamp} [seed]
    * @return {LocalizedDateTime}
    */
-  static factory(locale, preDefinedSchedules, seed) {
+  static factory(locale, { tz, preDefinedSchedules }, seed) {
     console.log("factory", seed);
     return new LocalizedDateTime(
       seed
         ? typeof seed === "number"
-          ? new Date(seed > 100000000000 ? seed : seed * 1000)
+          ? new TZDate(
+              seed > 100000000000 ? seed : seed * 1000,
+              tz || DEFAULT_TZ,
+            )
           : typeof seed === "string"
-            ? toZonedTime(seed, SYSTEM_TZ)
+            ? /^\d+\D\d+\D\d+$/.test(seed)
+              ? new TZDate(
+                  Number(seed.split(/\D/)[0]),
+                  Number(seed.split(/\D/)[1]) - 1,
+                  Number(seed.split(/\D/)[2]),
+                  tz || DEFAULT_TZ,
+                )
+              : /^\d+\D\d+\D\d+\D\d+\D\d+$/.test(seed)
+                ? new TZDate(
+                    Number(seed.split(/\D/)[0]),
+                    Number(seed.split(/\D/)[1]) - 1,
+                    Number(seed.split(/\D/)[2]),
+                    Number(seed.split(/\D/)[3]),
+                    Number(seed.split(/\D/)[4]),
+                    tz || DEFAULT_TZ,
+                  )
+                : /^\d+\D\d+\D\d+\D\d+\D\d+\D\d+/.test(seed)
+                  ? new TZDate(
+                      Number(seed.split(/\D/)[0]),
+                      Number(seed.split(/\D/)[1]) - 1,
+                      Number(seed.split(/\D/)[2]),
+                      Number(seed.split(/\D/)[3]),
+                      Number(seed.split(/\D/)[4]),
+                      Number(seed.split(/\D/)[5]),
+                      tz || DEFAULT_TZ,
+                    )
+                  : undefined
             : seed instanceof Date
-              ? seed
+              ? new TZDate(seed, tz || DEFAULT_TZ)
               : seed instanceof Timestamp
-                ? seed.toDate()
+                ? new TZDate(seed.toDate(), tz || DEFAULT_TZ)
                 : undefined
-        : new Date(),
+        : new TZDate(new Date(), tz || DEFAULT_TZ),
       locale,
-      preDefinedSchedules,
+      tz || DEFAULT_TZ,
+      preDefinedSchedules ?? {},
     );
   }
 
@@ -92,7 +127,7 @@ export class LocalizedDateTime {
       return this;
     }
 
-    let base = add(set(this.dt, { seconds: 0, milliseconds: 0 }), {
+    let base = add(startOfMinute(this.dt), {
       minutes: delta < 0 ? -1 : 1,
     });
     while (
@@ -106,6 +141,7 @@ export class LocalizedDateTime {
     return new LocalizedDateTime(
       max([base, new Date()]),
       this.locale,
+      this.tz,
       this.sch,
     );
   }

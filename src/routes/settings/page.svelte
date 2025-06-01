@@ -2,8 +2,9 @@
   import SvgSettings from "../../lib/icons/SvgSettings.svelte";
   import Templates from "./Templates.svelte";
   import PreDefinedSchedules from "./PreDefinedSchedules.svelte";
-  import FeedList from "./FeedList.svelte";
   import SiteDescription from "./SiteDescription.svelte";
+  import DailyJob from "./DailyJob.svelte";
+  import TimeZone from "./TimeZone.svelte";
   import LoginMethods from "./LoginMethods.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
@@ -19,10 +20,11 @@
 {#if store.admin || store.manager}
   <Templates />
   <PreDefinedSchedules />
-  <FeedList />
   <SiteDescription />
 {/if}
 {#if store.admin}
+  <DailyJob />
+  <TimeZone />
   <AuthTwitter />
   <AuthMastodon />
   <AuthMisskey />

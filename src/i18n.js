@@ -534,6 +534,36 @@ export class I18n {
       en: "Enter one item per line",
     }[this.locale];
   }
+  timeZone() {
+    return {
+      ja: "タイムゾーン",
+      en: "Time zone",
+    }[this.locale];
+  }
+  run() {
+    return {
+      ja: "実行",
+      en: "Run",
+    }[this.locale];
+  }
+  running() {
+    return {
+      ja: "実行中",
+      en: "Running",
+    }[this.locale];
+  }
+  complete() {
+    return {
+      ja: "完了",
+      en: "Complete",
+    }[this.locale];
+  }
+  runDailyJobManually() {
+    return {
+      ja: "日次ジョブを手動で実行",
+      en: "Run daily job manually",
+    }[this.locale];
+  }
 
   // Validation
   errorPasswordStrength() {
@@ -570,6 +600,12 @@ export class I18n {
     return {
       ja: "正しい形式のメールアドレスとしてください",
       en: "Enter a valid email address",
+    }[this.locale];
+  }
+  validTimeZoneName() {
+    return {
+      ja: "正しい形式のタイムゾーン名としてください",
+      en: "Enter a valid time zone name",
     }[this.locale];
   }
   nameInUse() {
