@@ -34,7 +34,7 @@ export class FeedReader {
           .map((doc) => doc.get("feed"))
           .filter(
             (feed, index, self) =>
-              !self.some((f, i) => f === feed && i < index),
+              feed && !self.some((f, i) => f === feed && i < index),
           ),
       );
   }

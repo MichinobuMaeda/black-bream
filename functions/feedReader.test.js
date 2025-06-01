@@ -36,6 +36,9 @@ describe("getFeedUrls()", () => {
       "http://example.com/feed2",
       "http://example.com/feed1", // Duplicate
       "http://example.com/feed3",
+      undefined, // Undefined feed
+      null, // Null feed
+      "", // Empty feed
     ];
     const mockGet = vi.fn();
     mockGet
