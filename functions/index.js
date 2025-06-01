@@ -235,21 +235,21 @@ export const setTumblrAccessToken = onCall(optOnCall, async ({ data, auth }) =>
   ),
 );
 
-const dailyJob = async ({ project }) => {
+const dailyJob = async () => {
   await recordError(new Threads(db, bucket).refreshAccessToken());
   await recordError(new Instagram(db, bucket).refreshAccessToken());
   await recordError(new FeedReader(db).readAll());
   await recordError(new FeedHandler(db).handleFeeds());
-  await recordError(postAll(db, bucket, getQueue(project, location, "post")));
+  await recordError(
+    postAll(db, bucket, getQueue(app.options.projectId, region, "post")),
+  );
 };
 
-export const runDaily = onCall({ region }, async ({ project }) =>
-  dailyJob(project),
-);
+export const runDaily = onCall({ region }, async () => dailyJob());
 
 export const daily = onSchedule(
   { schedule: "every day 00:11", timeZone, region },
-  async ({ project }) => dailyJob(project),
+  async () => dailyJob(),
 );
 
 export const onDataVersionDeleted = onDocumentDeleted(
