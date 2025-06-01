@@ -127,7 +127,7 @@ describe("readFeed()", () => {
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:20:43.000Z")),
         category: "しごと情報",
         feed: url,
-        status: "new",
+        // status: "new",
         updatedAt: FieldValue.serverTimestamp(),
       },
     ];
@@ -214,7 +214,7 @@ describe("readFeed()", () => {
         pubDate: Timestamp.fromDate(new Date("2025-05-15T10:20:43.000Z")),
         category: "しごと情報",
         feed: url,
-        status: "new",
+        // status: "new",
         updatedAt: FieldValue.serverTimestamp(),
       },
     ];

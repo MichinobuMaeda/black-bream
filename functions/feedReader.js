@@ -91,7 +91,6 @@ export class FeedReader {
         const data = {
           ...item,
           feed: url,
-          status: "new",
           updatedAt: FieldValue.serverTimestamp(),
         };
         const doc = await ref.get();
@@ -102,6 +101,7 @@ export class FeedReader {
         } else {
           await ref.set({
             ...data,
+            status: "new",
             createdAt: FieldValue.serverTimestamp(),
           });
         }
