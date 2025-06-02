@@ -353,7 +353,7 @@ describe("getNextOrPreviousSchedule()", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
     const conf = {
-      tz: "Asia/Tokyo",
+      tz: "Europe/Berlin",
       preDefinedSchedules: sch,
     };
 
@@ -417,7 +417,7 @@ describe("getNextOrPreviousSchedule()", () => {
     // Prepare
     const sch = { wd: [1, 2, 3], h: [4, 6, 8], m: [9, 11, 13] };
     const conf = {
-      tz: "Asia/Tokyo",
+      tz: "Europe/Berlin",
       preDefinedSchedules: sch,
     };
 
