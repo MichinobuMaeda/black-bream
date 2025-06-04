@@ -180,7 +180,7 @@ export class Post {
       status: "posting",
       [`targets.${target}`]: {
         status: "failed",
-        err: err.message,
+        err: `${err}`,
         updatedAt: FieldValue.serverTimestamp(),
       },
       updatedAt: FieldValue.serverTimestamp(),

@@ -547,7 +547,7 @@ describe("httpRequest", () => {
     const ret = await httpRequest(url, options);
 
     // Verify
-    expect(ret).toEqual({ err: "404 Not found", data: resp });
+    expect(ret).toEqual({ err: new Error("404 Not found"), data: resp });
     expect(global.fetch.mock.calls).toEqual([[url, options]]);
   });
 });

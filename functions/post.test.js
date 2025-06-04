@@ -477,7 +477,7 @@ describe("setPostStatusError", () => {
           status: "posting",
           ["targets.mastodon"]: {
             status: "failed",
-            err: err.message,
+            err: `${err}`,
             updatedAt: FieldValue.serverTimestamp(),
           },
           updatedAt: FieldValue.serverTimestamp(),
@@ -505,7 +505,7 @@ describe("setPostStatusError", () => {
           status: "posting",
           ["targets.misskey"]: {
             status: "failed",
-            err: "error",
+            err: "Error: error",
             updatedAt: FieldValue.serverTimestamp(),
           },
           updatedAt: FieldValue.serverTimestamp(),

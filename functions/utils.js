@@ -248,7 +248,7 @@ export const httpRequest = async (url, options) =>
     .then((res) =>
       200 <= res.status && res.status < 300
         ? { err: undefined, data: res }
-        : { err: `${res.status} ${res.statusText}`, data: res },
+        : { err: new Error(`${res.status} ${res.statusText}`), data: res },
     )
     .catch((err) => ({ err }));
 
