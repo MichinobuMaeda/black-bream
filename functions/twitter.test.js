@@ -58,6 +58,7 @@ describe("uploadImage", () => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
         },
         body: expect.any(FormData),
       },
@@ -98,6 +99,7 @@ describe("uploadImage", () => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
         },
         body: expect.any(FormData),
       },
@@ -157,6 +159,7 @@ describe("uploadImage", () => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
         },
         body: expect.any(FormData),
       },

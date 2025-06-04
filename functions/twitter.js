@@ -1,5 +1,5 @@
 import { logger } from "firebase-functions/v2";
-import { getMediaAsBlob, sleep, httpRequest } from "./utils.js";
+import { getMimeTypes, getMediaAsBlob, sleep, httpRequest } from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Twitter extends Provider {
@@ -32,12 +32,13 @@ export class Twitter extends Provider {
 
     const form = new FormData();
     form.append("media_category", "tweet_image");
-    form.append("media_type", blob.data.type);
+    form.append("media_type", getMimeTypes(file));
     form.append("media", blob.data, file);
 
     const resp = await httpRequest("https://api.twitter.com/2/media/upload", {
       method: "POST",
       headers: {
+        "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${accessToken}`,
       },
       body: form,
