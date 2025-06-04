@@ -136,9 +136,10 @@ describe("uploadImage", () => {
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = { id: mediaId };
-    getMediaAsBlob.mockResolvedValue({ data: new Blob() });
-    const err = new Error("test error");
-    httpRequest.mockResolvedValue({ err });
+    getMediaAsBlob.mockResolvedValueOnce({ data: new Blob() });
+    const err = "test error";
+    const data = { text: () => Promise.resolve("Error message") };
+    httpRequest.mockResolvedValue({ err, data });
 
     // Execute
     const result = await twitter.uploadImage(accessToken, id, file);
@@ -161,7 +162,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toEqual({ err });
+    expect(result).toEqual({ err: "test error Error message" });
   });
 });
 

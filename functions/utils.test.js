@@ -21,6 +21,7 @@ import {
   handleUpdate,
   handleOnCall,
 } from "./utils.js";
+import { text } from "node:stream/consumers";
 
 vi.mock("firebase-functions/logger");
 vi.mock("firebase-admin/storage");
@@ -535,14 +536,18 @@ describe("httpRequest", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ test: "test" }),
     };
-    const resp = { status: 404, statusText: "Not found" };
-    global.fetch.mockResolvedValue(resp);
+    const resp = {
+      status: 404,
+      statusText: "Not found",
+      text: () => Promise.resolve("Error message"),
+    };
+    global.fetch.mockResolvedValueOnce(resp);
 
     // Execute
     const ret = await httpRequest(url, options);
 
     // Verify
-    expect(ret).toEqual({ err: new Error("404 Not found") });
+    expect(ret).toEqual({ err: "404 Not found", data: resp });
     expect(global.fetch.mock.calls).toEqual([[url, options]]);
   });
 });

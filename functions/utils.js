@@ -241,14 +241,14 @@ export const getMediaAsBlob = async (
  *
  * @param {string} url
  * @param {Object} options
- * @returns {Promise<{err: undefined|Error, data: Response|undefined}>}
+ * @returns {Promise<{err: undefined|string, data: Response|undefined}>}
  */
 export const httpRequest = async (url, options) =>
   fetch(url, options)
     .then((res) =>
       200 <= res.status && res.status < 300
         ? { err: undefined, data: res }
-        : { err: new Error(`${res.status} ${res.statusText}`) },
+        : { err: `${res.status} ${res.statusText}`, data: res },
     )
     .catch((err) => ({ err }));
 

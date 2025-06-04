@@ -44,7 +44,8 @@ export class Twitter extends Provider {
     });
 
     if (resp.err) {
-      return { err: resp.err };
+      const message = await resp.data.text();
+      return { err: `${resp.err} ${message}` };
     }
 
     const data = await resp.data.json();
