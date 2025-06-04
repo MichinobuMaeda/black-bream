@@ -3,10 +3,9 @@ export class CallbackHandler {
    * @constructor
    * @param {Location} location
    */
-  constructor({ pathname, search, replace }) {
-    this.pathname = pathname;
-    this.params = new URLSearchParams(search);
-    this.replace = replace;
+  constructor(location) {
+    this.location = location;
+    this.params = new URLSearchParams(location.search);
   }
 
   /**
@@ -93,8 +92,8 @@ export class CallbackHandler {
     let err = undefined;
     let data = undefined;
 
-    if (this.pathname.startsWith("/auth/")) {
-      const [item, action] = this.pathname.split("/").slice(2);
+    if (this.location.pathname.startsWith("/auth/")) {
+      const [item, action] = this.location.pathname.split("/").slice(2);
 
       switch (item) {
         case "threads":
@@ -147,7 +146,7 @@ export class CallbackHandler {
       console.info(err);
     } else if (data) {
       console.log("Redirecting to:", data);
-      this.replace(data);
+      this.location.replace(data);
     } else {
       console.info("No redirect path found.");
     }
