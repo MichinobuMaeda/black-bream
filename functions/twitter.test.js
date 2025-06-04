@@ -53,7 +53,7 @@ describe("uploadImage", () => {
       file,
     );
     expect(httpRequest).toHaveBeenCalledWith(
-      "https://api.x.com/2/media/upload",
+      "https://api.twitter.com/2/media/upload",
       {
         method: "POST",
         headers: {
@@ -93,7 +93,7 @@ describe("uploadImage", () => {
       file,
     );
     expect(httpRequest).toHaveBeenCalledWith(
-      "https://api.x.com/2/media/upload",
+      "https://api.twitter.com/2/media/upload",
       {
         method: "POST",
         headers: {
@@ -151,7 +151,7 @@ describe("uploadImage", () => {
       file,
     );
     expect(httpRequest).toHaveBeenCalledWith(
-      "https://api.x.com/2/media/upload",
+      "https://api.twitter.com/2/media/upload",
       {
         method: "POST",
         headers: {
@@ -182,14 +182,17 @@ describe("post", () => {
 
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
-    expect(httpRequest).toHaveBeenCalledWith("https://api.x.com/2/tweets", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+    expect(httpRequest).toHaveBeenCalledWith(
+      "https://api.twitter.com/2/tweets",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
       },
-      body: JSON.stringify({ text }),
-    });
+    );
     expect(result).toEqual({});
   });
 
@@ -215,14 +218,17 @@ describe("post", () => {
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
     expect(mockUploadImage.mock.calls).toEqual([[accessToken, id, files[0]]]);
-    expect(httpRequest).toHaveBeenCalledWith("https://api.x.com/2/tweets", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+    expect(httpRequest).toHaveBeenCalledWith(
+      "https://api.twitter.com/2/tweets",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text, media: { media_ids: ["media-id"] } }),
       },
-      body: JSON.stringify({ text, media: { media_ids: ["media-id"] } }),
-    });
+    );
     expect(result).toEqual({});
   });
 
@@ -287,14 +293,17 @@ describe("post", () => {
 
     // Verify
     expect(mockGetParams.mock.calls).toEqual([[]]);
-    expect(httpRequest).toHaveBeenCalledWith("https://api.x.com/2/tweets", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+    expect(httpRequest).toHaveBeenCalledWith(
+      "https://api.twitter.com/2/tweets",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
       },
-      body: JSON.stringify({ text }),
-    });
+    );
     expect(result).toEqual({ err });
   });
 });

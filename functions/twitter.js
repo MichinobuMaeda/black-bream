@@ -31,9 +31,11 @@ export class Twitter extends Provider {
     }
 
     const form = new FormData();
+    form.append("media_category", "tweet_image");
+    form.append("media_type", blob.data.type);
     form.append("media", blob.data, file);
 
-    const resp = await httpRequest("https://api.x.com/2/media/upload", {
+    const resp = await httpRequest("https://api.twitter.com/2/media/upload", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -93,7 +95,7 @@ export class Twitter extends Provider {
 
     text = text.trim();
 
-    const resp = await httpRequest("https://api.x.com/2/tweets", {
+    const resp = await httpRequest("https://api.twitter.com/2/tweets", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
