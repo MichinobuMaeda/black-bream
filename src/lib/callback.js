@@ -146,6 +146,7 @@ export class CallbackHandler {
     if (err) {
       console.info(err);
     } else if (data) {
+      console.log("Redirecting to:", data);
       this.replace(data);
     } else {
       console.info("No redirect path found.");
