@@ -88,5 +88,8 @@
 </script>
 
 <Content>
-  {result?.err}
+  <pre class="text-sm text-light-on-surface dark:text-dark-on-surface">
+    params: {JSON.stringify(params, null, 2)}
+    result: {JSON.stringify(result, null, 2)}
+  </pre>
 </Content>
