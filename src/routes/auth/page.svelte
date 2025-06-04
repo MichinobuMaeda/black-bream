@@ -56,12 +56,13 @@
       switch (params.action) {
         case "callback":
           {
+            let searchParams = new URLSearchParams(document.location.search);
             const param = {
               status: localstorage.twitter.state.load(),
               challenge: localstorage.twitter.challenge.load(),
-              code: params.data,
+              code: searchParams.get("code"),
             };
-            if (params.status === param.status) {
+            if (searchParams.get("state") === param.status) {
               (async () => {
                 result = await callFunction("setTwitterAccessToken", param);
                 if (!result.err) {
