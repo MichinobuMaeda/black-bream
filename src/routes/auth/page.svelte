@@ -11,6 +11,8 @@
   /** @type {Props} */
   let { params } = $props();
 
+  console.log("auth page", params);
+
   let result = $state(null);
 
   switch (params.item) {
@@ -57,6 +59,8 @@
         case "callback":
           {
             let searchParams = new URLSearchParams(document.location.search);
+            console.log("code", searchParams.get("code"));
+            console.log("state", searchParams.get("state"));
             const param = {
               status: localstorage.twitter.state.load(),
               challenge: localstorage.twitter.challenge.load(),
