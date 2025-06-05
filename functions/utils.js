@@ -318,7 +318,7 @@ const onError = async (db, err) => {
   return db.collection("logs").add({
     level: "error",
     message: err?.message || err?.toString() || "Unknown error",
-    stack: err?.stack,
+    stack: err?.stack || "",
     createdAt: FieldValue.serverTimestamp(),
   });
 };

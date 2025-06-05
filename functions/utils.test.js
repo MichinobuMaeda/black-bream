@@ -749,7 +749,7 @@ describe("handleError", () => {
         },
       ],
     ]);
-    expect(ret).toEqual({ err: err.toString() });
+    expect(ret).toEqual({ err: "test error" });
   });
 });
 
