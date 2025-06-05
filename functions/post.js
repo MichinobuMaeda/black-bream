@@ -355,9 +355,7 @@ export const postAll = async (db, bucket, queue) =>
     .then((snapshot) =>
       Promise.all(
         snapshot.docs.map((doc) =>
-          new Post(db, bucket, { id: doc.id, data: doc.data() }).createPosts(
-            queue,
-          ),
+          new Post(db, bucket, doc).createPosts(queue),
         ),
       ).then((results) => {
         const errors = results
