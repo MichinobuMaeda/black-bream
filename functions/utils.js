@@ -306,12 +306,19 @@ export const updateDoc = async (ref, data) =>
     .then(() => ({}))
     .catch((err) => ({ err }));
 
+/**
+ * Log error to Firestore
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {Error} err
+ * @returns {Promise<FirebaseFirestore.WriteResult>}
+ */
 const onError = async (db, err) => {
   logger.error(err);
   return db.collection("logs").add({
     level: "error",
-    message: err.message || err.toString() || "Unknown error",
-    stack: err.stack || "",
+    message: err?.message || err?.toString() || "Unknown error",
+    stack: err?.stack,
     createdAt: FieldValue.serverTimestamp(),
   });
 };
@@ -327,7 +334,11 @@ export const handleError = (db) => async (f) =>
     .then((data) =>
       data.err === undefined ? data : onError(db, data.err).then(() => data),
     )
-    .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));
+    .catch((err) =>
+      onError(db, err).then(() => ({
+        err: err?.message || err?.toString() || "Unknown error",
+      })),
+    );
 
 /**
  * Handle update

@@ -236,10 +236,19 @@ export const setTumblrAccessToken = onCall(optOnCall, async ({ data, auth }) =>
 );
 
 const dailyJob = async () => {
+  logger.info("new Threads(db, bucket).refreshAccessToken()");
   await recordError(new Threads(db, bucket).refreshAccessToken());
+  logger.info("new Instagram(db, bucket).refreshAccessToken()");
   await recordError(new Instagram(db, bucket).refreshAccessToken());
+  logger.info("new Twitter(db, bucket).refreshAccessToken()");
+  await recordError(new Twitter(db, bucket).refreshAccessToken());
+  logger.info("new FeedReader(db).readAll()");
   await recordError(new FeedReader(db).readAll());
+  logger.info("new FeedHandler(db).handleFeeds()");
   await recordError(new FeedHandler(db).handleFeeds());
+  logger.info(
+    "postAll(db, bucket, getQueue(app.options.projectId, region, 'post'))",
+  );
   await recordError(
     postAll(db, bucket, getQueue(app.options.projectId, region, "post")),
   );
