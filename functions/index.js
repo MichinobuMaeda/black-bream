@@ -240,8 +240,6 @@ const dailyJob = async () => {
   await recordError(new Threads(db, bucket).refreshAccessToken());
   logger.info("new Instagram(db, bucket).refreshAccessToken()");
   await recordError(new Instagram(db, bucket).refreshAccessToken());
-  logger.info("new Twitter(db, bucket).refreshAccessToken()");
-  await recordError(new Twitter(db, bucket).refreshAccessToken());
   logger.info("new FeedReader(db).readAll()");
   await recordError(new FeedReader(db).readAll());
   logger.info("new FeedHandler(db).handleFeeds()");
