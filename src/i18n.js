@@ -564,6 +564,12 @@ export class I18n {
       en: "Run daily job manually",
     }[this.locale];
   }
+  queuingThresholdDays() {
+    return {
+      ja: "キュー追加の閾値（日）",
+      en: "Queuing threshold (days)",
+    }[this.locale];
+  }
 
   // Validation
   errorPasswordStrength() {

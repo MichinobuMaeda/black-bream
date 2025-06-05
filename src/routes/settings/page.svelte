@@ -5,6 +5,7 @@
   import SiteDescription from "./SiteDescription.svelte";
   import DailyJob from "./DailyJob.svelte";
   import TimeZone from "./TimeZone.svelte";
+  import QueuingThresholdDays from "./QueuingThresholdDays.svelte";
   import LoginMethods from "./LoginMethods.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
@@ -25,6 +26,7 @@
 {#if store.admin}
   <DailyJob />
   <TimeZone />
+  <QueuingThresholdDays />
   <AuthTwitter />
   <AuthMastodon />
   <AuthMisskey />

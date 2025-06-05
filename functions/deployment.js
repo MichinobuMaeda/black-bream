@@ -12,9 +12,10 @@ import { DEFAULT_TZ } from "./utils.js";
  * @returns {Promise<{err: undefined|Error, data: number}>}
  */
 export const updateDataV1 = async (auth, db, deleted) => {
+  const TARGET_VER = 1;
   let ver = Number(deleted.get("ver")) || 0;
 
-  if (ver < 1) {
+  if (ver < TARGET_VER) {
     try {
       const email = deleted.get("email");
       if (!email) {
@@ -83,7 +84,7 @@ site.manager@example.com
         });
 
       await deleted.ref.set({
-        ver: 1,
+        ver: TARGET_VER,
         err: err ?? null,
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -92,7 +93,7 @@ site.manager@example.com
     }
   }
 
-  return { err: undefined, data: 1 };
+  return { data: TARGET_VER };
 };
 
 /**
@@ -103,9 +104,10 @@ site.manager@example.com
  * @returns {Promise<{err: undefined|Error, data: number}>}
  */
 export const updateDataV2 = async (db, deleted) => {
+  const TARGET_VER = 2;
   let ver = Number(deleted.get("ver")) || 0;
 
-  if (ver < 2) {
+  if (ver < TARGET_VER) {
     var err = undefined;
 
     try {
@@ -115,7 +117,7 @@ export const updateDataV2 = async (db, deleted) => {
       logger.info("Created 'service/auth'");
 
       await deleted.ref.set({
-        ver: 2,
+        ver: TARGET_VER,
         err: err ?? null,
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -124,7 +126,7 @@ export const updateDataV2 = async (db, deleted) => {
     }
   }
 
-  return { data: 2 };
+  return { data: TARGET_VER };
 };
 
 /**
@@ -135,9 +137,10 @@ export const updateDataV2 = async (db, deleted) => {
  * @returns {Promise<{err: undefined|Error, data: number}>}
  */
 export const updateDataV3 = async (db, deleted) => {
+  const TARGET_VER = 3;
   let ver = Number(deleted.get("ver")) || 0;
 
-  if (ver < 3) {
+  if (ver < TARGET_VER) {
     var err = undefined;
 
     try {
@@ -148,7 +151,7 @@ export const updateDataV3 = async (db, deleted) => {
       logger.info("Created 'service/auth'");
 
       await deleted.ref.set({
-        ver: 3,
+        ver: TARGET_VER,
         err: err ?? null,
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -157,5 +160,39 @@ export const updateDataV3 = async (db, deleted) => {
     }
   }
 
-  return { data: 3 };
+  return { data: TARGET_VER };
+};
+
+/**
+ * Update data to version 4
+ *
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {FirebaseFirestore.QueryDocumentSnapshot} deleted
+ * @returns {Promise<{err: undefined|Error, data: number}>}
+ */
+export const updateDataV4 = async (db, deleted) => {
+  const TARGET_VER = 4;
+  let ver = Number(deleted.get("ver")) || 0;
+
+  if (ver < TARGET_VER) {
+    var err = undefined;
+
+    try {
+      await db.collection("service").doc("conf").update({
+        queuingThresholdDays: 3,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      logger.info("Created 'service/auth'");
+
+      await deleted.ref.set({
+        ver: TARGET_VER,
+        err: err ?? null,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      return { err, data: ver };
+    }
+  }
+
+  return { data: TARGET_VER };
 };

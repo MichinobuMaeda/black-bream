@@ -6,52 +6,52 @@
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { DEFAULT_TZ } from "../../lib/datetime";
-  import { validateTimeZone } from "../../lib/validator";
   import { updateDocument } from "../../lib/firebase.js";
 
   let active = $state(false);
 
   // Fields
-  let tz = $state(store.conf.tz || DEFAULT_TZ);
+  let days = $state(store.conf.queuingThresholdDays || 2);
 
-  let errorTz = $derived(
-    tz ? (validateTimeZone(tz) ? "" : t().validTimeZoneName()) : t().required(),
+  let errorDays = $derived(
+    days ? (days > 1 ? "" : t().greaterOrEqual(2)) : t().required(),
   );
 
   // Actions
   let result = $state(null);
-  let changed = $derived(!active && tz !== store.conf.tz);
-  let valid = $derived(!errorTz);
+  let changed = $derived(!active && days !== store.conf.queuingThresholdDays);
+  let valid = $derived(!errorDays);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
-    tz = store.conf.tz || DEFAULT_TZ;
+    days = store.conf.queuingThresholdDays || 2;
   };
 
   const onSave = async () => {
     active = true;
-    result = await updateDocument("service", "conf", { tz });
+    result = await updateDocument("service", "conf", {
+      queuingThresholdDays: days,
+    });
     active = false;
   };
 </script>
 
-<h3>{t().timeZone()}</h3>
+<h3>{t().queuingThresholdDays()}</h3>
 <Content>
   <Wrap>
     <Fields>
       <TextFieldOutlined
-        id="timeZone"
-        label={t().timeZone()}
-        type="text"
-        bind:value={tz}
-        message={t().validTimeZoneName()}
-        error={errorTz}
+        id="queuingThresholdDays"
+        label={t().queuingThresholdDays()}
+        type="number"
+        bind:value={days}
+        message={t().greaterOrEqual(2)}
+        error={errorDays}
       />
     </Fields>
     <ActionFields>
       <ActionSave
-        id="timeZoneSave"
+        id="queuingThresholdDaysSave"
         {changed}
         {valid}
         {onCancel}

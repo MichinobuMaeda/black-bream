@@ -49,7 +49,7 @@ Tumblr.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
 const id = "postsId";
 const ref = { id, get: vi.fn() };
 const doc = vi.fn((id) => ref);
-const get = vi.fn(() => ref);
+const get = vi.fn();
 const where = vi.fn(() => ({ get }));
 const collection = vi.fn(() => ({ doc, where }));
 const db = { collection };
@@ -192,11 +192,16 @@ describe("createPosts", () => {
     nanoid
       .mockImplementationOnce(() => "mastodon-id")
       .mockImplementationOnce(() => "misskey-id");
+    const conf = { id, get: vi.fn(() => 3) };
+    ref.get.mockResolvedValueOnce(conf);
 
     // Execute
     const ret = await post.createPosts(queue);
 
     // Verify
+    expect(conf.get.mock.calls).toEqual([["queuingThresholdDays"]]);
+    expect(doc.mock.calls).toEqual([["conf"]]);
+    expect(collection.mock.calls).toEqual([["service"]]);
     expect(queue.enqueue.mock.calls).toEqual([
       [
         { id, target: "mastodon" },
@@ -270,11 +275,16 @@ describe("createPosts", () => {
     nanoid
       .mockImplementationOnce(() => "mastodon-id")
       .mockImplementationOnce(() => "misskey-id");
+    const conf = { id, get: vi.fn(() => 3) };
+    ref.get.mockResolvedValueOnce(conf);
 
     // Execute
     const ret = await post.createPosts(queue);
 
     // Verify
+    expect(conf.get.mock.calls).toEqual([["queuingThresholdDays"]]);
+    expect(doc.mock.calls).toEqual([["conf"]]);
+    expect(collection.mock.calls).toEqual([["service"]]);
     expect(queue.enqueue.mock.calls).toEqual([
       [
         { id, target: "mastodon" },
@@ -341,12 +351,14 @@ describe("createPosts", () => {
     const ret = await post.createPosts(queue);
 
     // Verify
+    expect(doc).not.toHaveBeenCalled();
+    expect(collection).not.toHaveBeenCalled();
     expect(queue.enqueue).not.toHaveBeenCalled();
     expect(updateDoc).not.toHaveBeenCalled();
     expect(ret).toEqual({ err: new Error("scheduledFor is required") });
   });
 
-  it("should return error if scheduledFor is too far in the future.", async () => {
+  it("should return warn if scheduledFor is too far in the future.", async () => {
     // Prepare
     const delay = 9 * 1000;
     const mastodon = {};
@@ -358,11 +370,16 @@ describe("createPosts", () => {
     const postData = { text, files, targets, scheduledFor };
     const snap = { id, ref, data: () => postData };
     const post = new Post(db, bucket, snap);
+    const conf = { id, get: vi.fn(() => 3) };
+    ref.get.mockResolvedValue(conf);
 
     // Execute
     const ret = await post.createPosts(queue);
 
     // Verify
+    expect(conf.get.mock.calls).toEqual([["queuingThresholdDays"]]);
+    expect(doc.mock.calls).toEqual([["conf"]]);
+    expect(collection.mock.calls).toEqual([["service"]]);
     expect(queue.enqueue).not.toHaveBeenCalled();
     expect(updateDoc).not.toHaveBeenCalled();
     expect(ret).toEqual({ warn: "scheduledFor is too far in the future" });

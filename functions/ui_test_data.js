@@ -48,7 +48,13 @@ export const createUiTestData = async (auth, db) => {
       return { error: retV3.err };
     }
 
-    logger.info(`dataVersion: ${retV3.data}`);
+    const retV4 = await deployment.updateDataV4(db, dataVersion);
+
+    if (retV4.err) {
+      return { error: retV4.err };
+    }
+
+    logger.info(`dataVersion: ${retV4.data}`);
 
     const user = await auth.getUserByEmail("primary@example.com");
     await auth.updateUser(user.uid, { password: "password" });

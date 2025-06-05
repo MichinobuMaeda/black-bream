@@ -266,6 +266,7 @@ export const onDataVersionDeleted = onDocumentDeleted(
     await recordError(deployment.updateDataV1(auth, db, data));
     await recordError(deployment.updateDataV2(db, data));
     await recordError(deployment.updateDataV3(db, data));
+    await recordError(deployment.updateDataV4(db, data));
   },
 );
 

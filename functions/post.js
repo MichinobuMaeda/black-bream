@@ -70,8 +70,14 @@ export class Post {
     if (!scheduledFor) {
       return { err: new Error("scheduledFor is required") };
     }
+
+    const conf = await this.db.collection("service").doc("conf").get();
+    const queuingThresholdDays = Number(
+      conf.get("queuingThresholdDays")?.queuingThresholdDays || 3,
+    );
+
     if (
-      Timestamp.now().toMillis() + 3 * 24 * 3600 * 1000 <
+      Timestamp.now().toMillis() + queuingThresholdDays * 24 * 3600 * 1000 <
       scheduledFor.toMillis()
     ) {
       return { warn: "scheduledFor is too far in the future" };
