@@ -37,7 +37,6 @@ export class Twitter extends Provider {
     logger.info(
       `twitter post media: ${file} ${getMimeTypes(file)} ${blob.data.size} bytes`,
     );
-    logger.info(`twitter post media: ${JSON.stringify(form.getHeaders())}`);
 
     const resp = await httpRequest("https://api.twitter.com/2/media/upload", {
       method: "POST",
