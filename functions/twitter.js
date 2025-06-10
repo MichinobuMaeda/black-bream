@@ -51,23 +51,25 @@ export class Twitter extends Provider {
       return { err: `${resp.err} ${message}` };
     }
 
-    const data = await resp.data.json();
-    logger.info(`twitter post media: ${resp.status} ${JSON.stringify(data)}`);
+    const json = await resp.data.json();
+    logger.info(
+      `twitter post media: ${resp.data.status} ${JSON.stringify(json.data)}`,
+    );
 
     if (
-      data.processing_info &&
-      data.processing_info.state === "in_progress" &&
-      data.processing_info.check_after_secs
+      json.data.processing_info &&
+      json.data.processing_info.state === "in_progress" &&
+      json.data.processing_info.check_after_secs
     ) {
       const wait = Math.min(
-        data.processing_info.check_after_secs,
+        json.data.processing_info.check_after_secs,
         timeout * timeout,
       );
       logger.info(`twitter wait media upload: ${wait} sec.`);
       await new sleep(wait);
     }
 
-    return { data };
+    return { data: json.data };
   }
 
   /**

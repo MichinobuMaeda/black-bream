@@ -36,7 +36,7 @@ describe("uploadImage", () => {
     const file = "1.jpg";
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
-    const mediaResp = { id: mediaId };
+    const mediaResp = { data: { id: mediaId } };
     getMediaAsBlob.mockResolvedValue({ data: new Blob() });
     httpRequest.mockResolvedValue({
       data: { json: vi.fn(() => Promise.resolve(mediaResp)) },
@@ -64,7 +64,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toEqual({ data: mediaResp });
+    expect(result).toEqual({ data: mediaResp.data });
   });
 
   it("should upload image to Twitter with wait 10 sec.", async () => {
@@ -75,8 +75,10 @@ describe("uploadImage", () => {
     const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = {
-      id: mediaId,
-      processing_info: { state: "in_progress", check_after_secs: 10 },
+      data: {
+        id: mediaId,
+        processing_info: { state: "in_progress", check_after_secs: 10 },
+      },
     };
     getMediaAsBlob.mockResolvedValue({ data: new Blob() });
     httpRequest.mockResolvedValue({
@@ -105,7 +107,7 @@ describe("uploadImage", () => {
       },
     );
     expect(sleep.mock.calls).toEqual([[10]]);
-    expect(result).toEqual({ data: mediaResp });
+    expect(result).toEqual({ data: mediaResp.data });
   });
 
   it("should return error when getMediaAsBlob returns error.", async () => {
