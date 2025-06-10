@@ -34,11 +34,14 @@ export class Twitter extends Provider {
     form.append("media_category", "tweet_image");
     form.append("media_type", getMimeTypes(file));
     form.append("media", blob.data, file);
+    logger.info(
+      `twitter post media: ${file} ${getMimeTypes(file)} ${blob.data.size} bytes`,
+    );
+    logger.info(`twitter post media: ${JSON.stringify(form.getHeaders())}`);
 
     const resp = await httpRequest("https://api.twitter.com/2/media/upload", {
       method: "POST",
       headers: {
-        "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${accessToken}`,
       },
       body: form,
