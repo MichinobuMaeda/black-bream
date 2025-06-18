@@ -17,7 +17,7 @@ export const DEFAULT_TZ = "Asia/Tokyo";
  */
 
 /**
- * Generate a card object} from a link
+ * Generate a card object from a link
  *
  * @param {string} text
  * @returns {Promise<{err: undefined|Error, data: LinkCard|null|undefined}>}
@@ -374,3 +374,15 @@ export const handleOnCall =
       })
       .then(() => handleError(db)(f))
       .catch((err) => onError(db, err).then(() => ({ err: err.toString() })));
+
+/**
+ * Join lines
+ *
+ * @param {string[]} lines
+ * @returns {string}
+ */
+export const joinLines = (...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n");

@@ -1,5 +1,10 @@
 import { logger } from "firebase-functions/v2";
-import { getPublicMediaUrl, generateLinkCard, httpRequest } from "./utils.js";
+import {
+  getPublicMediaUrl,
+  generateLinkCard,
+  httpRequest,
+  joinLines,
+} from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Tumblr extends Provider {
@@ -17,10 +22,10 @@ export class Tumblr extends Provider {
    * post
    *
    * @param {string} id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string, message:string, link:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, link, files }) {
     const params = await this.getParams();
 
     if (params.err) {
@@ -29,7 +34,6 @@ export class Tumblr extends Provider {
 
     const { accessToken, blogId } = params.data;
 
-    text = text.trim();
     let body = undefined;
 
     if (files?.length) {
@@ -41,18 +45,21 @@ export class Tumblr extends Provider {
         ],
       });
     } else {
-      const { data } = await generateLinkCard(text);
+      const { data } = await generateLinkCard(link || text);
       if (data) {
         const url = data.uri;
-        text = text.replace(url, "").trim();
         body = JSON.stringify({
           content: [
-            { type: "text", text },
+            { type: "text", text: joinLines(text, title, message) },
             { type: "link", url },
           ],
         });
       } else {
-        body = JSON.stringify({ content: [{ type: "text", text }] });
+        body = JSON.stringify({
+          content: [
+            { type: "text", text: joinLines(text, title, message, link) },
+          ],
+        });
       }
     }
 

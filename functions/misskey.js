@@ -1,4 +1,4 @@
-import { getMediaAsBlob, httpRequest } from "./utils.js";
+import { getMediaAsBlob, httpRequest, joinLines } from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Misskey extends Provider {
@@ -53,10 +53,10 @@ export class Misskey extends Provider {
    * post
    *
    * @param {string } id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string,message:string, link:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, link, files }) {
     return this.getParams().then(({ err, data }) =>
       err
         ? { err }
@@ -72,7 +72,7 @@ export class Misskey extends Provider {
                     },
                     body: JSON.stringify({
                       visibility: "public",
-                      text: text.trim(),
+                      text: joinLines(text, title, message, link),
                       ...(data.length ? { mediaIds: data } : {}),
                     }),
                   }).then(({ err }) => ({ err })),

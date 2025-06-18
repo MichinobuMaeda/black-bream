@@ -7,6 +7,7 @@ import {
   getMediaAsBlob,
   reduceImageSize,
   httpRequest,
+  joinLines,
 } from "./utils.js";
 
 const langs = ["ja"];
@@ -42,11 +43,10 @@ export class Bluesky extends Provider {
    *
    * @param {BskyAgent} agent
    * @param {string} id
-   * @param {string} text
    * @param {string} file
    * @returns {Promise<{err: undefined|Error, data: Buffer|undefined}>}
    */
-  async uploadImage(agent, id, text, file) {
+  async uploadImage(agent, id, file) {
     return getMediaAsBlob(this.bucket, id, file).then(({ err, data }) =>
       err
         ? { err }
@@ -142,10 +142,10 @@ export class Bluesky extends Provider {
    * post
    *
    * @param {string } id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string, message:string, link:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, link, files }) {
     return this.getParams().then(({ err, data }) =>
       err
         ? { err }
@@ -157,7 +157,7 @@ export class Bluesky extends Provider {
                   : {
                       then: (fn) =>
                         files?.length
-                          ? this.uploadImage(data, id, text, files[0]).then(
+                          ? this.uploadImage(data, id, files[0]).then(
                               ({ err, data }) =>
                                 err
                                   ? { err }
@@ -165,22 +165,41 @@ export class Bluesky extends Provider {
                                       $type: "app.bsky.embed.images",
                                       images: [
                                         {
-                                          alt: text.substring(0, 100),
+                                          alt: joinLines(
+                                            text,
+                                            title,
+                                            message,
+                                          ).substring(0, 100),
                                           image: data,
                                         },
                                       ],
                                     }),
                             )
-                          : this.generateExternal(data, text).then(
-                              ({ data }) =>
-                                data
-                                  ? fn({
-                                      $type: "app.bsky.embed.external",
-                                      external: data,
-                                    })
-                                  : fn(undefined),
+                          : this.generateExternal(
+                              data,
+                              link?.trim() || text?.trim(),
+                            ).then(({ data }) =>
+                              data
+                                ? fn({
+                                    $type: "app.bsky.embed.external",
+                                    external: data,
+                                  })
+                                : fn(undefined),
                             ),
-                    }.then((embed) => this.requestPost(data, text, embed)),
+                    }.then((embed) =>
+                      this.requestPost(
+                        data,
+                        joinLines(
+                          embed?.external?.uri && text
+                            ? text.replace(embed?.external?.uri, "")
+                            : text,
+                          title,
+                          message,
+                          embed?.external?.uri ? undefined : link,
+                        ),
+                        embed,
+                      ),
+                    ),
             ),
           ),
     );

@@ -1,4 +1,4 @@
-import { httpRequest, getPublicMediaUrl } from "./utils.js";
+import { httpRequest, getPublicMediaUrl, joinLines } from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Threads extends Provider {
@@ -15,22 +15,26 @@ export class Threads extends Provider {
   /**
    * Post container
    *
-   * @param {{ clientId:string, accessToken:string }} params
+   * @param {{ userId:string, accessToken:string }} params
    * @param {string} id
-   * @param {{ userId, accessToken }} data
+   * @param {{ text:string, title:string, message:string, link:string, files:array|undefined }} data
    * @returns {Promise<{err: undefined|Error, data: object|undefined}>}
    */
-  async createContainer({ userId, accessToken }, id, { text, files }) {
+  async createContainer(
+    { userId, accessToken },
+    id,
+    { text, title, message, link, files },
+  ) {
     return httpRequest(
       files?.length
         ? `https://graph.threads.net/v1.0/${userId}/threads` +
             "?media_type=IMAGE" +
-            `&text=${encodeURIComponent(text.trim())}` +
+            `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
             `&image_url=${getPublicMediaUrl(id, files[0])}` +
             `&access_token=${accessToken}`
         : `https://graph.threads.net/v1.0/${userId}/threads` +
             "?media_type=TEXT" +
-            `&text=${encodeURIComponent(text.trim())}` +
+            `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
             `&access_token=${accessToken}`,
       { method: "POST" },
     ).then(({ err, data }) =>
@@ -47,24 +51,23 @@ export class Threads extends Provider {
    * post
    *
    * @param {string} id
-   * @param {{text: string, files:array}} data
+   * @param {Object} postData
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, postData) {
     return this.getParams().then(({ err, data }) =>
       err
         ? { err }
         : { then: (fn) => fn(data) }.then(({ userId, accessToken }) =>
-            this.createContainer(data, id, { text, files }).then(
-              ({ err, data }) =>
-                err
-                  ? { err }
-                  : httpRequest(
-                      `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-                        `?creation_id=${data.id}` +
-                        `&access_token=${accessToken}`,
-                      { method: "POST" },
-                    ).then(({ err }) => ({ err })),
+            this.createContainer(data, id, postData).then(({ err, data }) =>
+              err
+                ? { err }
+                : httpRequest(
+                    `https://graph.threads.net/v1.0/${userId}/threads_publish` +
+                      `?creation_id=${data.id}` +
+                      `&access_token=${accessToken}`,
+                    { method: "POST" },
+                  ).then(({ err }) => ({ err })),
             ),
           ),
     );

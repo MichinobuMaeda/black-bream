@@ -1,12 +1,20 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
 import { getDownloadURL } from "firebase-admin/storage";
-import { httpRequest, getPublicMediaUrl } from "./utils.js";
+import { httpRequest, getPublicMediaUrl, joinLines } from "./utils.js";
 import { Threads } from "./threads.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("firebase-admin/storage");
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 const authSnap = {
   exists: true,
@@ -54,6 +62,11 @@ describe("Threads object", () => {
 describe("post", () => {
   const id = "post-id";
   const dataText = { text: "Text" };
+  const dataTitleMessageLink = {
+    title: "Title",
+    message: "Message",
+    link: "https://example.com",
+  };
   const dataImage = { text: "Text", files: ["1.jpg"] };
   getPublicMediaUrl.mockImplementation(
     (id, file) => `https://public-post-media-url/public/posts/${id}/${file}`,
@@ -74,7 +87,7 @@ describe("post", () => {
     expect(result).toEqual({ err });
   });
 
-  it("should post to Threads.", async () => {
+  it("should post with text to Threads.", async () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
@@ -96,6 +109,41 @@ describe("post", () => {
         `https://graph.threads.net/v1.0/${params.userId}/threads` +
           "?media_type=TEXT" +
           `&text=${encodeURIComponent("Text")}` +
+          `&access_token=${params.accessToken}`,
+        { method: "POST" },
+      ],
+      [
+        `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
+          "?creation_id=01234566789" +
+          `&access_token=${params.accessToken}`,
+        { method: "POST" },
+      ],
+    ]);
+    expect(result).toEqual({});
+  });
+
+  it("should post with title, message and link to Threads.", async () => {
+    // Prepare
+    const mockGetParams = vi.spyOn(threads, "getParams");
+    mockGetParams.mockResolvedValue({ data: params });
+    httpRequest
+      .mockResolvedValueOnce({
+        data: {
+          status: 200,
+          json: () => Promise.resolve({ id: "01234566789" }),
+        },
+      })
+      .mockResolvedValueOnce({ data: { status: 200 } });
+
+    // Execute
+    const result = await threads.post(id, dataTitleMessageLink);
+
+    // Verify
+    expect(httpRequest.mock.calls).toEqual([
+      [
+        `https://graph.threads.net/v1.0/${params.userId}/threads` +
+          "?media_type=TEXT" +
+          `&text=${encodeURIComponent("Title\nMessage\nhttps://example.com")}` +
           `&access_token=${params.accessToken}`,
         { method: "POST" },
       ],

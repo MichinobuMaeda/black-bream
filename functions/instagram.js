@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { Provider } from "./provider.js";
-import { getPublicMediaUrl, httpRequest } from "./utils.js";
+import { getPublicMediaUrl, httpRequest, joinLines } from "./utils.js";
 
 export class Instagram extends Provider {
   /**
@@ -17,10 +17,10 @@ export class Instagram extends Provider {
    * post
    *
    * @param {string } id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string, message:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, files }) {
     return !files?.length
       ? { err: new Error("No media files") }
       : this.getParams().then(({ err, data }) =>
@@ -36,7 +36,7 @@ export class Instagram extends Provider {
                       "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                      caption: text,
+                      caption: joinLines(text, title, message),
                       image_url: getPublicMediaUrl(id, files[0]),
                     }),
                   },

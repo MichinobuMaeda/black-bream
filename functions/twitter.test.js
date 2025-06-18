@@ -5,11 +5,20 @@ import {
   getDoc,
   updateDoc,
   sleep,
+  joinLines,
 } from "./utils.js";
 import { Twitter } from "./twitter.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 FormData.prototype.append = vi.fn();
 URLSearchParams.prototype.append = vi.fn();

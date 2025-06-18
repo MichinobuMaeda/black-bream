@@ -20,6 +20,7 @@ import {
   handleError,
   handleUpdate,
   handleOnCall,
+  joinLines,
 } from "./utils.js";
 import { text } from "node:stream/consumers";
 
@@ -913,5 +914,37 @@ describe("handleOnCall", () => {
       ],
     ]);
     expect(ret).toEqual({ err: err.toString() });
+  });
+});
+
+describe("joinLines", () => {
+  it("should join lines with \n.", () => {
+    // Prepare
+
+    // Execute
+    const result = joinLines("line1 ", " line2", "line3");
+
+    // Verify
+    expect(result).toEqual("line1\nline2\nline3");
+  });
+
+  it("should return an empty string, if lines are empty.", () => {
+    // Prepare
+
+    // Execute
+    const result = joinLines(undefined, "", null);
+
+    // Verify
+    expect(result).toEqual("");
+  });
+
+  it("should return an empty string without lines.", () => {
+    // Prepare
+
+    // Execute
+    const result = joinLines();
+
+    // Verify
+    expect(result).toEqual("");
   });
 });

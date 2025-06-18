@@ -1,9 +1,17 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { getMediaAsBlob, httpRequest } from "./utils.js";
+import { getMediaAsBlob, httpRequest, joinLines } from "./utils.js";
 import { Misskey } from "./misskey.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 FormData.prototype.append = vi.fn();
 
@@ -130,6 +138,11 @@ describe("post", () => {
   const blob = new Blob([new Uint8Array(1024)], { type: "image/jpeg" });
   const id = "post-id";
   const dataText = { text: "Text" };
+  const dataTitleMessageLink = {
+    title: "Title",
+    message: "Message",
+    link: "https://example.com",
+  };
   const dataImage = {
     text: "Text",
     files: ["1.jpg"],
@@ -150,7 +163,7 @@ describe("post", () => {
     expect(result).toEqual({ err });
   });
 
-  it("should post to Misskey.", async () => {
+  it("should post to Misskey with text", async () => {
     // Prepare
     const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
     mockGetMediaList.mockResolvedValueOnce({ data: [] });
@@ -173,6 +186,36 @@ describe("post", () => {
           body: JSON.stringify({
             visibility: "public",
             text: "Text",
+          }),
+        },
+      ],
+    ]);
+    expect(result).toEqual({});
+  });
+
+  it("should post to Misskey with title, message and link.", async () => {
+    // Prepare
+    const mockGetMediaList = vi.spyOn(misskey, "getMediaList");
+    mockGetMediaList.mockResolvedValueOnce({ data: [] });
+    httpRequest.mockResolvedValueOnce({ data: { status: 200 } });
+
+    // Execute
+    const result = await misskey.post(id, dataTitleMessageLink);
+
+    // Verify
+    expect(mockGetMediaList.mock.calls).toEqual([[url, token, id, undefined]]);
+    expect(httpRequest.mock.calls).toEqual([
+      [
+        `${url}/notes/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            visibility: "public",
+            text: "Title\nMessage\nhttps://example.com",
           }),
         },
       ],

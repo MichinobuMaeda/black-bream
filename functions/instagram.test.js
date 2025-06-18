@@ -1,10 +1,18 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
-import { getPublicMediaUrl, httpRequest, sleep } from "./utils.js";
+import { getPublicMediaUrl, httpRequest, sleep, joinLines } from "./utils.js";
 import { Instagram } from "./instagram.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 FormData.prototype.append = vi.fn();
 
@@ -34,17 +42,29 @@ describe("Instagram object", () => {
 describe("Instagram.post", () => {
   const id = "instagram-id";
   const text = "Text";
+  const title = "Title";
+  const message = "Message";
   const files = ["file1", "file2"];
+  const method = "POST";
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
   getPublicMediaUrl.mockImplementation(() => "public-url");
   const uploadUrl = `https://graph.instagram.com/v22.0/${clientId}/media`;
-  const uploadParams = {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+  const uploadParams1 = {
+    method,
+    headers,
     body: JSON.stringify({
       caption: text,
+      image_url: getPublicMediaUrl(id, files[0]),
+    }),
+  };
+  const uploadParams2 = {
+    method,
+    headers,
+    body: JSON.stringify({
+      caption: `${title}\n${message}`,
       image_url: getPublicMediaUrl(id, files[0]),
     }),
   };
@@ -55,11 +75,8 @@ describe("Instagram.post", () => {
   };
   const publishUrl = `https://graph.instagram.com/v22.0/${clientId}/media_publish`;
   const publishParams = {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+    method,
+    headers,
     body: JSON.stringify({ creation_id: "media-id" }),
   };
   const publishData = {
@@ -104,7 +121,7 @@ describe("Instagram.post", () => {
     // Verify
     expect(httpRequest).toHaveBeenCalledWith(
       `https://graph.instagram.com/v22.0/${clientId}/media`,
-      uploadParams,
+      uploadParams1,
     );
     expect(uploadData.data.json).not.toHaveBeenCalled();
     expect(result).toEqual({ err });
@@ -122,14 +139,14 @@ describe("Instagram.post", () => {
 
     // Verify
     expect(httpRequest.mock.calls).toEqual([
-      [uploadUrl, uploadParams],
+      [uploadUrl, uploadParams1],
       [publishUrl, publishParams],
     ]);
     expect(uploadData.data.json).toHaveBeenCalled();
     expect(result).toEqual({ err });
   });
 
-  it("should return no error if the media is published successfully.", async () => {
+  it("should post with text.", async () => {
     // Prepare
     httpRequest
       .mockResolvedValueOnce(uploadData)
@@ -140,7 +157,32 @@ describe("Instagram.post", () => {
 
     // Verify
     expect(httpRequest.mock.calls).toEqual([
-      [uploadUrl, uploadParams],
+      [uploadUrl, uploadParams1],
+      [publishUrl, publishParams],
+    ]);
+    expect(uploadData.data.json).toHaveBeenCalled();
+    expect(result).toEqual({});
+  });
+
+  it("should post with title and message.", async () => {
+    // Prepare
+    const title = "Title";
+    const message = "Message";
+    httpRequest
+      .mockResolvedValueOnce(uploadData)
+      .mockResolvedValueOnce(publishData);
+
+    // Execute
+    const result = await instagram.post(id, {
+      text: "",
+      title,
+      message,
+      files,
+    });
+
+    // Verify
+    expect(httpRequest.mock.calls).toEqual([
+      [uploadUrl, uploadParams2],
       [publishUrl, publishParams],
     ]);
     expect(uploadData.data.json).toHaveBeenCalled();

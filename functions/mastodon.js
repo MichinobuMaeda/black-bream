@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getMediaAsBlob, httpRequest, sleep } from "./utils.js";
+import { getMediaAsBlob, httpRequest, sleep, joinLines } from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Mastodon extends Provider {
@@ -135,17 +135,24 @@ export class Mastodon extends Provider {
    * post
    *
    * @param {string} id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string, message:string, link:string, files:array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, link, files }) {
     return this.getParams().then(async ({ err, data }) =>
       err
         ? { err }
         : { then: (fn) => fn(data) }.then(({ url, token }) =>
             this.getMediaList(url, token, id, files).then(
               async ({ err, data }) =>
-                err ? { err } : this.requestPost(url, token, text, data),
+                err
+                  ? { err }
+                  : this.requestPost(
+                      url,
+                      token,
+                      joinLines(text, title, message, link),
+                      data,
+                    ),
             ),
           ),
     );

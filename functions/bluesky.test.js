@@ -6,6 +6,7 @@ import {
   getMediaAsBlob,
   httpRequest,
   getMimeTypes,
+  joinLines,
 } from "./utils.js";
 import { Bluesky } from "./bluesky.js";
 
@@ -17,6 +18,14 @@ BskyAgent.prototype.uploadBlob = vi.fn(() =>
   Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 const db = {};
 const contents = [new ArrayBuffer(8)];
@@ -70,7 +79,6 @@ describe("login", () => {
 
 describe("uploadImage", () => {
   const id = "upload-id";
-  const text = "Text";
   const file = "1.jpg";
   const blob = new Blob(contents, { type: "image/jpeg" });
 
@@ -80,7 +88,7 @@ describe("uploadImage", () => {
     getMimeTypes.mockImplementationOnce(() => "image/jpeg");
 
     // Execute
-    const result = await bluesky.uploadImage(agent, id, text, file);
+    const result = await bluesky.uploadImage(agent, id, file);
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
@@ -96,7 +104,7 @@ describe("uploadImage", () => {
     getMediaAsBlob.mockResolvedValueOnce({ err });
 
     // Execute
-    const result = await bluesky.uploadImage(agent, id, text, file);
+    const result = await bluesky.uploadImage(agent, id, file);
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
@@ -112,7 +120,7 @@ describe("uploadImage", () => {
     BskyAgent.prototype.uploadBlob.mockRejectedValueOnce(err);
 
     // Execute
-    const result = await bluesky.uploadImage(agent, id, text, file);
+    const result = await bluesky.uploadImage(agent, id, file);
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
@@ -329,6 +337,9 @@ describe("requestPost", () => {
 describe("post", () => {
   const id = "upload-id";
   const text = "Text";
+  const title = "Title";
+  const message = "Message";
+  const link = "https://example.com";
   const file = "1.jpg";
   const langs = ["ja"];
   const image = new Uint8Array(10);
@@ -372,7 +383,7 @@ describe("post", () => {
     expect(mockLogin.mock.calls).toEqual([
       [expect.any(Object), identifier, password],
     ]);
-    expect(mockUploadImage.mock.calls).toEqual([[agent, id, text, file]]);
+    expect(mockUploadImage.mock.calls).toEqual([[agent, id, file]]);
     expect(mockGenerateExternal).not.toHaveBeenCalled();
     expect(mockRequestPost.mock.calls).toEqual([
       [
@@ -386,6 +397,48 @@ describe("post", () => {
               image,
             },
           ],
+        },
+      ],
+    ]);
+    expect(result).toEqual({});
+  });
+
+  it("should post with an external link in text", async () => {
+    // Prepare
+    const agent = { test: "agent" };
+    mockLogin.mockResolvedValueOnce({ data: agent });
+    mockGenerateExternal.mockResolvedValueOnce({
+      data: {
+        uri: link,
+        title: "Title",
+        description: "Description",
+      },
+    });
+    mockRequestPost.mockResolvedValueOnce({});
+
+    // Execute
+    const result = await bluesky.post(id, {
+      text: `Test ${link}`,
+      files: [],
+    });
+
+    // Verify
+    expect(mockLogin.mock.calls).toEqual([
+      [expect.any(Object), identifier, password],
+    ]);
+    expect(mockUploadImage).not.toHaveBeenCalled();
+    expect(mockGenerateExternal).toHaveBeenCalled();
+    expect(mockRequestPost.mock.calls).toEqual([
+      [
+        agent,
+        "Test",
+        {
+          $type: "app.bsky.embed.external",
+          external: {
+            uri: link,
+            title: "Title",
+            description: "Description",
+          },
         },
       ],
     ]);
@@ -406,7 +459,13 @@ describe("post", () => {
     mockRequestPost.mockResolvedValueOnce({});
 
     // Execute
-    const result = await bluesky.post(id, { text, files: [] });
+    const result = await bluesky.post(id, {
+      text: "",
+      title,
+      message,
+      link,
+      files: [],
+    });
 
     // Verify
     expect(mockLogin.mock.calls).toEqual([
@@ -417,11 +476,11 @@ describe("post", () => {
     expect(mockRequestPost.mock.calls).toEqual([
       [
         agent,
-        text,
+        `${title}\n${message}`,
         {
           $type: "app.bsky.embed.external",
           external: {
-            uri: "https://example.com",
+            uri: link,
             title: "Title",
             description: "Description",
           },
@@ -463,7 +522,7 @@ describe("post", () => {
     expect(mockLogin.mock.calls).toEqual([
       [expect.any(Object), identifier, password],
     ]);
-    expect(mockUploadImage.mock.calls).toEqual([[agent, id, text, file]]);
+    expect(mockUploadImage.mock.calls).toEqual([[agent, id, file]]);
     expect(mockGenerateExternal).not.toHaveBeenCalled();
     expect(mockRequestPost).not.toHaveBeenCalled();
     expect(result).toEqual({ err });

@@ -1,5 +1,11 @@
 import { logger } from "firebase-functions/v2";
-import { getMimeTypes, getMediaAsBlob, sleep, httpRequest } from "./utils.js";
+import {
+  getMimeTypes,
+  getMediaAsBlob,
+  sleep,
+  httpRequest,
+  joinLines,
+} from "./utils.js";
 import { Provider } from "./provider.js";
 
 export class Twitter extends Provider {
@@ -76,10 +82,10 @@ export class Twitter extends Provider {
    * post
    *
    * @param {string} id
-   * @param {{ text:string, files: array|undefined }} data
+   * @param {{ text:string, title:string, message:string, link:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, files }) {
+  async post(id, { text, title, message, link, files }) {
     const params = await this.getParams();
 
     if (params.err) {
@@ -99,7 +105,7 @@ export class Twitter extends Provider {
       media_ids.push(image.data.id);
     }
 
-    text = text.trim();
+    text = joinLines(text, title, message, link);
 
     const resp = await httpRequest("https://api.twitter.com/2/tweets", {
       method: "POST",

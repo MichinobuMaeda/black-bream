@@ -1,9 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getMediaAsBlob, httpRequest, sleep } from "./utils.js";
+import { getMediaAsBlob, httpRequest, sleep, joinLines } from "./utils.js";
 import { Mastodon } from "./mastodon.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");
+
+// restore original implementations for the mocked functions
+joinLines.mockImplementation((...lines) =>
+  lines
+    .map((line) => line?.trim())
+    .filter((line) => line)
+    .join("\n"),
+);
 
 FormData.prototype.append = vi.fn();
 
@@ -442,6 +450,27 @@ describe("post", () => {
     // Verify
     expect(mockGetMediaList.mock.calls).toEqual([[url, token, id, undefined]]);
     expect(mockRequestPost.mock.calls).toEqual([[url, token, text, []]]);
+    expect(result).toEqual({});
+  });
+
+  it("should post with title, message and link.", async () => {
+    // Prepare
+    const title = "Title";
+    const message = "Message";
+    const link = "https://example.com";
+    const mockGetMediaList = vi.spyOn(mastodon, "getMediaList");
+    const mockRequestPost = vi.spyOn(mastodon, "requestPost");
+    mockGetMediaList.mockResolvedValueOnce({ data: [] });
+    mockRequestPost.mockResolvedValueOnce({});
+
+    // Execute
+    const result = await mastodon.post(id, { text: "", title, message, link });
+
+    // Verify
+    expect(mockGetMediaList.mock.calls).toEqual([[url, token, id, undefined]]);
+    expect(mockRequestPost.mock.calls).toEqual([
+      [url, token, `${title}\n${message}\n${link}`, []],
+    ]);
     expect(result).toEqual({});
   });
 
