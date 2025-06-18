@@ -50,7 +50,10 @@ export class Tumblr extends Provider {
         const url = data.uri;
         body = JSON.stringify({
           content: [
-            { type: "text", text: joinLines(text, title, message) },
+            {
+              type: "text",
+              text: joinLines(text?.replace(url, ""), title, message),
+            },
             { type: "link", url },
           ],
         });
