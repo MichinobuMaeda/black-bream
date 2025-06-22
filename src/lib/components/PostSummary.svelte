@@ -14,6 +14,14 @@
   /** @type {Props} */
   let { post } = $props();
 
+  const getPostSummary = (post) =>
+    (post.title || post.message
+      ? [post.title, post.message].filter((item) => item).join("\n")
+      : post.text
+    )
+      .split("\n")
+      .join(" / ");
+
   let targets = postTargets.filter((target) =>
     (store.conf.postTargets ?? []).includes(target),
   );
@@ -60,5 +68,5 @@
       {/each}
     </span>
   </div>
-  <span class="line-clamp-1 text-ellipsis sm:w-96">{post.text}</span>
+  <span class="line-clamp-1 text-ellipsis sm:w-96">{getPostSummary(post)}</span>
 </div>

@@ -248,6 +248,24 @@ export class I18n {
       en: "Text",
     }[this.locale];
   }
+  title() {
+    return {
+      ja: "タイトル",
+      en: "Title",
+    }[this.locale];
+  }
+  message() {
+    return {
+      ja: "メッセージ",
+      en: "Message",
+    }[this.locale];
+  }
+  link() {
+    return {
+      ja: "リンク",
+      en: "Link",
+    }[this.locale];
+  }
   templates() {
     return {
       ja: "雛形",
@@ -594,6 +612,12 @@ export class I18n {
     return {
       ja: "入力必須です。",
       en: "Required.",
+    }[this.locale];
+  }
+  requiredAorB(a, b) {
+    return {
+      ja: `${a}または${b}が入力必須です。`,
+      en: `Required: ${a} or ${b}.`,
     }[this.locale];
   }
   greaterOrEqual(num) {

@@ -19,6 +19,11 @@
     postTargets,
   } from "../../lib/firebase.js";
 
+  const getTemplateSummary = (item) =>
+    (item.title || item.message ? `${item.title}\n${item.message}` : item.text)
+      .split("\n")
+      .join(" / ");
+
   let templates = $derived(store.templates ?? []);
   let template = $state(null);
   let active = $state(false);
@@ -26,7 +31,9 @@
   // Fields
   let id = $state("");
   let name = $state("");
-  let text = $state("");
+  let title = $state("");
+  let message = $state("");
+  let link = $state("");
   let deleted = $state(false);
   let feed = $state("");
   let category = $state("");
@@ -49,27 +56,33 @@
         ? t().nameInUse()
         : "",
   );
-  let errorText = $derived(text ? "" : t().required());
+  let errorTitleMessage = $derived(
+    title || message ? "" : t().requiredAorB(t().title(), t().message()),
+  );
 
   // Actions
   let result = $state(null);
   let changed = $derived(
     !active &&
       (name !== template.name ||
-        text !== template.text ||
+        title !== template.title ||
+        message !== template.message ||
+        link !== template.link ||
         feed !== template.feed ||
         category !== template.category ||
         targets.length !== template.targets?.length ||
         targets.some((target) => !template.targets?.includes(target)) ||
         deleted !== !!template.deletedAt),
   );
-  let valid = $derived(!errorName || !errorText);
+  let valid = $derived(!errorName || !errorTitleMessage);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
     id = "";
     name = "";
-    text = "";
+    title = "";
+    message = "";
+    link = "";
     feed = "";
     category = "";
     targets = [];
@@ -79,13 +92,18 @@
 
   const onSave = async () => {
     name = name.trim();
-    text = text.trim();
-    feed = feed.trim();
-    category = category.trim();
+    title = title?.trim() ?? "";
+    message = message?.trim() ?? "";
+    link = link?.trim() ?? "";
+    feed = feed?.trim() ?? "";
+    category = category?.trim() ?? "";
 
     const data = {
       name,
-      text,
+      text: null,
+      title,
+      message,
+      link,
       feed,
       category,
       targets,
@@ -114,6 +132,34 @@
           message={t().required()}
           error={errorName}
         />
+        <GroupedCheckBox
+          id="targets"
+          items={targetItems}
+          bind:value={targets}
+        />
+        <TextFieldOutlined
+          id={`title-${id}`}
+          label={t().title()}
+          type="text"
+          bind:value={title}
+          message={t().requiredAorB(t().title(), t().message())}
+          error={errorTitleMessage}
+        />
+        <TextFieldOutlined
+          id={`message-${id}`}
+          label={t().message()}
+          type="text"
+          bind:value={message}
+          lines={6}
+          message={t().requiredAorB(t().title(), t().message())}
+          error={errorTitleMessage}
+        />
+        <TextFieldOutlined
+          id={`link-${id}`}
+          label={t().link()}
+          type="text"
+          bind:value={link}
+        />
         <TextFieldOutlined
           id={`feed-${id}`}
           label="Feed"
@@ -125,20 +171,6 @@
           label="Category"
           type="text"
           bind:value={category}
-        />
-        <GroupedCheckBox
-          id="targets"
-          items={targetItems}
-          bind:value={targets}
-        />
-        <TextFieldOutlined
-          id={`text-${id}`}
-          label={t().text()}
-          type="text"
-          bind:value={text}
-          lines={6}
-          message={t().required()}
-          error={errorText}
         />
       </Fields>
       <ActionFields>
@@ -172,7 +204,9 @@
         template = { id: "", name: "", text: "", deletedAt: null };
         id = "";
         name = "";
-        text = "";
+        title = "";
+        message = "";
+        link = "";
         feed = "";
         category = "";
         targets = [];
@@ -191,7 +225,9 @@
                 template = item;
                 id = item.id;
                 name = item.name;
-                text = item.text;
+                title = item.title;
+                message = item.message || item.text;
+                link = item.link;
                 feed = item.feed;
                 category = item.category;
                 targets = item.targets ?? [];
@@ -210,10 +246,10 @@
         <Fields>
           {#if item.deletedAt}
             <span class="line-through text-light-error dark:text-dark-error">
-              {item.text.split("\n").join(" / ")}
+              {getTemplateSummary(item)}
             </span>
           {:else}
-            {item.text.split("\n").join(" / ")}
+            {getTemplateSummary(item)}
           {/if}
         </Fields>
       </Wrap>

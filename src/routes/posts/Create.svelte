@@ -25,10 +25,21 @@
 
   let templates = $state((store.templates ?? []).filter((t) => !t.deletedAt));
   let showTemplates = $state(templates.length > 0);
+  const getTemplateSummary = (template) =>
+    (template.title || template.message
+      ? `${template.title}\n${template.message}`
+      : template.text
+    )
+      .split("\n")
+      .join(" / ");
 
   // Fields
-  let text = $state("");
-  let errorText = $derived(active ? "" : !text ? t().required() : "");
+  let title = $state("");
+  let message = $state("");
+  let link = $state("");
+  let errorTitleMessage = $derived(
+    title || message ? "" : t().requiredAorB(t().title(), t().message()),
+  );
   let targetItems = postTargets
     .filter((target) => (store.conf.postTargets ?? []).includes(target))
     .map((target) => ({
@@ -50,11 +61,13 @@
   // Actions
   let result = $state(null);
   let changed = $derived(!active);
-  let valid = $derived(!errorText && !errorTargets && !errorSchedule);
+  let valid = $derived(!errorTitleMessage && !errorTargets && !errorSchedule);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
-    text = "";
+    title = "";
+    message = "";
+    link = "";
     checkedTargets = [];
     schedule = dt().formatDateTime();
     pop();
@@ -65,7 +78,9 @@
   const onSave = async () => {
     active = true;
     const status = "requested";
-    text = text.trim();
+    title = title?.trim() ?? "";
+    message = message?.trim() ?? "";
+    link = link?.trim() ?? "";
     const files =
       selectedImages && selectedImages[0]
         ? [`1.${selectedImages[0].name.split(".").pop()}`]
@@ -83,7 +98,7 @@
       );
     const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
 
-    const data = { text, files, targets, scheduledFor, status };
+    const data = { title, message, link, files, targets, scheduledFor, status };
     result = await createDocument("posts", data);
 
     if (!result.err && result.data.id && selectedImages && selectedImages[0]) {
@@ -125,12 +140,14 @@
               label={template.name}
               onClick={() => {
                 showTemplates = false;
-                text = template.text;
+                title = template.title;
+                message = template.message || template.text;
+                link = template.link;
               }}
             />
           </Fields>
           <Fields>
-            {template.text.split("\n").join(" / ")}
+            {getTemplateSummary(template)}
           </Fields>
         </Wrap>
       {/each}
@@ -181,17 +198,31 @@
               </p>
             {/if}
           </Fields>
-        </div>
-        <Fields>
           <TextFieldOutlined
-            id="text"
-            label={t().text()}
+            id="title"
+            label={t().title()}
+            type="text"
+            bind:value={title}
+            message={t().requiredAorB(t().title(), t().message())}
+            error={errorTitleMessage}
+          />
+          <TextFieldOutlined
+            id="message"
+            label={t().message()}
             type="text"
             lines={6}
-            bind:value={text}
-            message={t().required()}
-            error={errorText}
+            bind:value={message}
+            message={t().requiredAorB(t().title(), t().message())}
+            error={errorTitleMessage}
           />
+          <TextFieldOutlined
+            id="link"
+            label={t().link()}
+            type="text"
+            bind:value={link}
+          />
+        </div>
+        <Fields>
           <div class="flex flex-row gap-4">
             <ButtonText
               id="add-image"

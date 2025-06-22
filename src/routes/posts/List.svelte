@@ -5,6 +5,7 @@
   import ButtonOutlined from "../../lib/coarse-paper/ButtonOutlined.svelte";
   import PostSummary from "../../lib/components/PostSummary.svelte";
   import { t, store } from "../../lib/store.svelte.js";
+
   let posts = $derived(
     store.posts.filter((post) => store.manager || !post.deletedAt),
   );

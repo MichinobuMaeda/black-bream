@@ -36,8 +36,12 @@
   let active = $state(false);
 
   // Fields
-  let text = $state("");
-  let errorText = $derived(active ? "" : !text ? t().required() : "");
+  let title = $state("");
+  let message = $state("");
+  let link = $state("");
+  let errorTitleMessage = $derived(
+    title || message ? "" : t().requiredAorB(t().title(), t().message()),
+  );
   let targetItems = postTargets
     .filter((target) => (store.conf.postTargets ?? []).includes(target))
     .map((target) => ({
@@ -64,7 +68,9 @@
 
   $effect(() => {
     if (post) {
-      text = post.text;
+      title = post.title;
+      message = post.text || post.message;
+      link = post.link;
       checkedTargets = Object.keys(post.targets ?? {});
       savedImages = post.files ?? [];
       schedule = dt(post.scheduledFor).formatDateTime();
@@ -86,7 +92,9 @@
   let result = $state(null);
   let changed = $derived(
     !active &&
-      (text !== post?.text ||
+      (title !== post?.title.trim() ||
+        message !== post?.message.trim() ||
+        link !== post?.link.trim() ||
         checkedTargets.length !== orgTargets.length ||
         !checkedTargets.every((target) => orgTargets.includes(target)) ||
         new Date(schedule).getTime() !==
@@ -94,11 +102,13 @@
         deletedSavedImages ||
         deleted !== !!post?.deletedAt),
   );
-  let valid = $derived(!errorText && !errorTargets && !errorSchedule);
+  let valid = $derived(!errorTitleMessage && !errorTargets && !errorSchedule);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = async () => {
-    text = post?.text;
+    title = post?.title;
+    message = post?.text || post?.message;
+    link = post?.link;
     checkedTargets = Object.keys(post?.targets ?? {});
     savedImages = post?.files ?? [];
     schedule = dt(post?.scheduledFor).formatDateTime();
@@ -108,7 +118,10 @@
   const onSave = async () => {
     const status = post.status;
     active = true;
-    text = text.trim();
+    const text = null;
+    title = title?.trim();
+    message = message?.trim();
+    link = link?.trim();
     const files = deletedSavedImages
       ? selectedImages && selectedImages[0]
         ? [`1.${selectedImages[0].name.split(".").pop()}`]
@@ -127,7 +140,7 @@
       );
     const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
 
-    const data = { text, files, targets, scheduledFor };
+    const data = { text, title, message, link, files, targets, scheduledFor };
 
     if (!deleted && !!post?.deletedAt) {
       data.deletedAt = null;
@@ -202,17 +215,31 @@
             </p>
           {/if}
         </Fields>
-      </div>
-      <Fields>
         <TextFieldOutlined
-          id="text"
-          label={t().text()}
+          id="title"
+          label={t().title()}
+          type="text"
+          bind:value={title}
+          message={t().requiredAorB(t().title(), t().message())}
+          error={errorTitleMessage}
+        />
+        <TextFieldOutlined
+          id="message"
+          label={t().message()}
           type="text"
           lines={6}
-          bind:value={text}
-          message={t().required()}
-          error={errorText}
+          bind:value={message}
+          message={t().requiredAorB(t().title(), t().message())}
+          error={errorTitleMessage}
         />
+        <TextFieldOutlined
+          id="link"
+          label={t().link()}
+          type="text"
+          bind:value={link}
+        />
+      </div>
+      <Fields>
         <div class="flex flex-row gap-4">
           <ButtonText
             id="add-image"
