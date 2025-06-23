@@ -522,6 +522,12 @@ export class I18n {
       en: "Get access token",
     }[this.locale];
   }
+  skipPostingWithoutTitle(targets = ['unknown']) {
+    return {
+      ja: `タイトルが設定されていないため投稿をスキップします: ${targets.join(", ")}`,
+      en: `No title set. Skip posting: ${targets.join(", ")}`,
+    }[this.locale];
+  }
   skipPostingWithoutImage(targets = ['unknown']) {
     return {
       ja: `画像が設定されていないため投稿をスキップします: ${targets.join(", ")}`,

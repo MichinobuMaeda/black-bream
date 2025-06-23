@@ -14,6 +14,7 @@
   import AuthBluesky from "./AuthBluesky.svelte";
   import AuthThreads from "./AuthThreads.svelte";
   import AuthInstagram from "./AuthInstagram.svelte";
+  import AuthWordPress from "./AuthWordPress.svelte";
   import { t, store } from "../../lib/store.svelte.js";
 </script>
 
@@ -34,5 +35,6 @@
   <AuthBluesky />
   <AuthThreads />
   <AuthInstagram />
+  <AuthWordPress />
   <LoginMethods />
 {/if}

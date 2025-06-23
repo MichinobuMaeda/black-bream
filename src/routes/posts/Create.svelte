@@ -19,6 +19,7 @@
     createDocument,
     savePostedImage,
     postTargets,
+    titleRequiredTargets,
     imageRequiredTargets,
   } from "../../lib/firebase.js";
   let active = $state(false);
@@ -192,6 +193,11 @@
             </Wrap>
           </Fields>
           <Fields>
+            {#if !title && titleRequiredTargets.some( (target) => checkedTargets.includes(target), )}
+              <p class="text-light-primary dark:text-dark-primary">
+                {t().skipPostingWithoutTitle(titleRequiredTargets)}
+              </p>
+            {/if}
             {#if !selectedImages?.length && imageRequiredTargets.some( (target) => checkedTargets.includes(target), )}
               <p class="text-light-primary dark:text-dark-primary">
                 {t().skipPostingWithoutImage(imageRequiredTargets)}

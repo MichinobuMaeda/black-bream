@@ -6,6 +6,7 @@
   import SvgTumblr from "../icons/SvgTumblr.svelte";
   import SvgThreads from "../icons/SvgThreads.svelte";
   import SvgInstagram from "../icons/SvgInstagram.svelte";
+  import SvgWordpress from "../icons/SvgWordpress.svelte";
 
   /**
    * @typedef {Object} Props
@@ -30,4 +31,6 @@
   <SvgThreads />
 {:else if target === "instagram"}
   <SvgInstagram />
+{:else if target === "wordpress"}
+  <SvgWordpress />
 {/if}

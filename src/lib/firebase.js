@@ -63,8 +63,10 @@ export const postTargets = [
   "threads",
   "instagram",
   "tumblr",
+  "wordpress",
 ];
 
+export const titleRequiredTargets = ["wordpress"];
 export const imageRequiredTargets = ["instagram"];
 
 export const socialLoginProviders = [
