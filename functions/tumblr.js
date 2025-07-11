@@ -66,6 +66,8 @@ export class Tumblr extends Provider {
       }
     }
 
+    console.log("Posting to Tumblr", JSON.stringify(body));
+
     const { err } = await httpRequest(
       `https://api.tumblr.com/v2/blog/${blogId}/posts`,
       {
