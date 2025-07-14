@@ -44,12 +44,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import {
-  getAI,
-  getGenerativeModel,
-  GoogleAIBackend,
-  Schema,
-} from "firebase/ai";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
 
@@ -734,8 +729,11 @@ export const generateJobPosting = async (file, baseCount) => {
     );
 
     const prompt = `
-以下の案件情報から、条件に適合する上位３件を抽出してください。
-条件は以下の３項目です。
+以下の案件情報から、条件に適合する上位３件を抽出し、
+
+[{Number}, {Number}, {Number}]
+
+の形で出力してください。条件は以下の３項目です。
 
 1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
 2. 単価が明示されており、その単価が比較的高いもの。
@@ -748,20 +746,6 @@ ${text}
 
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: Schema.object({
-          properties: {
-            characters: Schema.array({
-              items: Schema.object({
-                properties: {
-                  Number: Schema.string(),
-                },
-              }),
-            }),
-          },
-        }),
-      },
     }).generateContent(prompt);
 
     return { data: result?.response?.text() ?? "No response from AI model" };
