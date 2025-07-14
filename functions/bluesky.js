@@ -1,5 +1,5 @@
 import { logger } from "firebase-functions/v2";
-import { BskyAgent } from "@atproto/api";
+import { CredentialSession, Agent } from "@atproto/api";
 import { Provider } from "./provider.js";
 import {
   generateLinkCard,
@@ -26,22 +26,22 @@ export class Bluesky extends Provider {
   /**
    * Login
    *
-   * @param {BskyAgent} agent
+   * @param {CredentialSession} session
    * @param {string} identifier
    * @param {string} password
-   * @returns {Promise<{err: undefined|Error, data: BskyAgent|undefined}>}
+   * @returns {Promise<{err: undefined|Error, data: Agent|undefined}>}
    */
-  async login(agent, identifier, password) {
-    return agent
+  async login(session, identifier, password) {
+    return session
       .login({ identifier, password })
-      .then(() => ({ data: agent }))
+      .then(() => ({ data: new Agent(session) }))
       .catch((err) => ({ err }));
   }
 
   /**
    * Upload image
    *
-   * @param {BskyAgent} agent
+   * @param {Agent} agent
    * @param {string} id
    * @param {string} file
    * @returns {Promise<{err: undefined|Error, data: Buffer|undefined}>}
@@ -65,7 +65,7 @@ export class Bluesky extends Provider {
   /**
    * Upload thumb image
    *
-   * @param {BskyAgent} agent
+   * @param {Agent} agent
    * @param {string} thumbUrl
    * @returns {Promise<{data: Buffer|undefined}>}
    */
@@ -102,7 +102,7 @@ export class Bluesky extends Provider {
   /**
    * Generate external
    *
-   * @param {BskyAgent} agent
+   * @param {Agent} agent
    * @param {string} text
    * @returns {Promise<{data: undefined|LinkCardData}>}
    */
@@ -126,7 +126,7 @@ export class Bluesky extends Provider {
   /**
    * Request post
    *
-   * @param {BskyAgent} agent
+   * @param {Agent} agent
    * @param {string} text
    * @param {Object} embed
    * @returns {Promise<{err: undefined|Error}>}
@@ -150,56 +150,59 @@ export class Bluesky extends Provider {
       err
         ? { err }
         : { then: (fn) => fn(data) }.then(({ service, identifier, password }) =>
-            this.login(new BskyAgent({ service }), identifier, password).then(
-              ({ err, data }) =>
-                err
-                  ? { err }
-                  : {
-                      then: (fn) =>
-                        files?.length
-                          ? this.uploadImage(data, id, files[0]).then(
-                              ({ err, data }) =>
-                                err
-                                  ? { err }
-                                  : fn({
-                                      $type: "app.bsky.embed.images",
-                                      images: [
-                                        {
-                                          alt: joinLines(
-                                            text,
-                                            title,
-                                            message,
-                                          ).substring(0, 100),
-                                          image: data,
-                                        },
-                                      ],
-                                    }),
-                            )
-                          : this.generateExternal(
-                              data,
-                              link?.trim() || text?.trim(),
-                            ).then(({ data }) =>
-                              data
-                                ? fn({
-                                    $type: "app.bsky.embed.external",
-                                    external: data,
-                                  })
-                                : fn(undefined),
-                            ),
-                    }.then((embed) =>
-                      this.requestPost(
-                        data,
-                        joinLines(
-                          embed?.external?.uri && text
-                            ? text.replace(embed?.external?.uri, "")
-                            : text,
-                          title,
-                          message,
-                          embed?.external?.uri ? undefined : link,
-                        ),
-                        embed,
+            this.login(
+              new CredentialSession({ service: new URL(service) }),
+              identifier,
+              password,
+            ).then(({ err, data }) =>
+              err
+                ? { err }
+                : {
+                    then: (fn) =>
+                      files?.length
+                        ? this.uploadImage(data, id, files[0]).then(
+                            ({ err, data }) =>
+                              err
+                                ? { err }
+                                : fn({
+                                    $type: "app.bsky.embed.images",
+                                    images: [
+                                      {
+                                        alt: joinLines(
+                                          text,
+                                          title,
+                                          message,
+                                        ).substring(0, 100),
+                                        image: data,
+                                      },
+                                    ],
+                                  }),
+                          )
+                        : this.generateExternal(
+                            data,
+                            link?.trim() || text?.trim(),
+                          ).then(({ data }) =>
+                            data
+                              ? fn({
+                                  $type: "app.bsky.embed.external",
+                                  external: data,
+                                })
+                              : fn(undefined),
+                          ),
+                  }.then((embed) =>
+                    this.requestPost(
+                      data,
+                      joinLines(
+                        embed?.external?.uri && text
+                          ? text.replace(embed?.external?.uri, "")
+                          : text,
+                        title,
+                        message,
+                        embed?.external?.uri ? undefined : link,
                       ),
+                      embed,
                     ),
+                  ),
             ),
           ),
     );

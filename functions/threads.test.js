@@ -76,7 +76,7 @@ describe("post", () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     const err = new Error("test error");
-    mockGetParams.mockResolvedValueOnce({ err });
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
@@ -302,7 +302,7 @@ describe("refreshAccessToken", () => {
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
     const err = new Error("test error");
-    mockGetParams.mockResolvedValueOnce({ err });
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -319,7 +319,7 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
-    mockGetParams.mockResolvedValueOnce({
+    mockGetParams.mockResolvedValue({
       data: { ...params, accessToken: "" },
     });
 
@@ -338,7 +338,7 @@ describe("refreshAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     mockUpdateParams.mockResolvedValue({});
-    mockGetParams.mockResolvedValueOnce({
+    mockGetParams.mockResolvedValue({
       data: { ...params, expiredAt: null },
     });
 
@@ -360,7 +360,7 @@ describe("refreshAccessToken", () => {
       const mockGetParams = vi.spyOn(threads, "getParams");
       const mockUpdateParams = vi.spyOn(threads, "updateParams");
       mockUpdateParams.mockResolvedValue({});
-      mockGetParams.mockResolvedValueOnce({
+      mockGetParams.mockResolvedValue({
         data: {
           ...params,
           expiredAt: Timestamp.fromMillis(
@@ -405,7 +405,7 @@ describe("refreshAccessToken", () => {
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
     httpRequest.mockResolvedValueOnce(respNewAccessToken);
     const err = new Error("test error");
-    mockUpdateParams.mockResolvedValueOnce({ err });
+    mockUpdateParams.mockResolvedValue({ err });
 
     // Execute
     const result = await threads.refreshAccessToken();
@@ -496,7 +496,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
@@ -520,7 +520,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
 
     // Execute
     const result = await threads.setAccessToken({ code: "" });
@@ -536,9 +536,9 @@ describe("setAccessToken", () => {
     // Prepare
     const mockGetParams = vi.spyOn(threads, "getParams");
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
     const err = new Error("test error");
-    mockGetParams.mockResolvedValueOnce({ err });
+    mockGetParams.mockResolvedValue({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
@@ -573,7 +573,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
     httpRequest.mockResolvedValueOnce({
       data: { json: () => Promise.resolve({}) },
     });
@@ -595,7 +595,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
     const err = new Error("test error");
     httpRequest
       .mockResolvedValueOnce({
@@ -618,7 +618,7 @@ describe("setAccessToken", () => {
     const mockGetParams = vi.spyOn(threads, "getParams");
     mockGetParams.mockResolvedValue({ data: params });
     const mockUpdateParams = vi.spyOn(threads, "updateParams");
-    mockUpdateParams.mockResolvedValueOnce({});
+    mockUpdateParams.mockResolvedValue({});
     httpRequest
       .mockResolvedValueOnce({
         data: { json: () => Promise.resolve(oauthData) },
@@ -652,7 +652,7 @@ describe("setAccessToken", () => {
         data: { json: () => Promise.resolve(tokenData) },
       });
     const err = new Error("test error");
-    mockUpdateParams.mockResolvedValueOnce({ err });
+    mockUpdateParams.mockResolvedValue({ err });
 
     // Execute
     const result = await threads.setAccessToken(data);
