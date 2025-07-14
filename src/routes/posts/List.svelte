@@ -24,6 +24,15 @@
   {/if}
 </h3>
 <Content>
+  <div class="flex flex-row justify-between items-center">
+    <ButtonOutlined
+      id="jobposting"
+      icon={SvgNoteAdd}
+      label={t().jobPosting()}
+      onClick={() => push("/posts/jobposting")}
+      dense
+    />
+  </div>
   {#each posts as post (post.id)}
     <PostSummary {post} />
   {/each}

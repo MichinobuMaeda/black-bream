@@ -1,7 +1,7 @@
 {
   "name": "black-bream",
   "private": true,
-  "version": "0.9.4",
+  "version": "0.9.5",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -29,8 +29,10 @@
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
     "@date-fns/utc": "^2.1.0",
+    "cheerio": "^1.1.0",
     "date-fns": "^4.1.0",
-    "firebase": "^11.4.0",
+    "firebase": "^11.10.0",
+    "mammoth": "^1.9.1",
     "marked": "^15.0.7",
     "nanoid": "^5.1.2",
     "svelte-spa-router": "^4.0.1"
@@ -47,7 +49,7 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-jest": "^28.11.0",
     "eslint-plugin-svelte": "^3.1.0",
-    "firebase-tools": "^13.34.0",
+    "firebase-tools": "^13.35.1",
     "functions": "^1.0.9",
     "globals": "^16.0.0",
     "jsdom": "^26.0.0",

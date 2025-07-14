@@ -534,6 +534,18 @@ export class I18n {
       en: `No image set. Skip posting: ${targets.join(", ")}`,
     }[this.locale];
   }
+  postGenerator() {
+    return {
+      ja: "投稿生成",
+      en: "Post generator",
+    }[this.locale];
+  }
+  jobPosting () {
+    return {
+      ja: "案件情報",
+      en: "Job posting",
+    }[this.locale];
+  }
   current(value) {
     return {
       ja: `変更前: ${value}`,

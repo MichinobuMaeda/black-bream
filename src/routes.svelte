@@ -15,34 +15,19 @@
 </script>
 
 {#if store.me}
-  {#if store.admin || store.manager}
-    <Router
-      routes={{
-        "/": Home,
-        "/account": Account,
-        "/groups/:item?/:action?": Groups,
-        "/users/:item?/:action?": Users,
-        "/posts/:item?/:action?": Posts,
-        "/info": Info,
-        "/settings": Settings,
-        "/auth/:item/:action/:status?/:data?": Auth,
-        "*": NotFound,
-      }}
-    />
-  {:else}
-    <Router
-      routes={{
-        "/": Home,
-        "/account": Account,
-        "/groups/:item?/:action?": Groups,
-        "/users/:item?/:action?": Users,
-        "/posts/:item?/:action?": Posts,
-        "/info": Info,
-        "/auth/:item/:action/:status?/:data?": Auth,
-        "*": NotFound,
-      }}
-    />
-  {/if}
+  <Router
+    routes={{
+      "/": Home,
+      "/account": Account,
+      "/groups/:item?/:action?": Groups,
+      "/users/:item?/:action?": Users,
+      "/posts/:item?/:action?": Posts,
+      "/info": Info,
+      "/settings": store.admin || store.manager ? Settings : undefined,
+      "/auth/:item/:action/:status?/:data?": Auth,
+      "*": NotFound,
+    }}
+  />
 {:else}
   <Router
     routes={{

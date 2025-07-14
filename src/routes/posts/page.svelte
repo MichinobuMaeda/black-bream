@@ -5,6 +5,7 @@
   import Create from "./Create.svelte";
   import Show from "./Show.svelte";
   import Edit from "./Edit.svelte";
+  import JobPosting from "./JobPosting.svelte";
 
   /**
    * @typedef {Object} Props
@@ -21,6 +22,8 @@
 {#if store.operator || store.manager}
   {#if params?.item === "new"}
     <Create />
+  {:else if params?.item === "jobposting"}
+    <JobPosting />
   {:else if params?.item}
     {#if params?.action === "edit"}
       {#if store.operator}
