@@ -151,7 +151,7 @@ export class Bluesky extends Provider {
         ? { err }
         : { then: (fn) => fn(data) }.then(({ service, identifier, password }) =>
             this.login(
-              new CredentialSession({ service: new URL(service) }),
+              new CredentialSession(new URL(service)),
               identifier,
               password,
             ).then(({ err, data }) =>
