@@ -48,7 +48,7 @@ import {
   getAI,
   getGenerativeModel,
   GoogleAIBackend,
-  // Schema,
+  Schema,
 } from "firebase/ai";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
@@ -697,8 +697,6 @@ function getAllTextNodes(dom, node) {
 
 export const generateJobPosting = async (file, baseCount) => {
   try {
-    const model = getGenerativeModel(fbs.ai, { model: "gemini-2.5-flash" });
-
     const buffer = await file.arrayBuffer();
     const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
     const dom = cheerio.load(value);
@@ -731,7 +729,7 @@ export const generateJobPosting = async (file, baseCount) => {
     });
     const text = items.reduce(
       (acc, cur) =>
-        `${acc}\n\n管理番号: ${cur.number}\n日付:${cur.date}\n文面: ${cur.content}`,
+        `${acc}\n\nNumber: ${cur.number}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
 
@@ -748,7 +746,24 @@ export const generateJobPosting = async (file, baseCount) => {
 ${text}
 `;
 
-    const result = await model.generateContent(prompt);
+    const result = await getGenerativeModel(fbs.ai, {
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: Schema.object({
+          properties: {
+            characters: Schema.array({
+              items: Schema.object({
+                properties: {
+                  Number: Schema.string(),
+                },
+              }),
+            }),
+          },
+        }),
+      },
+    }).generateContent(prompt);
+
     return { data: result?.response?.text() ?? "No response from AI model" };
   } catch (e) {
     console.error(`generateJobPosting: ${e}`);

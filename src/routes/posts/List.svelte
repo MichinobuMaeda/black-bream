@@ -13,7 +13,7 @@
 
 <h3>
   <span class="flex grow">{t().list()}</span>
-  {#if store.operator}
+  {#if (store.operator || store.manager) && store.conf?.jobPosting}
     <ButtonOutlined
       id="create"
       icon={SvgNoteAdd}

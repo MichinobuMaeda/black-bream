@@ -135,8 +135,8 @@
   <span class="size-6"><SvgNoteAdd /></span>
   {t().jobPosting()}
 </h3>
-{#if store.operator || store.manager}
-  <Content>
+<Content>
+  {#if (store.operator || store.manager) && store.conf?.jobPosting}
     <div class="flex flex-row gap-2">
       <ButtonText
         id="add-image"
@@ -156,5 +156,5 @@
     <pre>
       {text}
     </pre>
-  </Content>
-{/if}
+  {/if}
+</Content>
