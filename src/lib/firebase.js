@@ -44,7 +44,12 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+import {
+  getAI,
+  getGenerativeModel,
+  Schema,
+  GoogleAIBackend,
+} from "firebase/ai";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
 
@@ -690,10 +695,11 @@ function getAllTextNodes(dom, node) {
   return texts;
 }
 
-export const generateJobPosting = async (file, baseCount) => {
+export const generateJobPosting = async (setText, file, baseCount) => {
   try {
     const buffer = await file.arrayBuffer();
     const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    setText(value);
     const dom = cheerio.load(value);
     const rows = dom("tr");
     const items = [];
@@ -727,13 +733,10 @@ export const generateJobPosting = async (file, baseCount) => {
         `${acc}\n\nNumber: ${cur.number}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
+    setText(text);
 
     const prompt = `
-以下の案件情報から、条件に適合する上位３件を抽出し、
-
-[{Number}, {Number}, {Number}]
-
-の形で出力してください。条件は以下の３項目です。
+以下の案件情報から、条件に適合する上位３件を抽出して Number を出力してください。条件は以下の３項目です。
 
 1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
 2. 単価が明示されており、その単価が比較的高いもの。
@@ -746,7 +749,23 @@ ${text}
 
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: Schema.object({
+          properties: {
+            characters: Schema.array({
+              items: Schema.object({
+                properties: {
+                  Number: Schema.string(),
+                },
+              }),
+            }),
+          },
+        }),
+      },
     }).generateContent(prompt);
+
+    setText(result?.response?.text() ?? "No response from AI model");
 
     return { data: result?.response?.text() ?? "No response from AI model" };
   } catch (e) {

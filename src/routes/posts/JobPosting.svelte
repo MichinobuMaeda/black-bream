@@ -121,12 +121,12 @@
 
   $effect(() => {
     if (selectedFiles) {
-      Promise.resolve(generateJobPosting(selectedFiles[0], 10)).then(
-        (result) => {
-          const { err, data } = result;
-          text = data || err;
-        },
-      );
+      Promise.resolve(
+        generateJobPosting((value) => (text = value), selectedFiles[0], 10),
+      ).then((result) => {
+        const { err, data } = result;
+        text = data || err;
+      });
     }
   });
 </script>
