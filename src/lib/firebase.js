@@ -751,16 +751,11 @@ ${text}
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: Schema.object({
-          properties: {
-            characters: Schema.array({
-              items: Schema.object({
-                properties: {
-                  Number: Schema.string(),
-                },
-              }),
-            }),
-          },
+        responseSchema: Schema.array({
+          items: Schema.string(),
+          description: "Extracted job posting numbers",
+          minItems: 1,
+          maxItems: 3,
         }),
       },
     }).generateContent(prompt);
