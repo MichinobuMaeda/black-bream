@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { BskyAgent } from "@atproto/api";
+import { CredentialSession, Agent } from "@atproto/api";
 import {
   generateLinkCard,
   reduceImageSize,
@@ -12,9 +12,9 @@ import { Bluesky } from "./bluesky.js";
 
 vi.mock("firebase-functions/logger");
 vi.mock("@atproto/api");
-BskyAgent.prototype.login = vi.fn(() => Promise.resolve({}));
-BskyAgent.prototype.post = vi.fn(() => Promise.resolve());
-BskyAgent.prototype.uploadBlob = vi.fn(() =>
+CredentialSession.prototype.login = vi.fn(() => Promise.resolve({}));
+Agent.prototype.post = vi.fn(() => Promise.resolve());
+Agent.prototype.uploadBlob = vi.fn(() =>
   Promise.resolve({ data: { blob: new Uint8Array(10) } }),
 );
 vi.mock("./utils.js");
@@ -38,7 +38,8 @@ const service = "https://bluesky.example.com";
 const identifier = "bluesky-identifier";
 const password = "bluesky-password";
 const params = { service, identifier, password };
-const agent = new BskyAgent(service);
+const session = new CredentialSession(new URL(service));
+const agent = new Agent(session);
 
 FormData.prototype.append = vi.fn();
 
@@ -49,31 +50,27 @@ afterEach(() => {
 describe("login", () => {
   it("should login to Bluesky.", async () => {
     // Prepare
-    BskyAgent.prototype.login.mockResolvedValueOnce({});
+    CredentialSession.prototype.login.mockResolvedValueOnce({});
 
     // Execute
-    const result = await bluesky.login(agent, identifier, password);
+    const result = await bluesky.login(session, identifier, password);
 
     // Verify
-    expect(result).toEqual({ data: agent });
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier, password }],
-    ]);
+    expect(result).toEqual({ data: expect.any(Agent) });
+    expect(session.login.mock.calls).toEqual([[{ identifier, password }]]);
   });
 
   it("should return error, if Bluesky.login raises an exception.", async () => {
     // Prepare
     const err = new Error("test error");
-    BskyAgent.prototype.login.mockRejectedValueOnce(err);
+    CredentialSession.prototype.login.mockRejectedValueOnce(err);
 
     // Execute
-    const result = await bluesky.login(agent, identifier, password);
+    const result = await bluesky.login(session, identifier, password);
 
     // Verify
     expect(result).toEqual({ err });
-    expect(BskyAgent.prototype.login.mock.calls).toEqual([
-      [{ identifier, password }],
-    ]);
+    expect(session.login.mock.calls).toEqual([[{ identifier, password }]]);
   });
 });
 
@@ -92,7 +89,7 @@ describe("uploadImage", () => {
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
-    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+    expect(agent.uploadBlob.mock.calls).toEqual([
       [blob, { encoding: "image/jpeg" }],
     ]);
     expect(result).toEqual({ data: new Uint8Array(10) });
@@ -108,7 +105,7 @@ describe("uploadImage", () => {
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
-    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(agent.uploadBlob).not.toHaveBeenCalled();
     expect(result).toEqual({ err });
   });
 
@@ -117,14 +114,14 @@ describe("uploadImage", () => {
     getMediaAsBlob.mockResolvedValueOnce({ data: blob });
     getMimeTypes.mockImplementationOnce(() => "image/jpeg");
     const err = new Error("test error");
-    BskyAgent.prototype.uploadBlob.mockRejectedValueOnce(err);
+    Agent.prototype.uploadBlob.mockRejectedValueOnce(err);
 
     // Execute
     const result = await bluesky.uploadImage(agent, id, file);
 
     // Verify
     expect(getMediaAsBlob.mock.calls).toEqual([[bucket, "upload-id", "1.jpg"]]);
-    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+    expect(agent.uploadBlob.mock.calls).toEqual([
       [blob, { encoding: "image/jpeg" }],
     ]);
     expect(result).toEqual({ err });
@@ -138,7 +135,7 @@ describe("uploadThumb", () => {
       data: { status: 200, bytes: () => Promise.resolve(new Uint8Array(10)) },
     });
     reduceImageSize.mockResolvedValueOnce({ data: new Uint8Array(10) });
-    BskyAgent.prototype.uploadBlob.mockResolvedValueOnce({
+    Agent.prototype.uploadBlob.mockResolvedValueOnce({
       data: { blob: new Uint8Array(10) },
     });
     getMimeTypes.mockImplementationOnce(() => "image/jpeg");
@@ -149,7 +146,7 @@ describe("uploadThumb", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
     expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
-    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+    expect(agent.uploadBlob.mock.calls).toEqual([
       [new Uint8Array(10), { encoding: "image/jpeg" }],
     ]);
     expect(result).toEqual({ data: new Uint8Array(10) });
@@ -166,7 +163,7 @@ describe("uploadThumb", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
     expect(reduceImageSize).not.toHaveBeenCalled();
-    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(agent.uploadBlob).not.toHaveBeenCalled();
     expect(result).toEqual({});
   });
 
@@ -184,7 +181,7 @@ describe("uploadThumb", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
     expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
-    expect(BskyAgent.prototype.uploadBlob).not.toHaveBeenCalled();
+    expect(agent.uploadBlob).not.toHaveBeenCalled();
     expect(result).toEqual({});
   });
 
@@ -195,7 +192,7 @@ describe("uploadThumb", () => {
     });
     reduceImageSize.mockResolvedValueOnce({ data: new Uint8Array(10) });
     const err = new Error("test error");
-    BskyAgent.prototype.uploadBlob.mockRejectedValueOnce(err);
+    Agent.prototype.uploadBlob.mockRejectedValueOnce(err);
     getMimeTypes.mockImplementationOnce(() => "image/jpeg");
 
     // Execute
@@ -204,7 +201,7 @@ describe("uploadThumb", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([[thumbUrl]]);
     expect(reduceImageSize.mock.calls).toEqual([[new Uint8Array(10)]]);
-    expect(BskyAgent.prototype.uploadBlob.mock.calls).toEqual([
+    expect(agent.uploadBlob.mock.calls).toEqual([
       [new Uint8Array(10), { encoding: "image/jpeg" }],
     ]);
     expect(result).toEqual({});
@@ -306,30 +303,26 @@ describe("requestPost", () => {
 
   it("should request post.", async () => {
     // Prepare
-    BskyAgent.prototype.post.mockResolvedValueOnce({ data: {} });
+    Agent.prototype.post.mockResolvedValueOnce({ data: {} });
 
     // Execute
     const result = await bluesky.requestPost(agent, text, embed);
 
     // Verify
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
-      [{ text, langs, embed }],
-    ]);
+    expect(agent.post.mock.calls).toEqual([[{ text, langs, embed }]]);
     expect(result).toEqual({});
   });
 
   it("should return error, if Bluesky.post raises an exception.", async () => {
     // Prepare
     const err = new Error("test error");
-    BskyAgent.prototype.post.mockRejectedValueOnce(err);
+    Agent.prototype.post.mockRejectedValueOnce(err);
 
     // Execute
     const result = await bluesky.requestPost(agent, text, embed);
 
     // Verify
-    expect(BskyAgent.prototype.post.mock.calls).toEqual([
-      [{ text, langs, embed }],
-    ]);
+    expect(agent.post.mock.calls).toEqual([[{ text, langs, embed }]]);
     expect(result).toEqual({ err });
   });
 });

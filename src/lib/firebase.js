@@ -44,6 +44,14 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend,
+  // Schema,
+} from "firebase/ai";
+import mammoth from "mammoth";
+import * as cheerio from "cheerio";
 
 import * as firebaseConfig from "../firebaseConfig.js";
 import { localstorage } from "./localstorage.js";
@@ -111,6 +119,7 @@ export class FirebaseState {
     this.functions = getFunctions(this.app, this.firebaseConfig.region);
     this.storage = getStorage(this.app);
     this.userData = [];
+    this.ai = getAI(this.app, { backend: new GoogleAIBackend() });
   }
 
   /**
@@ -660,5 +669,89 @@ export const callFunction = async (name, param) => {
   } catch (e) {
     console.error(`${name}: ${e}`);
     return { err: "error", data: undefined };
+  }
+};
+
+/**
+ * Recursively get all text nodes from a Cheerio node.
+ * @param {cheerio.CheerioAPI} dom
+ * @param {cheerio.Cheerio<cheerio.Element>} node
+ * @returns {Array<string>}
+ */
+function getAllTextNodes(dom, node) {
+  let texts = [];
+  node.contents().each((_, child) => {
+    if (child.type === "text") {
+      const text = dom(child).text().trim();
+      if (text) {
+        texts.push(text);
+      }
+    } else {
+      if (dom(child).contents().length) {
+        texts = texts.concat(getAllTextNodes(dom, dom(child)));
+      }
+    }
+  });
+  return texts;
+}
+
+export const generateJobPosting = async (file, baseCount) => {
+  try {
+    const model = getGenerativeModel(fbs.ai, { model: "gemini-2.5-flash" });
+
+    const buffer = await file.arrayBuffer();
+    const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    const dom = cheerio.load(value);
+    const rows = dom("tr");
+    const items = [];
+
+    rows.each((_, row) => {
+      let confidential = false;
+      const item = {};
+      getAllTextNodes(dom, dom(row).find("td").first()).forEach((text) => {
+        if (/^\d+$/.test(text)) {
+          item.number = text;
+        } else if (/^[0-9/-]+$/.test(text)) {
+          item.date = text;
+        } else if (/(情報|機密|秘密|非公開|開示|禁止)/.test(text)) {
+          confidential = true;
+        }
+      });
+      if (item.number && item.date && !confidential) {
+        const right = getAllTextNodes(dom, dom(row).find("td").last());
+        if (right.length) {
+          item.content = right.join("\n");
+          items.push(item);
+
+          if (baseCount <= items.length) {
+            return; // Break the loop
+          }
+        }
+      }
+    });
+    const text = items.reduce(
+      (acc, cur) =>
+        `${acc}\n\n管理番号: ${cur.number}\n日付:${cur.date}\n文面: ${cur.content}`,
+      "",
+    );
+
+    const prompt = `
+以下の案件情報から、条件に適合する上位３件を抽出してください。
+条件は以下の３項目です。
+
+1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
+2. 単価が明示されており、その単価が比較的高いもの。
+3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+
+抽出の対象の案件情報は以下のものです。
+
+${text}
+`;
+
+    const result = await model.generateContent(prompt);
+    return { data: result?.response?.text() ?? "No response from AI model" };
+  } catch (e) {
+    console.error(`generateJobPosting: ${e}`);
+    return { err: e.toString(), data: undefined };
   }
 };

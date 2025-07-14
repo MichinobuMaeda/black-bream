@@ -6,6 +6,7 @@
   import DailyJob from "./DailyJob.svelte";
   import TimeZone from "./TimeZone.svelte";
   import QueuingThresholdDays from "./QueuingThresholdDays.svelte";
+  import PostGenerator from "./PostGenerator.svelte";
   import LoginMethods from "./LoginMethods.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
@@ -28,6 +29,7 @@
   <DailyJob />
   <TimeZone />
   <QueuingThresholdDays />
+  <PostGenerator />
   <AuthTwitter />
   <AuthMastodon />
   <AuthMisskey />

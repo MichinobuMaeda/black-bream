@@ -41,7 +41,7 @@ export class Tumblr extends Provider {
       body = JSON.stringify({
         content: [
           { type: "image", media: { url } },
-          { type: "text", text },
+          { type: "text", text: joinLines(text, title, message) },
         ],
       });
     } else {
@@ -65,8 +65,6 @@ export class Tumblr extends Provider {
         });
       }
     }
-
-    console.log("Posting to Tumblr", JSON.stringify(body));
 
     const { err } = await httpRequest(
       `https://api.tumblr.com/v2/blog/${blogId}/posts`,

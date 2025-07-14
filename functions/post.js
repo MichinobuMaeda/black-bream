@@ -272,11 +272,11 @@ export class Post {
       return this.setPostStatusError(verified.err);
     }
 
-    const provider = providers
+    this.provider = providers
       .map((Provider) => new Provider(this.db, this.bucket))
       .find((provider) => provider.id === target);
 
-    if (!provider) {
+    if (!this.provider) {
       return this.setPostStatusError(
         new Error(`Unsupported target: ${target}`),
       );
@@ -295,13 +295,13 @@ export class Post {
       return this.setPostStatusError(posting.err);
     }
 
-    const refreshed = await provider.refreshAccessToken();
+    const refreshed = await this.provider.refreshAccessToken();
 
     if (refreshed.err) {
       return this.setPostStatusError(refreshed.err);
     }
 
-    let posted = await provider.post(id, data);
+    let posted = await this.provider.post(id, data);
 
     if (posted.err) {
       return this.setPostStatusError(posted.err);

@@ -701,7 +701,6 @@ describe("post", () => {
     mockGetPostData.mockResolvedValueOnce({ data: postData });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
-    const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     Mastodon.prototype.post.mockResolvedValueOnce({});
     updateDoc.mockResolvedValueOnce({}).mockResolvedValueOnce({});
@@ -712,8 +711,8 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
-    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(post.provider.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(post.provider.post.mock.calls).toEqual([[id, { text, files }]]);
     expect(updateDoc.mock.calls).toEqual([updateData01, updateData02]);
     expect(ret).toEqual({ data: "posting" });
   });
@@ -788,7 +787,6 @@ describe("post", () => {
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
-    const provider = new Mastodon(db, bucket);
     const err = new Error("test error");
     updateDoc.mockResolvedValueOnce({ err });
     const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
@@ -800,8 +798,8 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(Mastodon.prototype.refreshAccessToken).not.toHaveBeenCalled();
-    expect(Mastodon.prototype.post).not.toHaveBeenCalled();
+    expect(post.provider.refreshAccessToken).not.toHaveBeenCalled();
+    expect(post.provider.post).not.toHaveBeenCalled();
     expect(updateDoc.mock.calls).toEqual([updateData01]);
     expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
     expect(ret).toEqual({ err });
@@ -814,7 +812,6 @@ describe("post", () => {
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
-    const provider = new Mastodon(db, bucket);
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     Mastodon.prototype.post.mockResolvedValueOnce({});
     const err = new Error("test error");
@@ -828,8 +825,8 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
-    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(post.provider.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(post.provider.post.mock.calls).toEqual([[id, { text, files }]]);
     expect(updateDoc.mock.calls).toEqual([updateData01, updateData02]);
     expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
     expect(ret).toEqual({ err });
@@ -842,7 +839,6 @@ describe("post", () => {
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
-    const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
     const err = new Error("test error");
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({ err });
@@ -855,8 +851,8 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
-    expect(Mastodon.prototype.post).not.toHaveBeenCalled();
+    expect(post.provider.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(post.provider.post).not.toHaveBeenCalled();
     expect(updateDoc.mock.calls).toEqual([updateData01]);
     expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
     expect(ret).toEqual({ err });
@@ -869,7 +865,6 @@ describe("post", () => {
     mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
     const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
     mockVerifyTargetStatus.mockImplementationOnce(() => ({}));
-    const provider = new Mastodon(db, bucket);
     updateDoc.mockResolvedValueOnce({});
     Mastodon.prototype.refreshAccessToken.mockResolvedValueOnce({});
     const err = new Error("test error");
@@ -883,8 +878,8 @@ describe("post", () => {
     // Verify
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
-    expect(Mastodon.prototype.refreshAccessToken.mock.calls).toEqual([[]]);
-    expect(Mastodon.prototype.post.mock.calls).toEqual([[id, { text, files }]]);
+    expect(post.provider.refreshAccessToken.mock.calls).toEqual([[]]);
+    expect(post.provider.post.mock.calls).toEqual([[id, { text, files }]]);
     expect(updateDoc.mock.calls).toEqual([updateData01]);
     expect(mockSetPostStatusError.mock.calls).toEqual([[err]]);
     expect(ret).toEqual({ err });
