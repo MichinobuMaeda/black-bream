@@ -829,12 +829,12 @@ Price: ${item.price}
 Language: ${item.language}
 Place: ${item.place}
 RequiredSkills:
-${item.requiredSkills.map((skill) => `- ${skill}`).join("\n")}
+${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n")}
 Description:
 ${item.description}
 
 Details:
-${item.details.map((detail) => `- ${detail}`).join("\n")}
+${item.details?.map((detail) => `- ${detail}`).join("\n")}
 `;
           })
           .join("\n");
