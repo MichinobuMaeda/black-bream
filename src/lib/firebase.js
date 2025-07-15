@@ -827,7 +827,7 @@ ${parsed}
   }
 };
 
-const structuredToText = ({ data }, withContent = false) =>
+const structuredToText = (data, withContent = false) =>
   data
     ? data
         .map((item) => {
@@ -853,7 +853,7 @@ ${withContent ? `\nContent:\n${item.content}` : ""}`;
         .join("\n")
     : undefined;
 
-const selectStructuredData = async ({ data }) => {
+const selectStructuredData = async (data) => {
   try {
     const promptSelect = `
 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
@@ -907,14 +907,14 @@ export const generateJobPosting = async (setText, file, baseCount) => {
     }
 
     const structured = await parsedToStructured(parsed.data);
-    setText(structuredToText(structured) || structured.err);
+    setText(structuredToText(structured.data) || structured.err);
 
     if (structured.err) {
       return structured;
     }
 
-    const selected = await selectStructuredData(structured);
-    setText(structuredToText(selected, true) || selected.err);
+    const selected = await selectStructuredData(structured.data);
+    setText(structuredToText(selected.data, true) || selected.err);
 
     if (selected.err) {
       return selected;
