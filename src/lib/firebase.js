@@ -899,7 +899,7 @@ ${structuredToText(data)}
 
 export const generateJobPosting = async (setText, file, baseCount) => {
   try {
-    const parsed = await parseDocx(setText, file, baseCount);
+    const parsed = await parseDocx(file, baseCount);
     setText(parsed.data || parsed.err);
 
     if (parsed.err) {
