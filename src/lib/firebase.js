@@ -810,7 +810,8 @@ ${text}
     }).generateContent(promptParse);
 
     const parsed = result?.response?.text() ?? "No response from AI model";
-    setText(JSON.stringify(parsed, null, 2));
+    // setText(JSON.stringify(parsed, null, 2));
+    setText(parsed);
 
     //     const promptSelect = `
     // 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
@@ -854,7 +855,7 @@ ${text}
       data: JSON.stringify(parsed, null, 2) ?? "No response from AI model",
     };
   } catch (e) {
-    console.error(`generateJobPosting: ${e}`);
+    console.error(`generateJobPosting: ${e.toString()}`);
     return { err: e.toString(), data: undefined };
   }
 };
