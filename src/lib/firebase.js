@@ -763,16 +763,13 @@ ${parsed}
 
     const codes = JSON.parse(resultSelected?.response?.text() ?? "[]");
 
-    const selected = structured.filter((item) => codes.includes(item.code));
-    const selectedText = inputs
-      .filter((item) => selected.includes(item.code))
-      .reduce(
-        (acc, cur) =>
-          `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
-        "",
-      );
+    const selected = inputs.filter((item) => codes.includes(item.code));
+    const selectedText = selected.reduce(
+      (acc, cur) =>
+        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
+      "",
+    );
 
-    // setText(JSON.stringify(selected, null, 2));
     setText(`${JSON.stringify(codes)} ${selectedText}`);
 
     const prompt = `
