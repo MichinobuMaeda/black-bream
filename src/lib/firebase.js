@@ -845,7 +845,7 @@ ${selectedText}
           }),
         }),
       },
-    }).generateContent(prompt);
+    }).generateContent(promptStruct);
     setText(result?.response?.text() ?? "No response from AI model");
 
     const structuredToText = (parsed) =>
