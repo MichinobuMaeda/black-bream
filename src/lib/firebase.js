@@ -817,7 +817,7 @@ ${parsed}
 
     const data = JSON.parse(text).map((item) => ({
       ...item,
-      content: parsed.content,
+      content: parsed.find((p) => p.code === item.code)?.content,
     }));
 
     return { data };
@@ -878,7 +878,7 @@ ${structuredToText(data)}
 ["12345", "67890", "23456"]
 `;
 
-    const resultSelected = await getGenerativeModel(fbs.ai, {
+    const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
@@ -888,7 +888,14 @@ ${structuredToText(data)}
       },
     }).generateContent(promptSelect);
 
-    const codes = JSON.parse(resultSelected?.response?.text() ?? "[]");
+    const text = result?.response?.text();
+
+    if (!text) {
+      console.error("No response from AI model");
+      return { err: "No response from AI model" };
+    }
+
+    const codes = JSON.parse(text);
 
     return { data: data.filter((item) => codes.includes(item.code)) };
   } catch (e) {
