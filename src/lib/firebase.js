@@ -845,6 +845,7 @@ ${selectedText}
         }),
       },
     }).generateContent(prompt);
+    setText(result?.response?.text() ?? "No response from AI model");
 
     const structuredToText = (parsed) =>
       parsed
@@ -873,7 +874,7 @@ ${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
     const structured = JSON.parse(
       result?.response?.text() ?? '"No response from AI model"',
     );
-    setText(`${structured.length}件\n\n${structuredToText(structured)}`);
+    // setText(`${structured.length}件\n\n${structuredToText(structured)}`);
 
     return { err: undefined };
   } catch (e) {
