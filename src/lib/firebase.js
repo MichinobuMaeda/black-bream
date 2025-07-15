@@ -728,12 +728,52 @@ export const generateJobPosting = async (setText, file, baseCount) => {
         }
       }
     });
-    const text = inputs.reduce(
+    const parsed = inputs.reduce(
       (acc, cur) =>
         `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
-    setText(text);
+    setText(`${inputs.length}件\n\n${parsed}`);
+
+    const promptSelect = `
+後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+条件:
+
+1. 「地方可」または「地方歓迎」が明示されていること。
+2. 単価が明示されており、その単価が比較的高いもの。
+3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+
+案件情報:
+
+${parsed}
+`;
+
+    const resultSelected = await getGenerativeModel(fbs.ai, {
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: Schema.array({
+          items: Schema.string(),
+          description: "Extracted job posting codes",
+          minItems: 1,
+          maxItems: 3,
+        }),
+      },
+    }).generateContent(promptSelect);
+
+    const codes = JSON.parse(resultSelected?.response?.text() ?? "[]");
+
+    const selected = structured.filter((item) => codes.includes(item.code));
+    const selectedText = inputs
+      .filter((item) => selected.includes(item.code))
+      .reduce(
+        (acc, cur) =>
+          `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
+        "",
+      );
+
+    // setText(JSON.stringify(selected, null, 2));
+    setText(`${JSON.stringify(codes)} ${selectedText}`);
 
     const prompt = `
 ## 指示内容
@@ -781,7 +821,7 @@ Details:
 
 ## 案件情報
 
-${text}
+${selectedText}
 `;
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
@@ -809,7 +849,7 @@ ${text}
       },
     }).generateContent(prompt);
 
-    const parsedToText = (parsed) =>
+    const structuredToText = (parsed) =>
       parsed
         .map((item) => {
           return `
@@ -819,59 +859,24 @@ Title: ${item.title}
 Occupation: ${item.occupation}
 Duration: ${item.duration}
 StartDate: ${item.startDate}
-Price: ${item.price}
-Language: ${item.language}
+Price: ${item.price ?? ""}
+Language: ${item.language ?? ""}
 Place: ${item.place}
 RequiredSkills:
-${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n")}
+${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n") ?? ""}
 Description:
-${item.description}
+${item.description ?? ""}
 
 Details:
-${item.details?.map((detail) => `- ${detail}`).join("\n")}
+${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
 `;
         })
         .join("\n");
 
-    const parsed = JSON.parse(
+    const structured = JSON.parse(
       result?.response?.text() ?? '"No response from AI model"',
     );
-    setText(`${parsed.length}件\n\n${parsedToText(parsed)}`);
-
-    if (Array.isArray(parsed) || parsed.length > 0) {
-      const prompt = `
-後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
-条件:
-
-1. 「地方可」または「地方歓迎」が明示されていること。
-2. 単価が明示されており、その単価が比較的高いもの。
-3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
-
-案件情報:
-
-${parsedToText(parsed)}
-`;
-
-      const result = await getGenerativeModel(fbs.ai, {
-        model: "gemini-2.5-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: Schema.array({
-            items: Schema.string(),
-            description: "Extracted job posting codes",
-            minItems: 1,
-            maxItems: 3,
-          }),
-        },
-      }).generateContent(prompt);
-
-      const codes = JSON.parse(result?.response?.text() ?? "[]");
-
-      const selected = parsed.filter((item) => codes.includes(item.code));
-
-      // setText(JSON.stringify(selected, null, 2));
-      setText(`${codes}\n\n${JSON.stringify(selected, null, 2)}`);
-    }
+    setText(`${structured.length}件\n\n${structuredToText(structured)}`);
 
     return { err: undefined };
   } catch (e) {
