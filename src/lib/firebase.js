@@ -47,7 +47,7 @@ import {
 import {
   getAI,
   getGenerativeModel,
-  Schema,
+  // Schema,
   GoogleAIBackend,
 } from "firebase/ai";
 import mammoth from "mammoth";
@@ -702,67 +702,135 @@ export const generateJobPosting = async (setText, file, baseCount) => {
     setText(value);
     const dom = cheerio.load(value);
     const rows = dom("tr");
-    const items = [];
+    const inputs = [];
 
     rows.each((_, row) => {
       let confidential = false;
       const item = {};
       getAllTextNodes(dom, dom(row).find("td").first()).forEach((text) => {
         if (/^\d+$/.test(text)) {
-          item.number = text;
+          item.code = text;
         } else if (/^[0-9/-]+$/.test(text)) {
           item.date = text;
         } else if (/(情報|機密|秘密|非公開|開示|禁止)/.test(text)) {
           confidential = true;
         }
       });
-      if (item.number && item.date && !confidential) {
+      if (item.code && item.date && !confidential) {
         const right = getAllTextNodes(dom, dom(row).find("td").last());
         if (right.length) {
           item.content = right.join("\n");
-          items.push(item);
+          inputs.push(item);
 
-          if (baseCount <= items.length) {
+          if (baseCount <= inputs.length) {
             return; // Break the loop
           }
         }
       }
     });
-    const text = items.reduce(
+    const text = inputs.reduce(
       (acc, cur) =>
-        `${acc}\n\nNumber: ${cur.number}\nDate: ${cur.date}\nContent: ${cur.content}`,
+        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
     setText(text);
 
-    const prompt = `
-以下の案件情報から、条件に適合する上位３件を抽出して Number を出力してください。条件は以下の３項目です。
+    const promptParse = `
+## 指示内容
 
-1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
-2. 単価が明示されており、その単価が比較的高いもの。
-3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+後述のそれぞれの案件情報について、以下の項目を抽出してください。
 
-抽出の対象の案件情報は以下のものです。
+Code: 案件番号(英数字)
+  ※例: 12345
+Date: 日付(月/日)
+  ※例: 2/1, 11/13
+Title: タイトル
+  ※「某」と「募集」は除外すること。
+Occupation: 職種
+  ※例: SE, PM, PMO, フロントエンドエンジニア, 運用, ヘルプデスク
+Duration: 期間
+  ※例: '25年10月〜, '25年10月(即日)〜, '25年10月〜'26年3月(延長あり)
+StartDate: 開始日
+  ※例: '25/10, '25/10(即日), '25/10
+Price: 単価
+  ※例: 65万円, 〜60万円, 60〜80万円 注意: 「スキル見合い」や「応相談」は除外すること。
+Language: 使用言語
+  ※例: Java, Python, C#, JavaScript, TypeScript, React, Vue.js, Laravel, Ruby, COBOL
+Place: 勤務地
+  ※例: リモート/港区, 港区/リモート, フルリモート, フルリモート地方可, 都内, 横浜市
+  ※「地方可」や「地方歓迎」は明記されている場合のみ記載すること。
+RequiredSkills:
+- 必須条件1
+- 必須条件2
+ ...
+- 必須条件n
+  ※文面を変更せずにそのまま抜き出すこと。
+  ※尚可や優遇は除外すること。
+Description:
+作業内容1行目
+作業内容2行目
+ ...
+作業内容n行目
+  ※箇条書きではなく、文章で記載された内容を抜き出すこと。
+Details:
+- 作業内容詳細1
+- 作業内容詳細2
+ ...
+- 作業内容詳細n
+  ※箇条書きの内容をそのまま抜き出すこと。
+
+## 案件情報
 
 ${text}
 `;
-
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: Schema.array({
-          items: Schema.string(),
-          description: "Extracted job posting numbers",
-          minItems: 1,
-          maxItems: 3,
-        }),
-      },
-    }).generateContent(prompt);
+    }).generateContent(promptParse);
 
-    setText(result?.response?.text() ?? "No response from AI model");
+    const parsed = result?.response?.text() ?? "No response from AI model";
+    setText(parsed);
 
-    return { data: result?.response?.text() ?? "No response from AI model" };
+    //     const promptSelect = `
+    // 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+    // 条件:
+
+    // 1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
+    // 2. 単価が明示されており、その単価が比較的高いもの。
+    // 3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+
+    // 案件情報:
+
+    // ${text}
+    // `;
+
+    //     const result = await getGenerativeModel(fbs.ai, {
+    //       model: "gemini-2.5-flash",
+    //       generationConfig: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: Schema.array({
+    //           items: Schema.string(),
+    //           description: "Extracted job posting numbers",
+    //           minItems: 1,
+    //           maxItems: 3,
+    //         }),
+    //       },
+    //     }).generateContent(promptSelect);
+
+    //     const selected = inputs.filter((item) =>
+    //       result?.response?.text()?.includes(item.number),
+    //     );
+
+    //     setText(
+    //       selected.reduce(
+    //         (acc, cur) =>
+    //           `${acc}\n\nNumber: ${cur.number}\nDate: ${cur.date}\nContent: ${cur.content}`,
+    //         "",
+    //       ),
+    //     );
+
+    return {
+      data: JSON.stringify(parsed, null, 2) ?? "No response from AI model",
+    };
   } catch (e) {
     console.error(`generateJobPosting: ${e}`);
     return { err: e.toString(), data: undefined };
