@@ -705,25 +705,23 @@ export const generateJobPosting = async (setText, file, baseCount) => {
     const inputs = [];
 
     rows.each((_, row) => {
-      let confidential = false;
-      const item = {};
-      getAllTextNodes(dom, dom(row).find("td").first()).forEach((text) => {
-        if (/^\d+$/.test(text)) {
-          item.code = text;
-        } else if (/^[0-9/-]+$/.test(text)) {
-          item.date = text;
-        } else if (/(情報|機密|秘密|非公開|開示|禁止)/.test(text)) {
-          confidential = true;
-        }
-      });
-      if (item.code && item.date && !confidential) {
-        const right = getAllTextNodes(dom, dom(row).find("td").last());
-        if (right.length) {
-          item.content = right.join("\n");
-          inputs.push(item);
-
-          if (baseCount <= inputs.length) {
-            return; // Break the loop
+      if (inputs.length < baseCount) {
+        let confidential = false;
+        const item = {};
+        getAllTextNodes(dom, dom(row).find("td").first()).forEach((text) => {
+          if (/^\d+$/.test(text)) {
+            item.code = text;
+          } else if (/^[0-9/-]+$/.test(text)) {
+            item.date = text;
+          } else if (/(情報|機密|秘密|非公開|開示|禁止)/.test(text)) {
+            confidential = true;
+          }
+        });
+        if (item.code && item.date && !confidential) {
+          const right = getAllTextNodes(dom, dom(row).find("td").last());
+          if (right.length) {
+            item.content = right.join("\n");
+            inputs.push(item);
           }
         }
       }
@@ -737,15 +735,20 @@ export const generateJobPosting = async (setText, file, baseCount) => {
 
     const promptSelect = `
 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
-条件:
+
+## 条件
 
 1. 「地方可」または「地方歓迎」が明示されていること。
 2. 単価が明示されており、その単価が比較的高いもの。
 3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
 
-案件情報:
+## 案件情報
 
 ${parsed}
+
+## 出力形式
+
+["12345", "67890", "23456"]
 `;
 
     const resultSelected = await getGenerativeModel(fbs.ai, {
@@ -754,9 +757,6 @@ ${parsed}
         responseMimeType: "application/json",
         responseSchema: Schema.array({
           items: Schema.string(),
-          description: "Extracted job posting codes",
-          minItems: 1,
-          maxItems: 3,
         }),
       },
     }).generateContent(promptSelect);
@@ -770,7 +770,7 @@ ${parsed}
       "",
     );
 
-    setText(`${JSON.stringify(codes)} ${selectedText}`);
+    setText(`${resultSelected?.response?.text() ?? "[]"} ${selectedText}`);
 
     const prompt = `
 ## 指示内容
