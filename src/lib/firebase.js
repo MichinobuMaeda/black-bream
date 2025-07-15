@@ -47,7 +47,7 @@ import {
 import {
   getAI,
   getGenerativeModel,
-  // Schema,
+  Schema,
   GoogleAIBackend,
 } from "firebase/ai";
 import mammoth from "mammoth";
@@ -785,10 +785,31 @@ ${text}
 `;
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: Schema.array({
+          items: Schema.object({
+            code: Schema.string().description("案件番号"),
+            date: Schema.string().description("日付"),
+            title: Schema.string().description("タイトル"),
+            occupation: Schema.string().description("職種"),
+            duration: Schema.string().description("期間"),
+            startDate: Schema.string().description("開始日"),
+            price: Schema.string().description("単価"),
+            language: Schema.string().description("使用言語"),
+            place: Schema.string().description("勤務地"),
+            requiredSkills: Schema.array(Schema.string()).description(
+              "必須条件",
+            ),
+            description: Schema.string().description("作業内容"),
+            details: Schema.array(Schema.string()).description("作業内容詳細"),
+          }),
+        }),
+      },
     }).generateContent(promptParse);
 
     const parsed = result?.response?.text() ?? "No response from AI model";
-    setText(parsed);
+    setText(JSON.stringify(parsed, null, 2));
 
     //     const promptSelect = `
     // 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
