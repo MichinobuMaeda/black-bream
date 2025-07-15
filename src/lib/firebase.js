@@ -60,6 +60,7 @@ import {
   getMimeTypeFromExtension,
   reduceImageSize,
 } from "./media.js";
+import { set } from "date-fns";
 
 const imageBasePath = "public/posts/";
 
@@ -695,11 +696,10 @@ function getAllTextNodes(dom, node) {
   return texts;
 }
 
-export const generateJobPosting = async (setText, file, baseCount) => {
+const parseDocx = async (file, baseCount) => {
   try {
     const buffer = await file.arrayBuffer();
     const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
-    setText(value);
     const dom = cheerio.load(value);
     const rows = dom("tr");
     const inputs = [];
@@ -726,51 +726,22 @@ export const generateJobPosting = async (setText, file, baseCount) => {
         }
       }
     });
-    const parsed = inputs.reduce(
+
+    const data = inputs.reduce(
       (acc, cur) =>
         `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
 
-    const promptSelect = `
-後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+    return { data };
+  } catch (e) {
+    console.error(`parseDocx: ${e.toString()}`);
+    return { err: e.toString() };
+  }
+};
 
-## 条件
-
-1. 「地方可」または「地方歓迎」が明示されていること。
-2. 単価が明示されており、その単価が比較的高いもの。
-3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
-
-## 案件情報
-
-${parsed}
-
-## 出力形式
-
-["12345", "67890", "23456"]
-`;
-
-    setText(promptSelect);
-
-    const resultSelected = await getGenerativeModel(fbs.ai, {
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: Schema.array({
-          items: Schema.string(),
-        }),
-      },
-    }).generateContent(promptSelect);
-
-    const codes = JSON.parse(resultSelected?.response?.text() ?? "[]");
-
-    const selected = inputs.filter((item) => codes.includes(item.code));
-    const selectedText = selected.reduce(
-      (acc, cur) =>
-        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
-      "",
-    );
-
+const parsedToStructured = async (parsed) => {
+  try {
     const promptStruct = `
 ## 指示内容
 
@@ -784,16 +755,17 @@ Title: タイトル
   ※「某」と「募集」は除外すること。
 Occupation: 職種
   ※例: SE, PM, PMO, フロントエンドエンジニア, 運用, ヘルプデスク
-Duration: 期間
-  ※例: '25年10月〜, '25年10月(即日)〜, '25年10月〜'26年3月(延長あり)
-StartDate: 開始日
-  ※例: '25/10, '25/10(即日), '25/10
+Duration: 期間('yy年m月)
+  ※例: '25年10月〜, '25年10月 or 11月〜, '25年10月(即日)〜, '25年10月〜'26年3月(延長あり)
+StartDate: 開始月('yy/m)
+  ※例: '25/10, '25/9(即日), '25/12 or '26/1
 Price: 単価
   ※例: 65万円, 〜60万円, 60〜80万円 注意: 「スキル見合い」や「応相談」は除外すること。
 Language: 使用言語
   ※例: Java, Python, C#, JavaScript, TypeScript, React, Vue.js, Laravel, Ruby, COBOL
 Place: 勤務地
   ※例: リモート/港区, 港区/リモート, フルリモート, フルリモート地方可, 都内, 横浜市
+  ※駅名の可能性がある場合は、自治体名に置き換えること。例: 「品川」→「港区」、「大宮」→「さいたま市」
   ※「地方可」や「地方歓迎」は明記されている場合のみ記載すること。
 RequiredSkills:
 - 必須条件1
@@ -817,9 +789,8 @@ Details:
 
 ## 案件情報
 
-${selectedText}
+${parsed}
 `;
-    setText(promptStruct);
 
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
@@ -846,10 +817,29 @@ ${selectedText}
         }),
       },
     }).generateContent(promptStruct);
-    setText(result?.response?.text() ?? "No response from AI model");
 
-    const structuredToText = (parsed) =>
-      parsed
+    const text = result?.response?.text();
+
+    if (!text) {
+      console.error("No response from AI model");
+      return { err: "No response from AI model" };
+    }
+
+    const data = JSON.parse(text).map((item) => ({
+      ...item,
+      content: parsed.content,
+    }));
+
+    return { data };
+  } catch (e) {
+    console.error(`parsedToStructured: ${e.toString()}`);
+    return { err: e.toString() };
+  }
+};
+
+const structuredToText = ({ data }, withContent = false) =>
+  data
+    ? data
         .map((item) => {
           return `
 Code: ${item.code}
@@ -868,14 +858,77 @@ ${item.description ?? ""}
 
 Details:
 ${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
-`;
+${withContent ? `\nContent:\n${item.content}` : ""}`;
         })
-        .join("\n");
+        .join("\n")
+    : undefined;
 
-    const structured = JSON.parse(
-      result?.response?.text() ?? '"No response from AI model"',
-    );
-    setText(`${structured.length}件\n\n${structuredToText(structured)}`);
+const selectStructuredData = async ({ data }) => {
+  try {
+    const promptSelect = `
+後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+
+## 必須条件
+
+- 単価が明示されていること。
+- 勤務地、または、リモート可、在宅可であることが明記されていること。
+
+## 優先する条件
+
+1. 「地方可」または「地方歓迎」が明示されていること。
+2. 単価が比較的高いもの。
+3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+
+## 案件情報
+
+${structuredToText(data)}
+
+## 出力形式
+
+["12345", "67890", "23456"]
+`;
+
+    const resultSelected = await getGenerativeModel(fbs.ai, {
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: Schema.array({
+          items: Schema.string(),
+        }),
+      },
+    }).generateContent(promptSelect);
+
+    const codes = JSON.parse(resultSelected?.response?.text() ?? "[]");
+
+    return { data: data.filter((item) => codes.includes(item.code)) };
+  } catch (e) {
+    console.error(`selectStructuredData: ${e.toString()}`);
+    return { err: e.toString() };
+  }
+};
+
+export const generateJobPosting = async (setText, file, baseCount) => {
+  try {
+    const parsed = await parseDocx(setText, file, baseCount);
+    setText(parsed.data || parsed.err);
+
+    if (parsed.err) {
+      return { parsed };
+    }
+
+    const structured = await parsedToStructured(parsed.data);
+    setText(structuredToText(structured) || structured.err);
+
+    if (structured.err) {
+      return structured;
+    }
+
+    const selected = await selectStructuredData(structured);
+    setText(structuredToText(selected, true) || selected.err);
+
+    if (selected.err) {
+      return selected;
+    }
 
     return { err: undefined };
   } catch (e) {
