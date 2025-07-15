@@ -809,16 +809,10 @@ ${text}
       },
     }).generateContent(prompt);
 
-    const parsed = JSON.parse(
-      result?.response?.text() ?? '"No response from AI model"',
-    );
-    setText(JSON.stringify(parsed, null, 2));
-
-    if (Array.isArray(parsed) || parsed.length > 0) {
-      const parsedToText = (parsed) =>
-        parsed
-          .map((item) => {
-            return `
+    const parsedToText = (parsed) =>
+      parsed
+        .map((item) => {
+          return `
 Code: ${item.code}
 Date: ${item.date}
 Title: ${item.title}
@@ -836,9 +830,15 @@ ${item.description}
 Details:
 ${item.details?.map((detail) => `- ${detail}`).join("\n")}
 `;
-          })
-          .join("\n");
+        })
+        .join("\n");
 
+    const parsed = JSON.parse(
+      result?.response?.text() ?? '"No response from AI model"',
+    );
+    setText(`${parsed.length}件\n\n${parsedToText(parsed)}`);
+
+    if (Array.isArray(parsed) || parsed.length > 0) {
       const prompt = `
 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
 条件:
