@@ -731,7 +731,6 @@ export const generateJobPosting = async (setText, file, baseCount) => {
         `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
       "",
     );
-    setText(`${inputs.length}件\n\n${parsed}`);
 
     const promptSelect = `
 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
@@ -750,6 +749,8 @@ ${parsed}
 
 ["12345", "67890", "23456"]
 `;
+
+    setText(promptSelect);
 
     const resultSelected = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
@@ -770,9 +771,7 @@ ${parsed}
       "",
     );
 
-    setText(`${resultSelected?.response?.text() ?? "[]"} ${selectedText}`);
-
-    const prompt = `
+    const promptStruct = `
 ## 指示内容
 
 後述のそれぞれの案件情報について、以下の項目を抽出してください。
@@ -820,6 +819,8 @@ Details:
 
 ${selectedText}
 `;
+    setText(promptStruct);
+
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
       generationConfig: {
@@ -874,7 +875,7 @@ ${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
     const structured = JSON.parse(
       result?.response?.text() ?? '"No response from AI model"',
     );
-    // setText(`${structured.length}件\n\n${structuredToText(structured)}`);
+    setText(`${structured.length}件\n\n${structuredToText(structured)}`);
 
     return { err: undefined };
   } catch (e) {

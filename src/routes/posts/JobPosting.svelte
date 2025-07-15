@@ -124,8 +124,10 @@
       Promise.resolve(
         generateJobPosting((value) => (text = value), selectedFiles[0], 10),
       ).then((result) => {
-        const { err, data } = result;
-        text = data || err;
+        const { err } = result;
+        if (err) {
+          text = err.toString();
+        }
       });
     }
   });
