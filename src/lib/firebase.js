@@ -803,7 +803,7 @@ ${text}
               description: Schema.string(),
               details: Schema.array({ items: Schema.string() }),
             },
-            optionalProperties: ["description", "details"],
+            optionalProperties: ["price", "language", "description", "details"],
           }),
         }),
       },
@@ -815,6 +815,30 @@ ${text}
     setText(JSON.stringify(parsed, null, 2));
 
     if (Array.isArray(parsed) || parsed.length > 0) {
+      const parsedToText = (parsed) =>
+        parsed
+          .map((item) => {
+            return `
+Code: ${item.code}
+Date: ${item.date}
+Title: ${item.title}
+Occupation: ${item.occupation}
+Duration: ${item.duration}
+StartDate: ${item.startDate}
+Price: ${item.price}
+Language: ${item.language}
+Place: ${item.place}
+RequiredSkills:
+${item.requiredSkills.map((skill) => `- ${skill}`).join("\n")}
+Description:
+${item.description}
+
+Details:
+${item.details.map((detail) => `- ${detail}`).join("\n")}
+`;
+          })
+          .join("\n");
+
       const prompt = `
 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
 条件:
@@ -825,7 +849,7 @@ ${text}
 
 案件情報:
 
-${JSON.stringify(parsed, null, 2)}
+${parsedToText(parsed)}
 `;
 
       const result = await getGenerativeModel(fbs.ai, {
@@ -834,18 +858,19 @@ ${JSON.stringify(parsed, null, 2)}
           responseMimeType: "application/json",
           responseSchema: Schema.array({
             items: Schema.string(),
-            description: "Extracted job posting numbers",
+            description: "Extracted job posting codes",
             minItems: 1,
             maxItems: 3,
           }),
         },
       }).generateContent(prompt);
 
-      const codes = JSON.parse(result?.response?.text() ?? []);
+      const codes = JSON.parse(result?.response?.text() ?? "[]");
 
       const selected = parsed.filter((item) => codes.includes(item.code));
 
-      setText(JSON.stringify(selected, null, 2));
+      // setText(JSON.stringify(selected, null, 2));
+      setText(`${codes}\n\n${JSON.stringify(selected, null, 2)}`);
     }
 
     return { err: undefined };
