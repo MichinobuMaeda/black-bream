@@ -735,7 +735,7 @@ export const generateJobPosting = async (setText, file, baseCount) => {
     );
     setText(text);
 
-    const promptParse = `
+    const prompt = `
 ## 指示内容
 
 後述のそれぞれの案件情報について、以下の項目を抽出してください。
@@ -807,55 +807,50 @@ ${text}
           }),
         }),
       },
-    }).generateContent(promptParse);
+    }).generateContent(prompt);
 
-    const parsed = result?.response?.text() ?? "No response from AI model";
-    // setText(JSON.stringify(parsed, null, 2));
-    setText(parsed);
+    const parsed = JSON.parse(
+      result?.response?.text() ?? '"No response from AI model"',
+    );
+    setText(JSON.stringify(parsed, null, 2));
 
-    //     const promptSelect = `
-    // 後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
-    // 条件:
+    if (Array.isArray(parsed) || parsed.length > 0) {
+      const prompt = `
+後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+条件:
 
-    // 1. 「地方可」または「地方歓迎」のキーワードが含まれていること。
-    // 2. 単価が明示されており、その単価が比較的高いもの。
-    // 3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+1. 「地方可」または「地方歓迎」が明示されていること。
+2. 単価が明示されており、その単価が比較的高いもの。
+3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
 
-    // 案件情報:
+案件情報:
 
-    // ${text}
-    // `;
+${JSON.stringify(parsed, null, 2)}
+`;
 
-    //     const result = await getGenerativeModel(fbs.ai, {
-    //       model: "gemini-2.5-flash",
-    //       generationConfig: {
-    //         responseMimeType: "application/json",
-    //         responseSchema: Schema.array({
-    //           items: Schema.string(),
-    //           description: "Extracted job posting numbers",
-    //           minItems: 1,
-    //           maxItems: 3,
-    //         }),
-    //       },
-    //     }).generateContent(promptSelect);
+      const result = await getGenerativeModel(fbs.ai, {
+        model: "gemini-2.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: Schema.array({
+            items: Schema.string(),
+            description: "Extracted job posting numbers",
+            minItems: 1,
+            maxItems: 3,
+          }),
+        },
+      }).generateContent(prompt);
 
-    //     const selected = inputs.filter((item) =>
-    //       result?.response?.text()?.includes(item.number),
-    //     );
+      const codes = JSON.parse(result?.response?.text() ?? []);
 
-    //     setText(
-    //       selected.reduce(
-    //         (acc, cur) =>
-    //           `${acc}\n\nNumber: ${cur.number}\nDate: ${cur.date}\nContent: ${cur.content}`,
-    //         "",
-    //       ),
-    //     );
+      const selected = parsed.filter((item) => codes.includes(item.code));
 
-    return {
-      data: JSON.stringify(parsed, null, 2) ?? "No response from AI model",
-    };
+      setText(JSON.stringify(selected, null, 2));
+    }
+
+    return { err: undefined };
   } catch (e) {
     console.error(`generateJobPosting: ${e.toString()}`);
-    return { err: e.toString(), data: undefined };
+    return { err: e.toString() };
   }
 };
