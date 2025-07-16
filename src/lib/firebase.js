@@ -726,13 +726,7 @@ const parseDocx = async (file, baseCount) => {
       }
     });
 
-    const data = inputs.reduce(
-      (acc, cur) =>
-        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
-      "",
-    );
-
-    return { data };
+    return { data: inputs };
   } catch (e) {
     console.error(`parseDocx: ${e.toString()}`);
     return { err: e.toString() };
@@ -741,6 +735,12 @@ const parseDocx = async (file, baseCount) => {
 
 const parsedToStructured = async (parsed) => {
   try {
+    const parsedText = parsed.reduce(
+      (acc, cur) =>
+        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
+      "",
+    );
+
     const promptStruct = `
 ## 指示内容
 
@@ -779,7 +779,7 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
 
 ## 案件情報
 
-${parsed}
+${parsedText}
 `;
 
     const result = await getGenerativeModel(fbs.ai, {
