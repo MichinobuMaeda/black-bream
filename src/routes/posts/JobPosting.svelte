@@ -155,8 +155,6 @@
         bind:files={selectedFiles}
       />
     </div>
-    <pre>
-      {text}
-    </pre>
+    <pre class="break-all">{text}</pre>
   {/if}
 </Content>

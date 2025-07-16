@@ -32,6 +32,7 @@
     "cheerio": "^1.1.0",
     "date-fns": "^4.1.0",
     "firebase": "^11.10.0",
+    "js-yaml": "^4.1.0",
     "mammoth": "^1.9.1",
     "marked": "^15.0.7",
     "nanoid": "^5.1.2",

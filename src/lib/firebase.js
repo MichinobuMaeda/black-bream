@@ -52,6 +52,7 @@ import {
 } from "firebase/ai";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
+import { dump } from "js-yaml";
 
 import * as firebaseConfig from "../firebaseConfig.js";
 import { localstorage } from "./localstorage.js";
@@ -827,31 +828,31 @@ ${parsedText}
   }
 };
 
-const structuredToText = (data, withContent = false) =>
-  data
-    ? data
-        .map((item) => {
-          return `
-Code: ${item.code}
-Date: ${item.date}
-Title: ${item.title}
-Occupation: ${item.occupation}
-Duration: ${item.duration}
-StartDate: ${item.startDate}
-Price: ${item.price ?? ""}
-Language: ${item.language ?? ""}
-Place: ${item.place}
-RequiredSkills:
-${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n") ?? ""}
-Description:
-${item.description ?? ""}
+// const structuredToText = (data, withContent = false) =>
+//   data
+//     ? data
+//         .map((item) => {
+//           return `
+// Code: ${item.code}
+// Date: ${item.date}
+// Title: ${item.title}
+// Occupation: ${item.occupation}
+// Duration: ${item.duration}
+// StartDate: ${item.startDate}
+// Price: ${item.price ?? ""}
+// Language: ${item.language ?? ""}
+// Place: ${item.place}
+// RequiredSkills:
+// ${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n") ?? ""}
+// Description:
+// ${item.description ?? ""}
 
-Details:
-${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
-${withContent ? `\nContent:\n${item.content}` : ""}`;
-        })
-        .join("\n")
-    : undefined;
+// Details:
+// ${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
+// ${withContent ? `\nContent:\n${item.content}` : ""}`;
+//         })
+//         .join("\n")
+//     : undefined;
 
 const selectStructuredData = async (data) => {
   try {
@@ -871,7 +872,7 @@ const selectStructuredData = async (data) => {
 
 ## 案件情報
 
-${structuredToText(data)}
+${dump(data.map((item) => ({ ...item, content: undefined })))}
 
 ## 出力形式
 
@@ -907,21 +908,24 @@ ${structuredToText(data)}
 export const generateJobPosting = async (setText, file, baseCount) => {
   try {
     const parsed = await parseDocx(file, baseCount);
-    setText(parsed.data || parsed.err);
+    setText(parsed.err || dump(parsed.data));
 
     if (parsed.err) {
       return { parsed };
     }
 
     const structured = await parsedToStructured(parsed.data);
-    setText(structuredToText(structured.data) || structured.err);
+    setText(
+      structured.err ||
+        dump(structured.data.map((item) => ({ ...item, content: undefined }))),
+    );
 
     if (structured.err) {
       return structured;
     }
 
     const selected = await selectStructuredData(structured.data);
-    setText(structuredToText(selected.data, true) || selected.err);
+    setText(selected.err || dump(selected.data));
 
     if (selected.err) {
       return selected;
