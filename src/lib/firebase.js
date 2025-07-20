@@ -680,7 +680,7 @@ export const callFunction = async (name, param) => {
   }
 };
 
-const testFilter = `
+const testFilter = `(
 (tables) => tables.reduce((ret, { rows }) => {
   const limit = 10;
   const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
@@ -699,7 +699,7 @@ const testFilter = `
   .filter(({ code, date, skip }) => code && date && !skip)
   .slice(0, limit);
 }
-`;
+)`;
 
 const testPrompt1 = `
 ## 指示1
