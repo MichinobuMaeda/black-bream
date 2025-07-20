@@ -681,20 +681,24 @@ export const callFunction = async (name, param) => {
 };
 
 const testInput = `
-input: docx
-output: table
-headers:
-  - meta
-  - content
-limit: 10
-# includes:
-excludes:
-  meta:
-    - 情報
-    - 開示
-    - 禁止
-    - 秘
-    - 取引先
+input:
+  type: file
+  accept:
+    - '.docx'
+output:
+  type: table
+  headers:
+    - meta
+    - content
+  limit: 10
+  # includes:
+  excludes:
+    meta:
+      - 情報
+      - 開示
+      - 禁止
+      - 秘
+      - 取引先
 `;
 
 const testPrompt1 = `
@@ -716,7 +720,7 @@ StartDate: 開始月('yy/m)
   ※例: '25/10, '25/9(即日), '25/12 or '26/1
 Price: 単価
   ※例: 65万円, 〜60万円, 60〜80万円 注意: 「スキル見合い」や「応相談」は除外すること。
-Language: 使用言語
+TechStack: 使用言語
   ※例: Java, Python, C#, JavaScript, TypeScript, React, Vue.js, Laravel, Ruby, COBOL
 Place: 勤務地
   ※例: リモート/港区, 港区/リモート, フルリモート, フルリモート地方可, 都内, 横浜市
@@ -752,48 +756,64 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
 
 ## 指示3
 
-指示2で抽出したデータに、元の案件情報の記載内容 content を追加してください。
+指示2で抽出したデータを次のテンプレートの {{項目名}} に当てはめて投稿用のデータを作成してください。
+title の "[]" は必須ではない記載内容、"|" は選択肢を表します。
+
+- title: {{StartDate}}【{{Place}}】[{{TechStack}}|{{Occupation}}：]{{Title}}
+  message: |
+    <!-- wp:table -->
+    <figure class="wp-block-table">
+      <table>
+        <tbody>
+          <tr><th>職種</th><td>{{Occupation}}</td></tr>
+          <tr><th>契約額</th><td>{{Price}}</td></tr>
+          <tr><th>期間</th><td>{{Duration}}</td></tr>
+          <tr><th>場所</th><td>{{Place}}</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <!-- /wp:table -->
+    <!-- wp:heading {"level":4} -->
+    <h4 class="wp-block-heading">必要スキル</h4>
+    <!-- /wp:heading -->
+    <!-- wp:list -->
+    <ul>
+      <li>{{RequiredSkills}}</li>
+    </ul>
+    <!-- /wp:list -->
+    <!-- wp:heading {"level":4} -->
+    <h4 class="wp-block-heading">業務内容</h4>
+    <!-- /wp:heading -->
+    <!-- wp:paragraph -->
+    <p>{{Description}}</p>
+    <!-- /wp:paragraph -->
+    <!-- wp:list -->
+    <ul>
+      <li>{{Details}}</li>
+    </ul>
+    <!-- /wp:list -->
+    <!-- wp:paragraph {"align":"right"} -->
+    <p class="has-text-align-right">管理番号:{{Code}}</p>
+    <!-- /wp:paragraph -->
+    <!-- {{Date}} -->
+  note: 入力元のデータ
 
 ## 案件情報
 `;
 
-const testSchema = `
-- properties:
-    code: string
-    date: string
-    title: string
-    occupation: string
-    duration: string
-    startDate: string
-    price: string
-    language: string
-    place: string
-    requiredSkills: string[]
-    description: string
-    details: string[]
-    content: string
-  optionalProperties:
-    - price
-    - language
-    - description
-    - details
-`;
-
-const parseDocx = async (
-  file,
-  { input, output, headers = [], limit, includes = [], excludes = [] },
-) => {
-  if (input === "docx" && output === "table") {
+const parseDocx = async (file, { input, output }) => {
+  if (input.accept.includes(".docx") && output.type === "table") {
     const table = await docxToTable(file);
     if (table.err) {
       console.error(`parseDocx: ${table.err}`);
       return table;
     }
 
+    const { headers, includes, excludes, limit } = output;
     const data = table.data
       .filter(({ cols }) => cols.length >= headers.length)
       .map(({ cols }) =>
-        headers.reduce(
+        (headers || []).reduce(
           (acc, header, index) => ({
             ...acc,
             [header]: cols[index].texts.join("\n"),
@@ -803,15 +823,15 @@ const parseDocx = async (
       )
       .filter(
         (row) =>
-          Object.keys(includes).length === 0 ||
-          Object.entries(includes).some(([key, values]) =>
+          Object.keys(includes || []).length === 0 ||
+          Object.entries(includes || []).some(([key, values]) =>
             values.some((value) => row[key].includes(value)),
           ),
       )
       .filter(
         (row) =>
-          Object.keys(excludes).length === 0 ||
-          Object.entries(excludes).every(([key, values]) =>
+          Object.keys(excludes || []).length === 0 ||
+          Object.entries(excludes || []).every(([key, values]) =>
             values.every((value) => !row[key].includes(value)),
           ),
       )
@@ -830,32 +850,22 @@ ${testPrompt1}
 ${dump(parsed)}
 `;
 
-    const promptSchemaDef = load(testSchema);
-
-    const buildSchema = (def) =>
-      Array.isArray(def)
-        ? Schema.array({ items: buildSchema(def[0]) })
-        : def.properties
-          ? Schema.object({
-              properties: Object.fromEntries(
-                Object.entries(def.properties).map(([key, value]) => [
-                  key,
-                  buildSchema(value),
-                ]),
-              ),
-              optionalProperties: def.optionalProperties || [],
-            })
-          : typeof def === "number"
-            ? Schema.number()
-            : Schema.string();
-
-    const responseSchema = buildSchema(promptSchemaDef);
-
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema,
+        responseSchema: Schema.array({
+          items: Schema.object({
+            properties: {
+              title: Schema.string(),
+              message: Schema.string(),
+              url: Schema.string(),
+              images: Schema.array({ items: Schema.string() }),
+              note: Schema.string(),
+            },
+            optionalProperties: ["title", "message", "url", "images", "note"],
+          }),
+        }),
       },
     }).generateContent(promptStruct);
 
