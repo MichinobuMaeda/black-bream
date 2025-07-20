@@ -48,9 +48,9 @@ import {
   getAI,
   getGenerativeModel,
   Schema,
-  GoogleAIBackend,
+  VertexAIBackend,
 } from "firebase/ai";
-import { dump } from "js-yaml";
+import { dump, load } from "js-yaml";
 
 import * as firebaseConfig from "../firebaseConfig.js";
 import { localstorage } from "./localstorage.js";
@@ -119,7 +119,7 @@ export class FirebaseState {
     this.functions = getFunctions(this.app, this.firebaseConfig.region);
     this.storage = getStorage(this.app);
     this.userData = [];
-    this.ai = getAI(this.app, { backend: new GoogleAIBackend() });
+    this.ai = getAI(this.app, { backend: new VertexAIBackend("global") });
   }
 
   /**
@@ -680,6 +680,23 @@ export const callFunction = async (name, param) => {
   }
 };
 
+const testInput = `
+input: docx
+output: table
+headers:
+  - meta
+  - content
+limit: 10
+# includes:
+excludes:
+  meta:
+    - 情報
+    - 開示
+    - 禁止
+    - 秘
+    - 取引先
+`;
+
 const testPrompt1 = `
 ## 指示1
 
@@ -740,43 +757,69 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
 ## 案件情報
 `;
 
+const testSchema = `
+- properties:
+    code: string
+    date: string
+    title: string
+    occupation: string
+    duration: string
+    startDate: string
+    price: string
+    language: string
+    place: string
+    requiredSkills: string[]
+    description: string
+    details: string[]
+    content: string
+  optionalProperties:
+    - price
+    - language
+    - description
+    - details
+`;
+
 const parseDocx = async (
   file,
-  headers = [],
-  limit,
-  includes = [],
-  excludes = [],
+  { input, output, headers = [], limit, includes = [], excludes = [] },
 ) => {
-  const table = await docxToTable(file);
-  if (table.err) {
-    console.error(`parseDocx: ${table.err}`);
-    return table;
+  if (input === "docx" && output === "table") {
+    const table = await docxToTable(file);
+    if (table.err) {
+      console.error(`parseDocx: ${table.err}`);
+      return table;
+    }
+
+    const data = table.data
+      .filter(({ cols }) => cols.length >= headers.length)
+      .map(({ cols }) =>
+        headers.reduce(
+          (acc, header, index) => ({
+            ...acc,
+            [header]: cols[index].texts.join("\n"),
+          }),
+          {},
+        ),
+      )
+      .filter(
+        (row) =>
+          Object.keys(includes).length === 0 ||
+          Object.entries(includes).some(([key, values]) =>
+            values.some((value) => row[key].includes(value)),
+          ),
+      )
+      .filter(
+        (row) =>
+          Object.keys(excludes).length === 0 ||
+          Object.entries(excludes).every(([key, values]) =>
+            values.every((value) => !row[key].includes(value)),
+          ),
+      )
+      .slice(0, limit ? limit : undefined);
+    return { data };
   }
 
-  const data = table.data
-    .filter(({ cols }) => cols.length >= headers.length)
-    .map(({ cols }) =>
-      headers.reduce(
-        (acc, header, index) => ({
-          ...acc,
-          [header]: cols[index].texts.join("\n"),
-        }),
-        {},
-      ),
-    )
-    .filter(
-      (row) =>
-        includes.length === 0 ||
-        includes.some(({ key, value }) => row[key].includes(value)),
-    )
-    .filter(
-      (row) =>
-        excludes.length === 0 ||
-        excludes.every(({ key, value }) => !row[key].includes(value)),
-    )
-    .slice(0, limit);
-
-  return { data };
+  return { err: "Unsupported input/output format" };
 };
 
 const parsedToStructured = async (parsed) => {
@@ -787,30 +830,32 @@ ${testPrompt1}
 ${dump(parsed)}
 `;
 
+    const promptSchemaDef = load(testSchema);
+
+    const buildSchema = (def) =>
+      Array.isArray(def)
+        ? Schema.array({ items: buildSchema(def[0]) })
+        : def.properties
+          ? Schema.object({
+              properties: Object.fromEntries(
+                Object.entries(def.properties).map(([key, value]) => [
+                  key,
+                  buildSchema(value),
+                ]),
+              ),
+              optionalProperties: def.optionalProperties || [],
+            })
+          : typeof def === "number"
+            ? Schema.number()
+            : Schema.string();
+
+    const responseSchema = buildSchema(promptSchemaDef);
+
     const result = await getGenerativeModel(fbs.ai, {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: Schema.array({
-          items: Schema.object({
-            properties: {
-              code: Schema.string(),
-              date: Schema.string(),
-              title: Schema.string(),
-              occupation: Schema.string(),
-              duration: Schema.string(),
-              startDate: Schema.string(),
-              price: Schema.string(),
-              language: Schema.string(),
-              place: Schema.string(),
-              requiredSkills: Schema.array({ items: Schema.string() }),
-              description: Schema.string(),
-              details: Schema.array({ items: Schema.string() }),
-              content: Schema.string(),
-            },
-            optionalProperties: ["price", "language", "description", "details"],
-          }),
-        }),
+        responseSchema,
       },
     }).generateContent(promptStruct);
 
@@ -832,20 +877,7 @@ ${dump(parsed)}
 
 export const generateJobPosting = async (setText, file) => {
   try {
-    const headers = ["meta", "content"];
-    const limit = 10;
-    const includes = [];
-    const excludes = [
-      { key: "meta", value: "情報" },
-      { key: "meta", value: "開示" },
-      { key: "meta", value: "禁止" },
-      { key: "meta", value: "秘" },
-      { key: "meta", value: "取引先" },
-      { key: "meta", value: "confidential" },
-      { key: "meta", value: "Confidential" },
-    ];
-
-    const parsed = await parseDocx(file, headers, limit, includes, excludes);
+    const parsed = await parseDocx(file, load(testInput));
 
     if (parsed.err) {
       setText(parsed.err);
