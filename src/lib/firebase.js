@@ -699,10 +699,6 @@ output:
       - 禁止
       - 秘
       - 取引先
-  targets:
-    - wordpress
-  date:
-    - random
 `;
 
 const testPrompt1 = `
@@ -786,6 +782,7 @@ title の "|" は選択肢を表します。 {{TechStack}}|{{Occupation}}： は
     <!-- wp:list -->
     <ul>
       <li>{{RequiredSkills}}</li>
+      <li>{{RequiredSkills}}</li>
     </ul>
     <!-- /wp:list -->
     <!-- wp:heading {"level":4} -->
@@ -797,6 +794,7 @@ title の "|" は選択肢を表します。 {{TechStack}}|{{Occupation}}： は
     <!-- wp:list -->
     <ul>
       <li>{{Details}}</li>
+      <li>{{Details}}</li>
     </ul>
     <!-- /wp:list -->
     <!-- wp:paragraph {"align":"right"} -->
@@ -804,6 +802,9 @@ title の "|" は選択肢を表します。 {{TechStack}}|{{Occupation}}： は
     <!-- /wp:paragraph -->
     <!-- {{Date}} -->
   note: 入力元のデータの content をそのまま記載してください。
+  targets:
+    - wordpress
+  date: 月日は {{Date}} で、時は 17 で、分はランダムに設定してください。
 
 ## 案件情報
 `;
