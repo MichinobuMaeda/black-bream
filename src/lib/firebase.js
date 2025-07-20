@@ -685,9 +685,9 @@ const testPrompt1 = `
 
 後述のそれぞれの案件情報について、以下の項目を抽出してください。
 
-Code: 案件番号(英数字)
+Code: 案件番号(英数字)を meta から抽出する
   ※例: 12345
-Date: 日付(月/日)
+Date: 日付(月/日)を meta から抽出する
   ※例: 2/1, 11/13
 Title: タイトル
   ※「某」と「募集」は除外すること。
@@ -716,28 +716,26 @@ Description: 作業内容1行目
 Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
   ※箇条書きの内容をそのまま抜き出すこと。
 
-## 案件情報
-`;
 
-const testPrompt2 = `
-後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+## 指示2
 
-## 必須条件
+指示1で生成したデータの中から次の必須条件と優先条件に適合する上位3件を抽出してください。
+
+### 必須条件
 
 - 単価が明示されていること。
 - 勤務地、または、リモート可、在宅可であることが明記されていること。
 
-## 優先する条件
+### 優先する条件
 
 1. 「地方可」または「地方歓迎」が明示されていること。
 2. 単価が比較的高いもの。
 3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
 
-## 出力例(YAML)
 
-- 12345
-- 67890
-- 23456
+## 指示3
+
+指示2で抽出したデータに、元の案件情報の記載内容 content を追加してください。
 
 ## 案件情報
 `;
@@ -805,6 +803,7 @@ ${dump(parsed)}
               requiredSkills: Schema.array({ items: Schema.string() }),
               description: Schema.string(),
               details: Schema.array({ items: Schema.string() }),
+              content: Schema.string(),
             },
             optionalProperties: ["price", "language", "description", "details"],
           }),
@@ -824,40 +823,6 @@ ${dump(parsed)}
     return { data };
   } catch (e) {
     console.error(`parsedToStructured: ${e.toString()}`);
-    return { err: e.toString() };
-  }
-};
-
-const selectStructuredData = async (data) => {
-  try {
-    const promptSelect = `
-${testPrompt2}
-
-${dump(data)}
-`;
-
-    const result = await getGenerativeModel(fbs.ai, {
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: Schema.array({
-          items: Schema.string(),
-        }),
-      },
-    }).generateContent(promptSelect);
-
-    const text = result?.response?.text();
-
-    if (!text) {
-      console.error("No response from AI model");
-      return { err: "No response from AI model" };
-    }
-
-    const codes = JSON.parse(text);
-
-    return { data: data.filter((item) => codes.includes(item.code)) };
-  } catch (e) {
-    console.error(`selectStructuredData: ${e.toString()}`);
     return { err: e.toString() };
   }
 };
@@ -897,20 +862,6 @@ export const generateJobPosting = async (setText, file) => {
     }
 
     setText(`${structured.data.length}件\n\n${dump(structured.data)}`);
-
-    const selected = await selectStructuredData(structured.data);
-
-    if (selected.err) {
-      setText(selected.err);
-      return selected;
-    }
-
-    const data = selected.data.map((item) => ({
-      ...item,
-      original: parsed.find((p) => p.code === item.code)?.content,
-    }));
-
-    setText(`${data.length}件\n\n${dump(data)}`);
 
     return { err: undefined };
   } catch (e) {
