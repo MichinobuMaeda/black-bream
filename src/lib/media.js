@@ -129,7 +129,7 @@ function getAllTextNodes(dom, node) {
         texts.push(text);
       }
     } else {
-      if (dom(child).contents().length) {
+      if (dom(child).contents()?.length) {
         texts = texts.concat(getAllTextNodes(dom, dom(child)));
       }
     }
@@ -155,7 +155,7 @@ function getAllTextNodes(dom, node) {
 /**
  *
  * @param {*} file
- * @returns {Promise<{data: DocxToTableResult|undefined, err: string|undefined}>}
+ * @returns {Promise<{data: DocxToTableResult|undefined err: string|undefined}>}
  */
 export const docxToTable = async (file) => {
   try {
