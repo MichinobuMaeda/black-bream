@@ -699,6 +699,10 @@ output:
       - 禁止
       - 秘
       - 取引先
+  targets:
+    - wordpress
+  date:
+    - random
 `;
 
 const testPrompt1 = `
@@ -720,7 +724,7 @@ StartDate: 開始月('yy/m)
   ※例: '25/10, '25/9(即日), '25/12 or '26/1
 Price: 単価
   ※例: 65万円, 〜60万円, 60〜80万円 注意: 「スキル見合い」や「応相談」は除外すること。
-TechStack: 使用言語
+TechStack: 使用言語/フレームワーク
   ※例: Java, Python, C#, JavaScript, TypeScript, React, Vue.js, Laravel, Ruby, COBOL
 Place: 勤務地
   ※例: リモート/港区, 港区/リモート, フルリモート, フルリモート地方可, 都内, 横浜市
@@ -734,8 +738,10 @@ Description: 作業内容1行目
  ...
 作業内容n行目
   ※箇条書きではなく、文章で記載された内容を抜き出すこと。
+  ※「某」は除外すること。
 Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
   ※箇条書きの内容をそのまま抜き出すこと。
+  ※「某」は除外すること。
 
 
 ## 指示2
@@ -756,8 +762,9 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
 
 ## 指示3
 
-指示2で抽出したデータを次のテンプレートの {{項目名}} に当てはめて投稿用のデータを作成してください。
+指示2で抽出した3件のデータを次のテンプレートの {{項目名}} に当てはめて3件の投稿用のデータを作成してください。
 title の "[]" は必須ではない記載内容、"|" は選択肢を表します。
+テンプレートの message の改行は維持してください。
 
 - title: {{StartDate}}【{{Place}}】[{{TechStack}}|{{Occupation}}：]{{Title}}
   message: |
@@ -861,6 +868,7 @@ ${dump(parsed)}
               message: Schema.string(),
               url: Schema.string(),
               images: Schema.array({ items: Schema.string() }),
+              targets: Schema.array({ items: Schema.string() }),
               note: Schema.string(),
             },
             optionalProperties: ["title", "message", "url", "images", "note"],
