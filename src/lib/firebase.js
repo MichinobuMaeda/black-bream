@@ -680,13 +680,14 @@ export const callFunction = async (name, param) => {
   }
 };
 
-const testFilter = `(
+const testFilter = `
 (tables) => tables.reduce((ret, { rows }) => {
   const limit = 10;
   const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
   const regCode = /[0-9]/;
   const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
   return rows
+    .filter((_) => ret.length < limit)
     .filter(({ cols }) => cols.length >= 2)
     .reduce((acc, { cols }) => [
       ...acc,
@@ -695,11 +696,9 @@ const testFilter = `(
         (regCode.test(text)) ? { ...acc, code: text.trim() } :
         (regSkip.test(text)) ? { skip: true } : acc
       , { content: cols[1].texts.map((text) => text.trim()).join("\n") })
-    ], []), [])
+    ], [])}, [])
   .filter(({ code, date, skip }) => code && date && !skip)
-  .slice(0, limit);
-}
-)`;
+`;
 
 const testPrompt1 = `
 ## 指示1
@@ -763,7 +762,8 @@ const testPrompt2 = `
 ## 案件情報
 `;
 
-const parseDocx = async (file) => eval(testFilter)(await docxToTable(file));
+const parseDocx = async (file) =>
+  eval(`(${testFilter})`)(await docxToTable(file));
 
 const parsedToStructured = async (parsed) => {
   try {
