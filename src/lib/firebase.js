@@ -681,12 +681,12 @@ export const callFunction = async (name, param) => {
 };
 
 const testFilter = `
-const limit = 10;
-const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
-const regCode = /[0-9]/;
-const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
-(tables) => tables.reduce((ret, { rows }) =>
-  rows
+(tables) => tables.reduce((ret, { rows }) => {
+  const limit = 10;
+  const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
+  const regCode = /[0-9]/;
+  const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
+  return rows
     .filter(({ cols }) => cols.length >= 2)
     .reduce((acc, { cols }) => [
       ...acc,
@@ -698,6 +698,7 @@ const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
     ], []), [])
   .filter(({ code, date, skip }) => code && date && !skip)
   .slice(0, limit);
+}
 `;
 
 const testPrompt1 = `
