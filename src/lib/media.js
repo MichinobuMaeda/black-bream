@@ -121,14 +121,16 @@ export const reduceImageSize = async (
  * @returns {Array<string>}
  */
 function getAllTextNodes(dom, node) {
+  console.log("node", node.type);
   let texts = [];
   node.contents().each((_, child) => {
+    console.log("child", child.type);
     if (child.type === "text") {
       const text = dom(child).text();
       if (text) {
         texts.push(text);
       }
-    } else if (child.type === "element") {
+    } else {
       if (dom(child).contents().length) {
         texts = texts.concat(getAllTextNodes(dom, dom(child)));
       }
@@ -159,23 +161,23 @@ function getAllTextNodes(dom, node) {
  */
 export const docxToTable = async (file) => {
   try {
-    const rows = [];
+    const data = [];
     const buffer = await file.arrayBuffer();
     const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
     const dom = cheerio.load(value);
 
     dom("tr").each((_, tr) => {
       const cols = [];
-      rows.push({ cols });
+      data.push({ cols });
       dom("td", null, tr).each((_, td) => {
-        const texts = getAllTextNodes(dom, td);
+        const texts = getAllTextNodes(dom, dom(td));
         cols.push({ texts });
       });
     });
 
-    return { data: rows };
+    return { data };
   } catch (e) {
-    console.error(`parseDocx: ${e.toString()}`);
+    console.error(`docxToTable: ${e.toString()}`);
     return { err: e.toString() };
   }
 };

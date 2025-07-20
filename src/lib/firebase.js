@@ -753,7 +753,7 @@ const parseDocx = async (
     return table;
   }
 
-  const data = table.data.rows
+  const data = table.data
     .filter(({ cols }) => cols.length >= headers.length)
     .map(({ cols }) =>
       headers.reduce(
@@ -764,11 +764,15 @@ const parseDocx = async (
         {},
       ),
     )
-    .filter((row) =>
-      includes.some(({ key, value }) => row[key].includes(value)),
+    .filter(
+      (row) =>
+        includes.length === 0 ||
+        includes.some(({ key, value }) => row[key].includes(value)),
     )
-    .filter((row) =>
-      excludes.every(({ key, value }) => !row[key].includes(value)),
+    .filter(
+      (row) =>
+        excludes.length === 0 ||
+        excludes.every(({ key, value }) => !row[key].includes(value)),
     )
     .slice(0, limit);
 
