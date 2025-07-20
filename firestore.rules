@@ -43,6 +43,10 @@ service cloud.firestore {
       allow read, create, update: if isManager();
       allow read: if isActiveAccount();
     }
+    match /generators/{generator} {
+      allow read, create, update: if isManager()|| isOperator();
+      allow read: if isActiveAccount();
+    }
     match /{document=**} {
       allow read, write: if false;
     }

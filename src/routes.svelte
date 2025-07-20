@@ -8,6 +8,7 @@
   import Groups from "./routes/groups/page.svelte";
   import Users from "./routes/users/page.svelte";
   import Posts from "./routes/posts/page.svelte";
+  import Generators from "./routes/generators/page.svelte";
   import Settings from "./routes/settings/page.svelte";
   import Auth from "./routes/auth/page.svelte";
   import NotFound from "./routes/NotFound.svelte";
@@ -22,6 +23,7 @@
       "/groups/:item?/:action?": Groups,
       "/users/:item?/:action?": Users,
       "/posts/:item?/:action?": Posts,
+      "/generators/:item?/:action?": Generators,
       "/info": Info,
       "/settings": store.admin || store.manager ? Settings : undefined,
       "/auth/:item/:action/:status?/:data?": Auth,

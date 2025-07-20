@@ -50,8 +50,6 @@ import {
   Schema,
   GoogleAIBackend,
 } from "firebase/ai";
-import mammoth from "mammoth";
-import * as cheerio from "cheerio";
 import { dump } from "js-yaml";
 
 import * as firebaseConfig from "../firebaseConfig.js";
@@ -60,6 +58,7 @@ import {
   getFileExtension,
   getMimeTypeFromExtension,
   reduceImageSize,
+  docxToTable,
 } from "./media.js";
 
 const imageBasePath = "public/posts/";
@@ -256,6 +255,14 @@ export class FirebaseState {
         query: query(collection(this.db, "templates"), orderBy("name", "asc")),
         setData: (snap) => {
           this.store.templates = this.castSnapshot(snap, "templates", []);
+        },
+        requires: [],
+      },
+      {
+        name: "generators",
+        query: query(collection(this.db, "generators"), orderBy("name", "asc")),
+        setData: (snap) => {
+          this.store.generators = this.castSnapshot(snap, "generators", []);
         },
         requires: [],
       },
@@ -673,77 +680,28 @@ export const callFunction = async (name, param) => {
   }
 };
 
-/**
- * Recursively get all text nodes from a Cheerio node.
- * @param {cheerio.CheerioAPI} dom
- * @param {cheerio.Cheerio<cheerio.Element>} node
- * @returns {Array<string>}
- */
-function getAllTextNodes(dom, node) {
-  let texts = [];
-  node.contents().each((_, child) => {
-    if (child.type === "text") {
-      const text = dom(child).text().trim();
-      if (text) {
-        texts.push(text);
-      }
-    } else {
-      if (dom(child).contents().length) {
-        texts = texts.concat(getAllTextNodes(dom, dom(child)));
-      }
-    }
-  });
-  return texts;
-}
+const testFilter = `
+const limit = 10;
+const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
+const regCode = /[0-9]/;
+const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
+(tables) => tables.reduce((ret, { rows }) =>
+  rows
+    .filter(({ cols }) => cols.length >= 2)
+    .reduce((acc, { cols }) => [
+      ...acc,
+      cols[0].texts.map((text) => text.trim()).reduce((acc, text) =>
+        (regDate.test(text)) ? { ...acc, date: text.trim() } :
+        (regCode.test(text)) ? { ...acc, code: text.trim() } :
+        (regSkip.test(text)) ? { skip: true } : acc
+      , { content: cols[1].texts.map((text) => text.trim()).join("\n") })
+    ], []), [])
+  .filter(({ code, date, skip }) => code && date && !skip)
+  .slice(0, limit);
+`;
 
-const parseDocx = async (file, baseCount) => {
-  try {
-    const buffer = await file.arrayBuffer();
-    const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
-    const dom = cheerio.load(value);
-    const rows = dom("tr");
-    const inputs = [];
-
-    rows.each((_, row) => {
-      if (inputs.length < baseCount) {
-        let confidential = false;
-        const item = {};
-        getAllTextNodes(dom, dom(row).find("td").first()).forEach((text) => {
-          if (/^\d+$/.test(text)) {
-            item.code = text;
-          } else if (/^[0-9/-]+$/.test(text)) {
-            item.date = text;
-          } else if (/(情報|機密|秘密|非公開|開示|禁止)/.test(text)) {
-            confidential = true;
-          }
-        });
-        if (item.code && item.date && !confidential) {
-          const right = getAllTextNodes(dom, dom(row).find("td").last());
-          if (right.length) {
-            item.content = right.join("\n");
-            inputs.push(item);
-          }
-        }
-      }
-    });
-
-    return { data: inputs };
-  } catch (e) {
-    console.error(`parseDocx: ${e.toString()}`);
-    return { err: e.toString() };
-  }
-};
-
-const parsedToStructured = async (parsed) => {
-  try {
-    const parsedText = parsed.reduce(
-      (acc, cur) =>
-        `${acc}\n\nCode: ${cur.code}\nDate: ${cur.date}\nContent: ${cur.content}`,
-      "",
-    );
-
-    const promptStruct = `
-## 指示内容
+const testPrompt1 = `
+## 指示1
 
 後述のそれぞれの案件情報について、以下の項目を抽出してください。
 
@@ -779,8 +737,39 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
   ※箇条書きの内容をそのまま抜き出すこと。
 
 ## 案件情報
+`;
 
-${parsedText}
+const testPrompt2 = `
+後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+
+## 必須条件
+
+- 単価が明示されていること。
+- 勤務地、または、リモート可、在宅可であることが明記されていること。
+
+## 優先する条件
+
+1. 「地方可」または「地方歓迎」が明示されていること。
+2. 単価が比較的高いもの。
+3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
+
+## 出力例(YAML)
+
+- 12345
+- 67890
+- 23456
+
+## 案件情報
+`;
+
+const parseDocx = async (file) => eval(testFilter)(await docxToTable(file));
+
+const parsedToStructured = async (parsed) => {
+  try {
+    const promptStruct = `
+${testPrompt1}
+
+${dump(parsed)}
 `;
 
     const result = await getGenerativeModel(fbs.ai, {
@@ -816,10 +805,7 @@ ${parsedText}
       return { err: "No response from AI model" };
     }
 
-    const data = JSON.parse(text).map((item) => ({
-      ...item,
-      content: parsed.find((p) => p.code === item.code)?.content,
-    }));
+    const data = JSON.parse(text);
 
     return { data };
   } catch (e) {
@@ -828,55 +814,12 @@ ${parsedText}
   }
 };
 
-// const structuredToText = (data, withContent = false) =>
-//   data
-//     ? data
-//         .map((item) => {
-//           return `
-// Code: ${item.code}
-// Date: ${item.date}
-// Title: ${item.title}
-// Occupation: ${item.occupation}
-// Duration: ${item.duration}
-// StartDate: ${item.startDate}
-// Price: ${item.price ?? ""}
-// Language: ${item.language ?? ""}
-// Place: ${item.place}
-// RequiredSkills:
-// ${item.requiredSkills?.map((skill) => `- ${skill}`).join("\n") ?? ""}
-// Description:
-// ${item.description ?? ""}
-
-// Details:
-// ${item.details?.map((detail) => `- ${detail}`).join("\n") ?? ""}
-// ${withContent ? `\nContent:\n${item.content}` : ""}`;
-//         })
-//         .join("\n")
-//     : undefined;
-
 const selectStructuredData = async (data) => {
   try {
     const promptSelect = `
-後述の案件情報から、条件に適合する上位３件を抽出して Code を出力してください。
+${testPrompt2}
 
-## 必須条件
-
-- 単価が明示されていること。
-- 勤務地、または、リモート可、在宅可であることが明記されていること。
-
-## 優先する条件
-
-1. 「地方可」または「地方歓迎」が明示されていること。
-2. 単価が比較的高いもの。
-3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
-
-## 案件情報
-
-${dump(data.map((item) => ({ ...item, content: undefined })))}
-
-## 出力形式
-
-["12345", "67890", "23456"]
+${dump(data)}
 `;
 
     const result = await getGenerativeModel(fbs.ai, {
@@ -908,28 +851,36 @@ ${dump(data.map((item) => ({ ...item, content: undefined })))}
 export const generateJobPosting = async (setText, file, baseCount) => {
   try {
     const parsed = await parseDocx(file, baseCount);
-    setText(parsed.err || dump(parsed.data));
 
     if (parsed.err) {
+      setText(parsed.err);
       return { parsed };
     }
 
+    setText(`${parsed.data.length}件\n\n${dump(parsed.data)}`);
+
     const structured = await parsedToStructured(parsed.data);
-    setText(
-      structured.err ||
-        dump(structured.data.map((item) => ({ ...item, content: undefined }))),
-    );
 
     if (structured.err) {
+      setText(structured.err);
       return structured;
     }
 
+    setText(`${structured.data.length}件\n\n${dump(structured.data)}`);
+
     const selected = await selectStructuredData(structured.data);
-    setText(selected.err || dump(selected.data));
 
     if (selected.err) {
+      setText(selected.err);
       return selected;
     }
+
+    const data = selected.data.map((item) => ({
+      ...item,
+      original: parsed.find((p) => p.code === item.code)?.content,
+    }));
+
+    setText(`${data.length}件\n\n${dump(data)}`);
 
     return { err: undefined };
   } catch (e) {

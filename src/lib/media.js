@@ -1,3 +1,6 @@
+import mammoth from "mammoth";
+import * as cheerio from "cheerio";
+
 const mimeTypeList = {
   html: "text/html",
   htm: "text/html",
@@ -108,5 +111,76 @@ export const reduceImageSize = async (
   } catch (error) {
     console.error("Error reducing image size:", error);
     return source;
+  }
+};
+
+/**
+ * Recursively get all text nodes from a Cheerio node.
+ * @param {cheerio.CheerioAPI} dom
+ * @param {cheerio.Cheerio<cheerio.Element>} node
+ * @returns {Array<string>}
+ */
+function getAllTextNodes(dom, node) {
+  let texts = [];
+  node.contents().each((_, child) => {
+    if (child.type === "text") {
+      const text = dom(child).text();
+      if (text) {
+        texts.push(text);
+      }
+    } else {
+      if (dom(child).contents().length) {
+        texts = texts.concat(getAllTextNodes(dom, dom(child)));
+      }
+    }
+  });
+  return texts;
+}
+
+/**
+ * @typedef {Object} DocxToTableResultCol
+ * @property {Array<string>} texts
+ */
+
+/**
+ * @typedef {Object} DocxToTableResultRow
+ * @property {Array<{DocxToTableResultCol}>} cols
+ */
+
+/**
+ * @typedef {Object} DocxToTableResultTable
+ * @property {Array<DocxToTableResultRow>} rows
+ */
+
+/**
+ * Convert DOCX file to a table structure.
+ * @param {File} file
+ * @returns {{data: Array<DocxToTableResultTable>} | {err: string}}
+ */
+export const docxToTable = async (file) => {
+  try {
+    const tables = [];
+
+    const buffer = await file.arrayBuffer();
+    const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    const dom = cheerio.load(value);
+
+    dom("table").each((_, table) => {
+      const rows = [];
+      tables.push({ rows });
+      dom("tr", null, table).each((_, tr) => {
+        const cols = [];
+        rows.push({ cols });
+        dom("td", null, tr).each((_, td) => {
+          const texts = getAllTextNodes(dom, td);
+          cols.push({ texts });
+        });
+      });
+    });
+
+    return { data: tables };
+  } catch (e) {
+    console.error(`parseDocx: ${e.toString()}`);
+    return { err: e.toString() };
   }
 };
