@@ -759,9 +759,7 @@ const parseDocx = async (
       headers.reduce(
         (acc, header, index) => ({
           ...acc,
-          [header[index]]: cols[index].texts
-            .map((text) => text.trim())
-            .join("\n"),
+          [header]: cols[index].texts.join("\n"),
         }),
         {},
       ),
