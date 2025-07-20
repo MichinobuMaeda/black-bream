@@ -763,10 +763,10 @@ Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
 ## 指示3
 
 指示2で抽出した3件のデータを次のテンプレートの {{項目名}} に当てはめて3件の投稿用のデータを作成してください。
-title の "[]" は必須ではない記載内容、"|" は選択肢を表します。
-テンプレートの message の改行は維持してください。
+title の "|" は選択肢を表します。 {{TechStack}}|{{Occupation}}： は {{TechStack}} が空の場合には {{Occupation}} を使ってください。 {{TechStack}} も {{Occupation}} も空の場合は {{TechStack}}|{{Occupation}}： は無しとしてください。
+テンプレートの message の改行とインデントは維持して出力してください。
 
-- title: {{StartDate}}【{{Place}}】[{{TechStack}}|{{Occupation}}：]{{Title}}
+- title: {{StartDate}}【{{Place}}】{{TechStack}}|{{Occupation}}：{{Title}}
   message: |
     <!-- wp:table -->
     <figure class="wp-block-table">
@@ -803,7 +803,7 @@ title の "[]" は必須ではない記載内容、"|" は選択肢を表しま�
     <p class="has-text-align-right">管理番号:{{Code}}</p>
     <!-- /wp:paragraph -->
     <!-- {{Date}} -->
-  note: 入力元のデータ
+  note: 入力元のデータの content をそのまま記載してください。
 
 ## 案件情報
 `;
