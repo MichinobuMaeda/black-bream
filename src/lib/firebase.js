@@ -749,6 +749,7 @@ const parseDocx = async (
 ) => {
   const table = await docxToTable(file);
   if (table.err) {
+    console.error(`parseDocx: ${table.err}`);
     return table;
   }
 
@@ -843,13 +844,15 @@ export const generateJobPosting = async (setText, file) => {
     ];
 
     const parsed = await parseDocx(file, headers, limit, includes, excludes);
-    if (parsed.data.length === 0) {
-      setText("No valid data found in the document.");
-      return { err: "No valid data found" };
-    }
+
     if (parsed.err) {
       setText(parsed.err);
       return { parsed };
+    }
+
+    if (parsed.data.length === 0) {
+      setText("No valid data found in the document.");
+      return { err: "No valid data found" };
     }
 
     setText(`${parsed.data.length}件\n\n${dump(parsed.data)}`);
