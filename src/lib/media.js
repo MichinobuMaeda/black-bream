@@ -128,8 +128,8 @@ function getAllTextNodes(dom, node) {
       if (text) {
         texts.push(text);
       }
-    } else {
-      if (dom(child).contents()?.length) {
+    } else if (child.type === "element") {
+      if (dom(child).contents().length) {
         texts = texts.concat(getAllTextNodes(dom, dom(child)));
       }
     }
