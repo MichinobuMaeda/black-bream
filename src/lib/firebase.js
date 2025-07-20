@@ -680,26 +680,6 @@ export const callFunction = async (name, param) => {
   }
 };
 
-const testFilter = `
-(tables) => tables.reduce((ret, { rows }) => {
-  const limit = 10;
-  const regDate = /[0-9]\\s*[/-]\\s*[0-9]+/;
-  const regCode = /[0-9]/;
-  const regSkip = /(情報|機密|秘密|非公開|開示|禁止|取引先)/;
-  return rows
-    .filter((_) => ret.length < limit)
-    .filter(({ cols }) => cols.length >= 2)
-    .reduce((acc, { cols }) => [
-      ...acc,
-      cols[0].texts.map((text) => text.trim()).reduce((acc, text) =>
-        (regDate.test(text)) ? { ...acc, date: text.trim() } :
-        (regCode.test(text)) ? { ...acc, code: text.trim() } :
-        (regSkip.test(text)) ? { skip: true } : acc
-      , { content: cols[1].texts.map((text) => text.trim()).join("\n") })
-    ], [])}, [])
-  .filter(({ code, date, skip }) => code && date && !skip)
-`;
-
 const testPrompt1 = `
 ## 指示1
 
@@ -762,8 +742,41 @@ const testPrompt2 = `
 ## 案件情報
 `;
 
-const parseDocx = async (file) =>
-  eval(`(${testFilter})`)(await docxToTable(file));
+const parseDocx = async (
+  file,
+  headers = [],
+  limit,
+  includes = [],
+  excludes = [],
+) => {
+  const table = await docxToTable(file);
+  if (table.err) {
+    return table;
+  }
+
+  const data = table.data.rows
+    .filter(({ cols }) => cols.length >= headers.length)
+    .map(({ cols }) =>
+      headers.reduce(
+        (acc, header, index) => ({
+          ...acc,
+          [header[index]]: cols[index].texts
+            .map((text) => text.trim())
+            .join("\n"),
+        }),
+        {},
+      ),
+    )
+    .filter((row) =>
+      includes.some(({ key, value }) => row[key].includes(value)),
+    )
+    .filter((row) =>
+      excludes.every(({ key, value }) => !row[key].includes(value)),
+    )
+    .slice(0, limit);
+
+  return { data };
+};
 
 const parsedToStructured = async (parsed) => {
   try {
@@ -849,10 +862,26 @@ ${dump(data)}
   }
 };
 
-export const generateJobPosting = async (setText, file, baseCount) => {
+export const generateJobPosting = async (setText, file) => {
   try {
-    const parsed = await parseDocx(file, baseCount);
+    const headers = ["meta", "content"];
+    const limit = 10;
+    const includes = [];
+    const excludes = [
+      { key: "meta", value: "情報" },
+      { key: "meta", value: "開示" },
+      { key: "meta", value: "禁止" },
+      { key: "meta", value: "秘" },
+      { key: "meta", value: "取引先" },
+      { key: "meta", value: "confidential" },
+      { key: "meta", value: "Confidential" },
+    ];
 
+    const parsed = await parseDocx(file, headers, limit, includes, excludes);
+    if (parsed.data.length === 0) {
+      setText("No valid data found in the document.");
+      return { err: "No valid data found" };
+    }
     if (parsed.err) {
       setText(parsed.err);
       return { parsed };

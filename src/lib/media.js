@@ -148,37 +148,32 @@ function getAllTextNodes(dom, node) {
  */
 
 /**
- * @typedef {Object} DocxToTableResultTable
+ * @typedef {Object} DocxToTableResult
  * @property {Array<DocxToTableResultRow>} rows
  */
 
 /**
- * Convert DOCX file to a table structure.
- * @param {File} file
- * @returns {{data: Array<DocxToTableResultTable>} | {err: string}}
+ *
+ * @param {*} file
+ * @returns {Promise<{data: DocxToTableResult|undefined, err: string|undefined}>}
  */
 export const docxToTable = async (file) => {
   try {
-    const tables = [];
-
+    const rows = [];
     const buffer = await file.arrayBuffer();
     const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
     const dom = cheerio.load(value);
 
-    dom("table").each((_, table) => {
-      const rows = [];
-      tables.push({ rows });
-      dom("tr", null, table).each((_, tr) => {
-        const cols = [];
-        rows.push({ cols });
-        dom("td", null, tr).each((_, td) => {
-          const texts = getAllTextNodes(dom, td);
-          cols.push({ texts });
-        });
+    dom("tr").each((_, tr) => {
+      const cols = [];
+      rows.push({ cols });
+      dom("td", null, tr).each((_, td) => {
+        const texts = getAllTextNodes(dom, td);
+        cols.push({ texts });
       });
     });
 
-    return { data: tables };
+    return { data: rows };
   } catch (e) {
     console.error(`parseDocx: ${e.toString()}`);
     return { err: e.toString() };
