@@ -51,7 +51,7 @@
 {/snippet}
 
 <div
-  class="flex flex-col gap-4 xl:gap-4 p-2 z-50
+  class="flex flex-col gap-4 xl:gap-4 px-2 py-4 z-50
     items-start sm:items-center xl:items-start
     bg-light-surface-container-low dark:bg-dark-surface-container-low
     text-light-on-surface dark:text-dark-on-surface"

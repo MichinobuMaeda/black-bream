@@ -46,7 +46,7 @@
     text-light-on-surface-variant dark:text-dark-on-surface-variant"
 >
   <div
-    class="flex flex-row m-0 px-2 sm:px-4 py-1 sm:py-1.5 gap-6
+    class="flex flex-row m-0 pl-4 pr-2 sm:pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5 gap-6
     justify-start items-center grow"
   >
     <div class="flex flex-row grow gap-2 justify-start items-center">
@@ -80,7 +80,7 @@
   </div>
   {#if store.menu}
     <div
-      class="flex sm:hidden px-2
+      class="flex sm:hidden pl-2 pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5
         bg-light-surface-container-low dark:bg-dark-surface-container-low
           text-light-on-surface dark:text-dark-on-surface"
     >
@@ -92,7 +92,7 @@
       />
     </div>
   {:else}
-    <div class="flex sm:hidden px-2">
+    <div class="flex sm:hidden pl-2 pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5">
       <IconButton
         id="menu-open"
         icon={SvgMenu}

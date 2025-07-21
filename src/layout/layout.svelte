@@ -18,15 +18,9 @@
       bg-light-surface-container-lowest dark:bg-dark-surface-container-lowest
       text-light-on-surface dark:text-dark-on-surface"
     >
-      {#if store.test}
-        <div class="flex flex-col z-60 sticky bottom-6 sm:top-0">
-          <Header />
-        </div>
-      {:else}
-        <div class="flex flex-col z-60 sticky bottom-0 sm:top-0">
-          <Header />
-        </div>
-      {/if}
+      <div class="flex flex-col z-60 sticky bottom-0 sm:top-0">
+        <Header />
+      </div>
       <div class="flex flex-row min-h-screen">
         <div class="hidden sm:flex">
           <MainMenu />
@@ -34,19 +28,11 @@
         <main class="flex flex-col mb-auto pb-4 w-full lg:w-[1048px]">
           {@render children()}
         </main>
-        {#if store.test}
-          <div class="flex sm:hidden absolute right-0 bottom-14">
-            {#if store.menu}
-              <MainMenu />
-            {/if}
-          </div>
-        {:else}
-          <div class="flex sm:hidden absolute right-0 bottom-8">
-            {#if store.menu}
-              <MainMenu />
-            {/if}
-          </div>
-        {/if}
+        <div class="flex sm:hidden absolute right-0 bottom-12">
+          {#if store.menu}
+            <MainMenu />
+          {/if}
+        </div>
       </div>
     </div>
   {/if}
