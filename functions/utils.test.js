@@ -44,6 +44,10 @@ afterEach(() => {
 });
 
 describe("generateLinkCard", () => {
+  const fetchOptions = {
+    redirect: "follow",
+    follow: 3,
+  };
   it("should returns null, if text includes no url.", async () => {
     // Prepare
 
@@ -95,7 +99,9 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com", fetchOptions],
+    ]);
   });
 
   it("should returns card data, if text includes url. #2", async () => {
@@ -126,7 +132,9 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com", fetchOptions],
+    ]);
   });
 
   it("should returns card data, if text includes url. #3", async () => {
@@ -157,7 +165,9 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com", fetchOptions],
+    ]);
   });
 
   it("should returns first occurring data.", async () => {
@@ -191,7 +201,9 @@ describe("generateLinkCard", () => {
         thumbUrl: "https://example.com/thumb.jpg",
       },
     });
-    expect(global.fetch.mock.calls).toEqual([["https://example.com"]]);
+    expect(global.fetch.mock.calls).toEqual([
+      ["https://example.com", fetchOptions],
+    ]);
   });
 
   it("should returns error, if fetch() throws an exception.", async () => {
