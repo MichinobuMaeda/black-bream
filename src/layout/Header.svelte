@@ -1,26 +1,35 @@
 <script>
-  import { location, push } from "svelte-spa-router";
-  import ButtonText from "../lib/coarse-paper/ButtonText.svelte";
+  import { location, push, pop, replace } from "svelte-spa-router";
   import IconButton from "../lib/coarse-paper/IconButton.svelte";
-  import SvgCheck from "../lib/icons/SvgCheck.svelte";
+  import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
+  import SvgLanguage from "../lib/icons/SvgLanguage.svelte";
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
   import SvgInfo from "../lib/icons/SvgInfo.svelte";
+  import SvgClose from "../lib/icons/SvgClose.svelte";
+  import SvgMenu from "../lib/icons/SvgMenu.svelte";
   import { locales } from "../i18n.js";
-  import { store } from "../lib/store.svelte.js";
-</script>
+  import { t, store } from "../lib/store.svelte.js";
 
-{#snippet localeItem(/** @type {string} */ value, /** @type {string} */ label)}
-  <ButtonText
-    id={`locale-${value}`}
-    icon={store.locale === value ? SvgCheck : null}
-    {label}
-    onClick={() => {
-      store.locale = value;
-    }}
-    disabled={store.locale === value}
-  />
-{/snippet}
+  const switchLanguage = () => {
+    let index = locales.findIndex((l) => l.value === store.locale);
+    index = (index + 1) % locales.length;
+    store.locale = locales[index].value;
+  };
+
+  let timeoutId = null;
+
+  $effect(() => {
+    if (store.menu) {
+      timeoutId = setTimeout(() => {
+        store.menu = false;
+      }, 3 * 1000);
+    } else if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  });
+</script>
 
 {#snippet navItem(/** @type {Object} */ Icon, /** @type {string} */ path)}
   <IconButton
@@ -32,20 +41,64 @@
 {/snippet}
 
 <div
-  class="flex flex-row mb-0.5 px-2 sm:px-4 py-1 sm:py-1.5 gap-6 justify-end
+  class="flex flex-row
     bg-light-surface-container-high dark:bg-dark-surface-container-high
     text-light-on-surface-variant dark:text-dark-on-surface-variant"
 >
-  <div class="flex gap-2">
-    {#each locales as locale (locale.value)}
-      {@render localeItem(locale.value, locale.label)}
-    {/each}
-  </div>
-  {#if store.me}
-    {#if store.admin || store.manager}
-      {@render navItem(SvgSettings, "/settings")}
+  <div
+    class="flex flex-row m-0 px-2 sm:px-4 py-1 sm:py-1.5 gap-6
+    justify-start items-center grow"
+  >
+    <div class="flex flex-row grow gap-2 justify-start items-center">
+      {#if $location === "/"}
+        <button onclick={() => pop()}
+          ><img
+            src="/favicon.svg"
+            alt={t().appTitle()}
+            class="size-6"
+          /></button
+        >
+      {:else if history.length > 2}
+        <button class="size-6" onclick={() => pop()}
+          ><SvgArrowBackIosNew /></button
+        >
+      {:else}
+        <button class="size-6" onclick={() => replace("/")}
+          ><SvgArrowBackIosNew /></button
+        >
+      {/if}
+      <span class="hidden sm:flex text-base">{t().appTitle()}</span>
+    </div>
+    <IconButton id="language" icon={SvgLanguage} onClick={switchLanguage} />
+    {#if store.me}
+      {#if store.admin || store.manager}
+        {@render navItem(SvgSettings, "/settings")}
+      {/if}
+      {@render navItem(SvgAccountCircle, "/account")}
     {/if}
-    {@render navItem(SvgAccountCircle, "/account")}
+    {@render navItem(SvgInfo, "/info")}
+  </div>
+  {#if store.menu}
+    <div
+      class="flex sm:hidden px-2
+        bg-light-surface-container-low dark:bg-dark-surface-container-low
+          text-light-on-surface dark:text-dark-on-surface"
+    >
+      <IconButton
+        id="menu-close"
+        icon={SvgClose}
+        onClick={() => (store.menu = false)}
+        disabled={!store.me}
+      />
+    </div>
+  {:else}
+    <div class="flex sm:hidden px-2">
+      <IconButton
+        id="menu-open"
+        icon={SvgMenu}
+        onClick={() => (store.menu = true)}
+        disabled={!store.me}
+      />
+    </div>
   {/if}
-  {@render navItem(SvgInfo, "/info")}
 </div>

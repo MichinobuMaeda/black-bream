@@ -23,6 +23,8 @@ let me = $state(undefined);
 let admin = $derived(isMemberOf(me?.id, "admins"));
 let manager = $derived(isMemberOf(me?.id, "managers"));
 let operator = $derived(isMemberOf(me?.id, "operators"));
+let menu = $state(false);
+let test = $state(false);
 
 /**
  * Create DateTime object from seed
@@ -101,6 +103,18 @@ export const store = {
   },
   get operator() {
     return operator;
+  },
+  get menu() {
+    return menu;
+  },
+  set menu(value) {
+    menu = value;
+  },
+  get test() {
+    return test;
+  },
+  set test(value) {
+    test = value;
   },
 };
 

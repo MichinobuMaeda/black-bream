@@ -60,7 +60,7 @@ a.deleted {
   @apply size-8;
 }
 :not(.markdown) > h3 {
-  @apply flex sticky top-0 mb-0.5 px-2 sm:px-4 lg:px-6 py-1 sm:py-1.5 lg:py-2
+  @apply flex sticky top-0 sm:top-8 mb-0.5 px-2 sm:px-4 lg:px-6 py-1 sm:py-1.5 lg:py-2
     text-xl items-center gap-2 z-40
     bg-light-primary-container dark:bg-dark-primary-container
     text-light-on-primary-container dark:text-dark-on-primary-container;

@@ -152,6 +152,7 @@ export class FirebaseState {
       connectFirestoreEmulator(this.db, "127.0.0.1", 8080);
       connectFunctionsEmulator(this.functions, "127.0.0.1", 5001);
       connectStorageEmulator(this.storage, "127.0.0.1", 9199);
+      this.store.test = true;
     } else {
       initializeAppCheck(this.app, {
         provider: new ReCaptchaEnterpriseProvider(
@@ -869,8 +870,9 @@ ${dump(parsed)}
               message: Schema.string(),
               url: Schema.string(),
               images: Schema.array({ items: Schema.string() }),
-              targets: Schema.array({ items: Schema.string() }),
               note: Schema.string(),
+              targets: Schema.array({ items: Schema.string() }),
+              date: Schema.string(),
             },
             optionalProperties: ["title", "message", "url", "images", "note"],
           }),

@@ -36,7 +36,10 @@ export const generateLinkCard = async (text) => {
       thumbUrl: "",
     };
 
-    const html = await fetch(data.uri);
+    const html = await fetch(data.uri, {
+      redirect: "follow",
+      follow: 3,
+    });
 
     if (html.status !== 200) {
       return { err: undefined, data: null };

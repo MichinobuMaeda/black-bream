@@ -1,7 +1,6 @@
 <script>
-  import { location, push, pop, replace } from "svelte-spa-router";
+  import { location, push } from "svelte-spa-router";
   import { t, store } from "../lib/store.svelte.js";
-  import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
   import SvgHome from "../lib/icons/SvgHome.svelte";
   import SvgLogin from "../lib/icons/SvgLogin.svelte";
   import SvgGroup from "../lib/icons/SvgGroup.svelte";
@@ -14,6 +13,11 @@
         " text-light-on-primary-container dark:text-dark-on-primary-container"
       : " bg-light-secondary-container dark:bg-dark-secondary-container" +
         " text-light-on-secondary-container dark:text-dark-on-secondary-container";
+
+  const menuItemOnClick = (path) => {
+    push(path);
+    store.menu = false;
+  };
 </script>
 
 {#snippet navItem(
@@ -22,17 +26,17 @@
   /** @type {string} */ path,
 )}
   <button
-    class={"hidden xl:flex flex-row text-lg h-10 px-4 w-[224px] gap-2" +
+    class={"flex sm:hidden xl:flex flex-row text-lg h-10 px-4 w-[224px] gap-2" +
       " justify-start items-center rounded-full" +
       linkColor($location, path)}
-    onclick={() => push(path)}
+    onclick={() => menuItemOnClick(path)}
   >
     <span class="flex size-6"><Icon /></span>
     {label}
   </button>
   <button
-    class="xl:hidden flex flex-col items-center"
-    onclick={() => push(path)}
+    class="hidden sm:flex xl:hidden flex-col items-center"
+    onclick={() => menuItemOnClick(path)}
   >
     <div
       class={"flex h-8 w-14 justify-center items-center rounded-full" +
@@ -46,31 +50,15 @@
   </button>
 {/snippet}
 
-<header
-  class="flex flex-row sm:flex-col gap-4 xl:gap-4 p-2 z-50
-    sm:h-screen sticky bottom-0 sm:top-0 items-center xl:items-start
+<div
+  class="flex flex-col gap-4 xl:gap-4 p-2 z-50
+    items-start sm:items-center xl:items-start
     bg-light-surface-container-low dark:bg-dark-surface-container-low
     text-light-on-surface dark:text-dark-on-surface"
 >
-  <div class="flex flex-auto sm:grow-0 gap-2 xl:items-start items-center">
-    {#if $location === "/"}
-      <button onclick={() => pop()}
-        ><img src="/favicon.svg" alt={t().appTitle()} class="size-10" /></button
-      >
-    {:else if history.length > 2}
-      <button class="size-10 p-1.5" onclick={() => pop()}
-        ><SvgArrowBackIosNew /></button
-      >
-    {:else}
-      <button class="size-10 p-1.5" onclick={() => replace("/")}
-        ><SvgArrowBackIosNew /></button
-      >
-    {/if}
-    <span class="hidden xl:flex p-1 text-xl">{t().appTitle()}</span>
-  </div>
   {#if store.me}
     {@render navItem(SvgHome, t().home(), "/")}
-    {#if store.operator}
+    {#if store.operator || store.manager}
       {@render navItem(SvgTask, t().posts(), "/posts")}
     {/if}
     {@render navItem(SvgGroup, t().groups(), "/groups")}
@@ -78,4 +66,4 @@
   {:else}
     {@render navItem(SvgLogin, t().login(), "/")}
   {/if}
-</header>
+</div>
