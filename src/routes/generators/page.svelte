@@ -1,11 +1,12 @@
 <script>
-  import SvgTask from "../../lib/icons/SvgTask.svelte";
-  import { t } from "../../lib/store.svelte.js";
-  // import { t, store } from "../../lib/store.svelte.js";
-  // import List from "./List.svelte";
-  // import Create from "./Create.svelte";
-  // import Show from "./Show.svelte";
-  // import Edit from "./Edit.svelte";
+  import SvgCognition from "../../lib/icons/SvgCognition.svelte";
+  import { t, store } from "../../lib/store.svelte.js";
+  import List from "./List.svelte";
+  import Create from "./Create.svelte";
+  import Edit from "./Edit.svelte";
+  import Generate from "./Generate.svelte";
+
+  import JobPosting from "./Generate.svelte";
 
   /**
    * @typedef {Object} Props
@@ -18,23 +19,21 @@
   console.log(params?.item, params?.action);
 </script>
 
-<h2><SvgTask /> {t().posts()}</h2>
-<!-- {#if store.operator || store.manager}
+<h2><SvgCognition /> {t().generators()}</h2>
+{#if (store.operator || store.manager) && store.conf?.aiProvider}
   {#if params?.item === "new"}
     <Create />
+  {:else if params?.item === "jobposting"}
+    <JobPosting />
   {:else if params?.item}
-    {#if params?.action === "edit"}
-      {#if store.operator}
+    {#if store.generators.length > 0}
+      {#if params.action === "post"}
+        <Generate item={params?.item} />
+      {:else}
         <Edit item={params?.item} />
       {/if}
-    {:else}
-      <Show item={params?.item} />
     {/if}
   {:else}
     <List />
   {/if}
-{:else if params?.item}
-  <Show item={params?.item} />
-{:else}
-  <List />
-{/if} -->
+{/if}

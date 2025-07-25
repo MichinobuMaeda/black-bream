@@ -107,7 +107,8 @@ export class Bluesky extends Provider {
    * @returns {Promise<{data: undefined|LinkCardData}>}
    */
   async generateExternal(agent, text) {
-    return generateLinkCard(text).then(async ({ err, data }) =>
+    const excludeDomains = ["youtube.com/", "youtu.be/"];
+    return generateLinkCard(text, excludeDomains).then(async ({ err, data }) =>
       err
         ? { err }
         : !data

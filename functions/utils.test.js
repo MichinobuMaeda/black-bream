@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import Readable from "node:stream";
 import { getDownloadURL } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { BskyAgent } from "@atproto/api";
@@ -22,7 +21,6 @@ import {
   handleOnCall,
   joinLines,
 } from "./utils.js";
-import { text } from "node:stream/consumers";
 
 vi.mock("firebase-functions/logger");
 vi.mock("firebase-admin/storage");
@@ -580,7 +578,7 @@ describe("getPublicMediaUrl", () => {
 });
 
 describe("sleep", () => {
-  global.setTimeout = vi.fn((r, ms) => r());
+  global.setTimeout = vi.fn((r) => r());
 
   it("should sleep for the specified time.", async () => {
     // Prepare
@@ -772,11 +770,10 @@ describe("handleUpdate", () => {
     const add = vi.fn(() => Promise.resolve({}));
     const db = { collection: vi.fn(() => ({ add })) };
     const path = "test/path";
-    const updateDoc = vi.fn(() => Promise.resolve({}));
     db.collection.mockReturnValueOnce({ add });
 
     // Execute
-    const ret = await handleUpdate(db)(path);
+    await handleUpdate(db)(path);
 
     // Verify
     expect(db.collection.mock.calls).toEqual([["logs"]]);

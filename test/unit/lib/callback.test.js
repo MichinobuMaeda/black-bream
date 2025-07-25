@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi, should } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 
 import { CallbackHandler } from "../../../src/lib/callback.js";
 

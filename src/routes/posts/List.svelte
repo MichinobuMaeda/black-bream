@@ -13,7 +13,7 @@
 
 <h3>
   <span class="flex grow">{t().list()}</span>
-  {#if (store.operator || store.manager) && store.conf?.jobPosting}
+  {#if store.operator || store.manager}
     <ButtonOutlined
       id="create"
       icon={SvgNoteAdd}
@@ -24,15 +24,6 @@
   {/if}
 </h3>
 <Content>
-  <div class="flex flex-row justify-between items-center">
-    <ButtonOutlined
-      id="jobposting"
-      icon={SvgNoteAdd}
-      label={t().jobPosting()}
-      onClick={() => push("/posts/jobposting")}
-      dense
-    />
-  </div>
   {#each posts as post (post.id)}
     <PostSummary {post} />
   {/each}

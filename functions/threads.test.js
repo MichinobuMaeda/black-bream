@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
-import { getDownloadURL } from "firebase-admin/storage";
 import { httpRequest, getPublicMediaUrl, joinLines } from "./utils.js";
 import { Threads } from "./threads.js";
 
@@ -18,7 +17,7 @@ joinLines.mockImplementation((...lines) =>
 
 const authSnap = {
   exists: true,
-  data: () => authData,
+  data: () => ({}),
   get: vi.fn(),
 };
 const authRef = {
@@ -46,8 +45,6 @@ const params = {
     new Date().getTime() - 1000 * 60 * 60 * 24 + 1000,
   ),
 };
-
-getDownloadURL = vi.fn(() => Promise.resolve("download-url"));
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -460,13 +457,6 @@ describe("setAccessToken", () => {
   const data = {
     code: "threads-code",
   };
-  const formData = [
-    ["client_id", params.clientId],
-    ["client_secret", params.clientSecret],
-    ["grant_type", "authorization_code"],
-    ["redirect_uri", params.callBackUrl],
-    ["code", data.code],
-  ];
   const oauthData = {
     access_token: "threads-access-token",
     user_id: "threads-user-id",

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   getPublicMediaUrl,
   generateLinkCard,
@@ -6,8 +6,6 @@ import {
   joinLines,
 } from "./utils.js";
 import { Tumblr } from "./tumblr.js";
-import { mock } from "@atproto/api";
-import { error } from "firebase-functions/logger";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js");

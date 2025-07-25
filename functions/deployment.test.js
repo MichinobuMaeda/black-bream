@@ -336,7 +336,6 @@ describe("updateDataV3", () => {
     get: vi.fn(),
     ref: { set: vi.fn() },
   };
-  const createdAt = FieldValue.serverTimestamp();
   const updatedAt = FieldValue.serverTimestamp();
 
   it("should update data ver.0 to ver.3.", async () => {
@@ -430,7 +429,6 @@ describe("updateDataV4", () => {
     get: vi.fn(),
     ref: { set: vi.fn() },
   };
-  const createdAt = FieldValue.serverTimestamp();
   const updatedAt = FieldValue.serverTimestamp();
 
   it("should update data ver.0 to ver.3.", async () => {

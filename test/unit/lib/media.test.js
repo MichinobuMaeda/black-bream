@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { afterEach, describe, it, expect, vi, should } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 
 import {
   getFileExtension,

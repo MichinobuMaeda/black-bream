@@ -1,12 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import {
-  getMediaAsBlob,
-  httpRequest,
-  getDoc,
-  updateDoc,
-  sleep,
-  joinLines,
-} from "./utils.js";
+import { getMediaAsBlob, httpRequest, sleep, joinLines } from "./utils.js";
 import { Twitter } from "./twitter.js";
 
 vi.mock("firebase-functions/logger");
@@ -43,7 +36,6 @@ describe("uploadImage", () => {
     const accessToken = "twitter-access-token";
     const id = "post-id";
     const file = "1.jpg";
-    const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = { data: { id: mediaId } };
     getMediaAsBlob.mockResolvedValue({ data: new Blob() });
@@ -81,7 +73,6 @@ describe("uploadImage", () => {
     const accessToken = "twitter-access-token";
     const id = "post-id";
     const file = "1.jpg";
-    const mediaUrl = "https://media.url/1.jpg";
     const mediaId = "media-id";
     const mediaResp = {
       data: {
@@ -124,9 +115,6 @@ describe("uploadImage", () => {
     const accessToken = "twitter-access-token";
     const id = "post-id";
     const file = "1.jpg";
-    const mediaUrl = "https://media.url/1.jpg";
-    const mediaId = "media-id";
-    const mediaResp = { id: mediaId };
     const err = new Error("test error");
     getMediaAsBlob.mockResolvedValue({ err });
 
@@ -146,9 +134,6 @@ describe("uploadImage", () => {
     const accessToken = "twitter-access-token";
     const id = "post-id";
     const file = "1.jpg";
-    const mediaUrl = "https://media.url/1.jpg";
-    const mediaId = "media-id";
-    const mediaResp = { id: mediaId };
     getMediaAsBlob.mockResolvedValueOnce({ data: new Blob() });
     const err = "test error";
     const data = { text: () => Promise.resolve("Error message") };
@@ -249,7 +234,6 @@ describe("post", () => {
 
   it("should return error when getParams returns error.", async () => {
     // Prepare
-    const accessToken = "twitter-access-token";
     const id = "post-id";
     const text = "Hello, world!";
     const data = { text };
@@ -295,7 +279,6 @@ describe("post", () => {
     const accessToken = "twitter-access-token";
     const id = "post-id";
     const text = "Hello, world!";
-    const files = ["1.jpg"];
     const data = { text };
     const params = { accessToken };
     const mockGetParams = vi.spyOn(twitter, "getParams");

@@ -6,6 +6,8 @@
   import SvgGroup from "../lib/icons/SvgGroup.svelte";
   import SvgPerson from "../lib/icons/SvgPerson.svelte";
   import SvgTask from "../lib/icons/SvgTask.svelte";
+  import SvgCognition from "../lib/icons/SvgCognition.svelte";
+  import SvgTextSnippet from "../lib/icons/SvgTextSnippet.svelte";
 
   const linkColor = (location, path) =>
     location === path
@@ -51,7 +53,7 @@
 {/snippet}
 
 <div
-  class="flex flex-col gap-4 xl:gap-4 px-2 py-4 z-50
+  class="flex flex-col gap-4 xl:gap-4 px-2 py-4
     items-start sm:items-center xl:items-start
     bg-light-surface-container-low dark:bg-dark-surface-container-low
     text-light-on-surface dark:text-dark-on-surface"
@@ -60,6 +62,10 @@
     {@render navItem(SvgHome, t().home(), "/")}
     {#if store.operator || store.manager}
       {@render navItem(SvgTask, t().posts(), "/posts")}
+      {@render navItem(SvgTextSnippet, t().templates(), "/templates")}
+      {#if store.conf.aiProvider}
+        {@render navItem(SvgCognition, t().generators(), "/generators")}
+      {/if}
     {/if}
     {@render navItem(SvgGroup, t().groups(), "/groups")}
     {@render navItem(SvgPerson, t().users(), "/users")}

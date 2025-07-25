@@ -25,10 +25,10 @@
         <div class="hidden sm:flex">
           <MainMenu />
         </div>
-        <main class="flex flex-col mb-auto pb-4 w-full lg:w-[1048px]">
+        <main class="flex flex-col mb-auto pb-4 w-full lg:w-[1024px]">
           {@render children()}
         </main>
-        <div class="flex sm:hidden absolute right-0 bottom-12">
+        <div class="flex sm:hidden fixed z-60 right-0 bottom-12">
           {#if store.menu}
             <MainMenu />
           {/if}

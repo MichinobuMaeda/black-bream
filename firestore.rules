@@ -40,11 +40,11 @@ service cloud.firestore {
       allow read: if isActiveAccount();
     }
     match /templates/{template} {
-      allow read, create, update: if isManager();
+      allow read, create, update: if isManager() || isOperator();
       allow read: if isActiveAccount();
     }
     match /generators/{generator} {
-      allow read, create, update: if isManager()|| isOperator();
+      allow read, create, update: if isManager() || isOperator();
       allow read: if isActiveAccount();
     }
     match /{document=**} {

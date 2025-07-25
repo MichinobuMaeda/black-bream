@@ -7,7 +7,6 @@ import {
   removeAuthUser,
   getAuthUser,
 } from "./account.js";
-import { get } from "svelte/store";
 
 vi.mock("firebase-functions/logger");
 vi.mock("./utils.js", () => ({

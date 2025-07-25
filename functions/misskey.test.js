@@ -135,7 +135,6 @@ describe("getMediaList", () => {
 });
 
 describe("post", () => {
-  const blob = new Blob([new Uint8Array(1024)], { type: "image/jpeg" });
   const id = "post-id";
   const dataText = { text: "Text" };
   const dataTitleMessageLink = {

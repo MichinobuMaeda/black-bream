@@ -1,12 +1,11 @@
 <script>
   import SvgSettings from "../../lib/icons/SvgSettings.svelte";
-  import Templates from "./Templates.svelte";
   import PreDefinedSchedules from "./PreDefinedSchedules.svelte";
   import SiteDescription from "./SiteDescription.svelte";
   import DailyJob from "./DailyJob.svelte";
   import TimeZone from "./TimeZone.svelte";
   import QueuingThresholdDays from "./QueuingThresholdDays.svelte";
-  import PostGenerator from "./PostGenerator.svelte";
+  import AiProviders from "./AiProviders.svelte";
   import LoginMethods from "./LoginMethods.svelte";
   import AuthTwitter from "./AuthTwitter.svelte";
   import AuthMastodon from "./AuthMastodon.svelte";
@@ -21,7 +20,6 @@
 
 <h2><SvgSettings /> {t().settings()}</h2>
 {#if store.admin || store.manager}
-  <Templates />
   <PreDefinedSchedules />
   <SiteDescription />
 {/if}
@@ -29,7 +27,7 @@
   <DailyJob />
   <TimeZone />
   <QueuingThresholdDays />
-  <PostGenerator />
+  <AiProviders />
   <AuthTwitter />
   <AuthMastodon />
   <AuthMisskey />

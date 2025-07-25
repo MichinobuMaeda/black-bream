@@ -18,6 +18,7 @@ let users = $state([]);
 let groups = $state([]);
 let posts = $state([]);
 let templates = $state([]);
+let generators = $state([]);
 let logs = $state([]);
 let me = $state(undefined);
 let admin = $derived(isMemberOf(me?.id, "admins"));
@@ -82,6 +83,12 @@ export const store = {
   },
   set templates(value) {
     templates = value;
+  },
+  get generators() {
+    return generators;
+  },
+  set generators(value) {
+    generators = value;
   },
   get logs() {
     return logs;

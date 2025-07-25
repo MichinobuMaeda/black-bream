@@ -23,12 +23,14 @@
     <Create />
   {/if}
 {:else if params?.item}
-  {#if params?.action === "edit"}
-    {#if store.manager}
-      <Edit item={params?.item} />
+  {#if store.groups.length > 0}
+    {#if params?.action === "edit"}
+      {#if store.manager}
+        <Edit item={params?.item} />
+      {/if}
+    {:else}
+      <Show item={params?.item} />
     {/if}
-  {:else}
-    <Show item={params?.item} />
   {/if}
 {:else}
   <List />

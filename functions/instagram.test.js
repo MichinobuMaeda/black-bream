@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
-import { getPublicMediaUrl, httpRequest, sleep, joinLines } from "./utils.js";
+import { getPublicMediaUrl, httpRequest, joinLines } from "./utils.js";
 import { Instagram } from "./instagram.js";
 
 vi.mock("firebase-functions/logger");
@@ -19,8 +19,6 @@ FormData.prototype.append = vi.fn();
 const db = {};
 const bucket = { file: vi.fn() };
 const instagram = new Instagram(db, bucket);
-
-const orgTimeout = process.env.IMAGE_UPLOAD_TIMEOUT;
 
 const clientId = "instagram-client-id";
 const accessToken = "instagram-access-token";

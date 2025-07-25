@@ -266,15 +266,51 @@ export class I18n {
       en: "Link",
     }[this.locale];
   }
+  generators() {
+    return {
+      ja: "生成AI",
+      en: "Generative AI",
+    }[this.locale];
+  }
+  generator() {
+    return {
+      ja: "生成AI",
+      en: "Generative AI",
+    }[this.locale];
+  }
+  input() {
+    return {
+      ja: "入力",
+      en: "Input",
+    }[this.locale];
+  }
+  output() {
+    return {
+      ja: "出力",
+      en: "Output",
+    }[this.locale];
+  }
+  dataSource() {
+    return {
+      ja: "データソース",
+      en: "Data source",
+    }[this.locale];
+  }
+  prompt() {
+    return {
+      ja: "プロンプト",
+      en: "Prompt",
+    }[this.locale];
+  }
   templates() {
     return {
-      ja: "雛形",
+      ja: "テンプレート",
       en: "Templates",
     }[this.locale];
   }
   template() {
     return {
-      ja: "雛形",
+      ja: "テンプレート",
       en: "Template",
     }[this.locale];
   }
@@ -534,16 +570,10 @@ export class I18n {
       en: `No image set. Skip posting: ${targets.join(", ")}`,
     }[this.locale];
   }
-  postGenerator() {
+  aiProviders() {
     return {
-      ja: "投稿生成",
-      en: "Post generator",
-    }[this.locale];
-  }
-  jobPosting () {
-    return {
-      ja: "案件情報",
-      en: "Job posting",
+      ja: "AI プロバイダー",
+      en: "AI providers",
     }[this.locale];
   }
   current(value) {
@@ -776,6 +806,30 @@ export class I18n {
     return {
       ja: "設定を変更してやり直してください",
       en: "Change the settings and try again",
+    }[this.locale];
+  }
+  selectFile(accept) {
+    return {
+      ja: `ファイル${accept ? ` (${accept}) ` : ""}を選択してください`,
+      en: `Please select a file${accept ? `: (${accept})` : ""}`,
+    }[this.locale];
+  }
+  unsupportedInputType() {
+    return {
+      ja: "サポートされていない入力形式です",
+      en: "Unsupported input type",
+    }[this.locale];
+  }
+  waitWithoutClosing() {
+    return {
+      ja: "画面を閉じずにしばらくお待ちください",
+      en: "Please wait a while without closing the screen",
+    }[this.locale];
+  }
+  reviewResult() {
+    return {
+      ja: "結果を確認してください",
+      en: "Please review the result",
     }[this.locale];
   }
 

@@ -3,7 +3,6 @@ import { TZDate } from "@date-fns/tz";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 // import { httpRequest } from "./utils";
 import { FeedHandler } from "./feedHandler.js";
-import { get } from "svelte/store";
 import { DEFAULT_TZ } from "./utils.js";
 
 const templates = [

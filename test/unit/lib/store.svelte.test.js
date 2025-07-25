@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, it, expect, vi, test } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 
 import { localstorage } from "../../../src/lib/localstorage.js";
 import {
@@ -82,6 +82,7 @@ describe("store", () => {
       groups: [],
       posts: [],
       templates: [],
+      generators: [],
       logs: [],
       me: undefined,
       admin: false,

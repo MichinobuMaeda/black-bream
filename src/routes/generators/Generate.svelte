@@ -1,45 +1,50 @@
 <script>
   // import { pop } from "svelte-spa-router";
-  // import { serverTimestamp, Timestamp } from "firebase/firestore";
+  import { dump, load } from "js-yaml";
   import SvgNoteAdd from "../../lib/icons/SvgNoteAdd.svelte";
   import Content from "../../lib/components/Content.svelte";
-  // import Wrap from "../../lib/components/Wrap.svelte";
-  // import Fields from "../../lib/components/Fields.svelte";
   import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
-  // import SvgAddPhotoAlternate from "../../lib/icons/SvgAddPhotoAlternate.svelte";
-  // import SvgRemoveSelection from "../../lib/icons/SvgRemoveSelection.svelte";
-  // import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  // import IconButton from "../../lib/coarse-paper/IconButton.svelte";
-  // import SvgArrowBack from "../../lib/icons/SvgArrowBack.svelte";
-  // import SvgArrowForward from "../../lib/icons/SvgArrowForward.svelte";
-  // import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import SvgCognition from "../../lib/icons/SvgCognition.svelte";
   // import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import {
-    generateJobPosting,
+    generatePosts,
     //   createDocument,
-    //   savePostedImage,
-    //   postTargets,
-    //   titleRequiredTargets,
-    //   imageRequiredTargets,
   } from "../../lib/firebase.js";
-  // let active = $state(false);
 
-  // let templates = $state((store.templates ?? []).filter((t) => !t.deletedAt));
-  // let showTemplates = $state(templates.length > 0);
-  // const getTemplateSummary = (template) =>
-  //   (template.title || template.message
-  //     ? `${template.title}\n${template.message}`
-  //     : template.text
-  //   )
-  //     .split("\n")
-  //     .join(" / ");
+  /**
+   * @typedef {Object} Props
+   * @param {string} item
+   */
+
+  /** @type {Props} */
+  let { item } = $props();
+
+  const generator = store.generators.find((g) => g.id === item);
+  const source = load(generator?.source);
+  const initialMessage =
+    source?.input?.type === "file"
+      ? t().selectFile((source?.input?.accept || []).join(", "))
+      : t().unsupportedInputType();
+
+  // let active = $state(false);
 
   // Fields
   /** @type {FileList|null} */
   let selectedFiles = $state(null);
   /** @type {string} */
-  let text = $state("");
+  let message = $state(initialMessage);
+  /** @type {string} */
+  let text = $state(`
+-------- Source --------
+${generator?.source}
+
+-------- Prompt --------
+${generator.prompt}
+`);
+  /** @type {object}*/
+  let result = $state(null);
 
   // let title = $state("");
   // let message = $state("");
@@ -120,13 +125,23 @@
   // };
 
   $effect(() => {
-    if (selectedFiles) {
+    if (selectedFiles?.length > 0) {
+      message = t().waitWithoutClosing();
       Promise.resolve(
-        generateJobPosting((value) => (text = value), selectedFiles[0], 10),
-      ).then((result) => {
-        const { err } = result;
+        generatePosts(
+          source,
+          generator.prompt,
+          (value) => (text = value),
+          selectedFiles[0],
+        ),
+      ).then((response) => {
+        const { err, data } = response;
         if (err) {
+          message = initialMessage;
           text = err.toString();
+        } else {
+          message = t().reviewResult();
+          result = dump(data);
         }
       });
     }
@@ -134,27 +149,44 @@
 </script>
 
 <h3>
-  <span class="size-6"><SvgNoteAdd /></span>
-  {t().jobPosting()}
+  <span class="size-6"><SvgCognition /></span>
+  {t().generator()}
 </h3>
 <Content>
-  {#if (store.operator || store.manager) && store.conf?.jobPosting}
-    <div class="flex flex-row gap-2">
-      <ButtonText
-        id="add-image"
-        icon={SvgNoteAdd}
-        label="Word"
-        onClick={() => document.getElementById("add-image-field").click()}
-      />
-      {selectedFiles ? selectedFiles[0].name : "--"}
-      <input
-        id="add-image-field"
-        type="file"
-        accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        class="hidden"
-        bind:files={selectedFiles}
-      />
+  {#if (store.operator || store.manager) && store.conf?.aiProvider}
+    <div class="flex flex-col gap-2">
+      <h4>{generator?.name}</h4>
+      <div class="flex flex-row gap-2">
+        {#if source.input.type === "file"}
+          <ButtonText
+            id="open-file"
+            icon={SvgNoteAdd}
+            label="Word"
+            onClick={() => document.getElementById("add-image-field").click()}
+          />
+          {selectedFiles ? selectedFiles[0].name : "--"}
+          <input
+            id="add-image-field"
+            type="file"
+            accept={(source?.input?.accept || []).join(", ")}
+            class="hidden"
+            bind:files={selectedFiles}
+          />
+        {/if}
+      </div>
+      <div>{message}</div>
+      {#if result}
+        <TextFieldOutlined
+          id="result"
+          label={t().reviewResult()}
+          type="text"
+          bind:value={result}
+          lines={16}
+          readonly
+        />
+      {:else}
+        <div class="font-mono whitespace-pre-wrap">{text}</div>
+      {/if}
     </div>
-    <pre class="break-all">{text}</pre>
   {/if}
 </Content>

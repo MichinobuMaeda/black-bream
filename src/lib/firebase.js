@@ -48,9 +48,10 @@ import {
   getAI,
   getGenerativeModel,
   Schema,
+  GoogleAIBackend,
   VertexAIBackend,
 } from "firebase/ai";
-import { dump, load } from "js-yaml";
+import { dump } from "js-yaml";
 
 import * as firebaseConfig from "../firebaseConfig.js";
 import { localstorage } from "./localstorage.js";
@@ -72,6 +73,12 @@ export const postTargets = [
   "instagram",
   "tumblr",
   "wordpress",
+];
+
+export const aiProviders = [
+  { id: "", name: "None" },
+  { id: "gemini", name: "Gemini Developer API" },
+  { id: "vertex", name: "Vertex AI Gemini API" },
 ];
 
 export const titleRequiredTargets = ["wordpress"];
@@ -119,7 +126,6 @@ export class FirebaseState {
     this.functions = getFunctions(this.app, this.firebaseConfig.region);
     this.storage = getStorage(this.app);
     this.userData = [];
-    this.ai = getAI(this.app, { backend: new VertexAIBackend("global") });
   }
 
   /**
@@ -681,144 +687,15 @@ export const callFunction = async (name, param) => {
   }
 };
 
-const testInput = `
-input:
-  type: file
-  accept:
-    - '.docx'
-output:
-  type: table
-  headers:
-    - meta
-    - content
-  limit: 10
-  # includes:
-  excludes:
-    meta:
-      - 情報
-      - 開示
-      - 禁止
-      - 秘
-      - 取引先
-`;
-
-const testPrompt1 = `
-## 指示1
-
-後述のそれぞれの案件情報について、以下の項目を抽出してください。
-
-Code: 案件番号(英数字)を meta から抽出する
-  ※例: 12345
-Date: 日付(月/日)を meta から抽出する
-  ※例: 2/1, 11/13
-Title: タイトル
-  ※「某」と「募集」は除外すること。
-Occupation: 職種
-  ※例: SE, PM, PMO, フロントエンドエンジニア, 運用, ヘルプデスク
-Duration: 期間('yy年m月)
-  ※例: '25年10月〜, '25年10月 or 11月〜, '25年10月(即日)〜, '25年10月〜'26年3月(延長あり)
-StartDate: 開始月('yy/m)
-  ※例: '25/10, '25/9(即日), '25/12 or '26/1
-Price: 単価
-  ※例: 65万円, 〜60万円, 60〜80万円 注意: 「スキル見合い」や「応相談」は除外すること。
-TechStack: 使用言語/フレームワーク
-  ※例: Java, Python, C#, JavaScript, TypeScript, React, Vue.js, Laravel, Ruby, COBOL
-Place: 勤務地
-  ※例: リモート/港区, 港区/リモート, フルリモート, フルリモート地方可, 都内, 横浜市
-  ※駅名の可能性がある場合は、自治体名に置き換えること。例: 「品川」→「港区」、「大宮」→「さいたま市」
-  ※「地方可」や「地方歓迎」は明記されている場合のみ記載すること。
-RequiredSkills: [必須条件1, 必須条件1, ..., 必須条件n]
-  ※文面を変更せずにそのまま抜き出すこと。
-  ※尚可や優遇は除外すること。
-Description: 作業内容1行目
-作業内容2行目
- ...
-作業内容n行目
-  ※箇条書きではなく、文章で記載された内容を抜き出すこと。
-  ※「某」は除外すること。
-Details: [作業内容詳細1, 作業内容詳細2, ..., 作業内容詳細n]
-  ※箇条書きの内容をそのまま抜き出すこと。
-  ※「某」は除外すること。
-
-
-## 指示2
-
-指示1で生成したデータの中から次の必須条件と優先条件に適合する上位3件を抽出してください。
-
-### 必須条件
-
-- 単価が明示されていること。
-- 勤務地、または、リモート可、在宅可であることが明記されていること。
-
-### 優先する条件
-
-1. 「地方可」または「地方歓迎」が明示されていること。
-2. 単価が比較的高いもの。
-3. 抽出済みの他の案件と、職種や技術分野が異なるもの。
-
-
-## 指示3
-
-指示2で抽出した3件のデータを次のテンプレートの {{項目名}} に当てはめて3件の投稿用のデータを作成してください。
-title の "|" は選択肢を表します。 {{TechStack}}|{{Occupation}}： は {{TechStack}} が空の場合には {{Occupation}} を使ってください。 {{TechStack}} も {{Occupation}} も空の場合は {{TechStack}}|{{Occupation}}： は無しとしてください。
-テンプレートの message の改行とインデントは維持して出力してください。
-
-- title: {{StartDate}}【{{Place}}】{{TechStack}}|{{Occupation}}：{{Title}}
-  message: |
-    <!-- wp:table -->
-    <figure class="wp-block-table">
-      <table>
-        <tbody>
-          <tr><th>職種</th><td>{{Occupation}}</td></tr>
-          <tr><th>契約額</th><td>{{Price}}</td></tr>
-          <tr><th>期間</th><td>{{Duration}}</td></tr>
-          <tr><th>場所</th><td>{{Place}}</td></tr>
-        </tbody>
-      </table>
-    </figure>
-    <!-- /wp:table -->
-    <!-- wp:heading {"level":4} -->
-    <h4 class="wp-block-heading">必要スキル</h4>
-    <!-- /wp:heading -->
-    <!-- wp:list -->
-    <ul>
-      <li>{{RequiredSkills}}</li>
-      <li>{{RequiredSkills}}</li>
-    </ul>
-    <!-- /wp:list -->
-    <!-- wp:heading {"level":4} -->
-    <h4 class="wp-block-heading">業務内容</h4>
-    <!-- /wp:heading -->
-    <!-- wp:paragraph -->
-    <p>{{Description}}</p>
-    <!-- /wp:paragraph -->
-    <!-- wp:list -->
-    <ul>
-      <li>{{Details}}</li>
-      <li>{{Details}}</li>
-    </ul>
-    <!-- /wp:list -->
-    <!-- wp:paragraph {"align":"right"} -->
-    <p class="has-text-align-right">管理番号:{{Code}}</p>
-    <!-- /wp:paragraph -->
-    <!-- {{Date}} -->
-  note: 入力元のデータの content をそのまま記載してください。
-  targets:
-    - wordpress
-  date: 月日は {{Date}} で、時は 17 で、分はランダムに設定してください。
-
-## 案件情報
-`;
-
-const parseDocx = async (file, { input, output }) => {
-  if (input.accept.includes(".docx") && output.type === "table") {
+const parseDocx = async (file, { input, filter }) => {
+  if (input.accept.includes(".docx") && filter.type === "table") {
     const table = await docxToTable(file);
     if (table.err) {
       console.error(`parseDocx: ${table.err}`);
       return table;
     }
 
-    const { headers, includes, excludes, limit } = output;
+    const { headers, includes, excludes, limit } = filter;
     const data = table.data
       .filter(({ cols }) => cols.length >= headers.length)
       .map(({ cols }) =>
@@ -851,34 +728,44 @@ const parseDocx = async (file, { input, output }) => {
   return { err: "Unsupported input/output format" };
 };
 
-const parsedToStructured = async (parsed) => {
+const schemaPosts = Schema.array({
+  items: Schema.object({
+    properties: {
+      title: Schema.string(),
+      message: Schema.string(),
+      link: Schema.string(),
+      images: Schema.array({ items: Schema.string() }),
+      note: Schema.string(),
+      targets: Schema.array({ items: Schema.string() }),
+      scheduledFor: Schema.string(),
+    },
+    optionalProperties: ["title", "message", "link", "images", "note"],
+  }),
+});
+
+const generateFromSource = async (schema, prompt, source) => {
   try {
-    const promptStruct = `
-${testPrompt1}
+    const backend =
+      fbs.store.conf.aiProvider === "gemini"
+        ? new GoogleAIBackend()
+        : fbs.store.conf.aiProvider === "vertex"
+          ? new VertexAIBackend("global")
+          : undefined;
 
-${dump(parsed)}
-`;
+    if (!backend) {
+      console.error("No AI backend configured");
+      return { err: "No AI backend configured" };
+    }
 
-    const result = await getGenerativeModel(fbs.ai, {
+    const ai = getAI(fbs.app, { backend });
+
+    const result = await getGenerativeModel(ai, {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: Schema.array({
-          items: Schema.object({
-            properties: {
-              title: Schema.string(),
-              message: Schema.string(),
-              url: Schema.string(),
-              images: Schema.array({ items: Schema.string() }),
-              note: Schema.string(),
-              targets: Schema.array({ items: Schema.string() }),
-              date: Schema.string(),
-            },
-            optionalProperties: ["title", "message", "url", "images", "note"],
-          }),
-        }),
+        responseSchema: schema,
       },
-    }).generateContent(promptStruct);
+    }).generateContent(`${prompt}\n\n${source}`);
 
     const text = result?.response?.text();
 
@@ -896,9 +783,9 @@ ${dump(parsed)}
   }
 };
 
-export const generateJobPosting = async (setText, file) => {
+export const generatePosts = async (source, prompt, setText, file) => {
   try {
-    const parsed = await parseDocx(file, load(testInput));
+    const parsed = await parseDocx(file, source);
 
     if (parsed.err) {
       setText(parsed.err);
@@ -912,18 +799,11 @@ export const generateJobPosting = async (setText, file) => {
 
     setText(`${parsed.data.length}件\n\n${dump(parsed.data)}`);
 
-    const structured = await parsedToStructured(parsed.data);
+    const ret = await generateFromSource(schemaPosts, prompt, parsed.data);
 
-    if (structured.err) {
-      setText(structured.err);
-      return structured;
-    }
-
-    setText(`${structured.data.length}件\n\n${dump(structured.data)}`);
-
-    return { err: undefined };
+    return ret;
   } catch (e) {
-    console.error(`generateJobPosting: ${e.toString()}`);
+    console.error(`generatePosts: ${e.toString()}`);
     return { err: e.toString() };
   }
 };

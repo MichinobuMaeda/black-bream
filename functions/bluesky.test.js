@@ -221,7 +221,9 @@ describe("generateExternal", () => {
     const result = await bluesky.generateExternal(agent, text);
 
     // Verify
-    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(generateLinkCard.mock.calls).toEqual([
+      ["Text", ["youtube.com/", "youtu.be/"]],
+    ]);
     expect(mockUploadThumb).not.toHaveBeenCalled();
     expect(result).toEqual({ err: new Error("test error") });
   });
@@ -234,7 +236,9 @@ describe("generateExternal", () => {
     const result = await bluesky.generateExternal(agent, text);
 
     // Verify
-    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(generateLinkCard.mock.calls).toEqual([
+      ["Text", ["youtube.com/", "youtu.be/"]],
+    ]);
     expect(bluesky.uploadThumb).not.toHaveBeenCalled();
     expect(result).toEqual({ data: undefined });
   });
@@ -255,7 +259,9 @@ describe("generateExternal", () => {
     const result = await bluesky.generateExternal(agent, text);
 
     // Verify
-    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(generateLinkCard.mock.calls).toEqual([
+      ["Text", ["youtube.com/", "youtu.be/"]],
+    ]);
     expect(bluesky.uploadThumb.mock.calls).toEqual([
       [agent, "https://example.com/thumb.jpg"],
     ]);
@@ -284,7 +290,9 @@ describe("generateExternal", () => {
     const result = await bluesky.generateExternal(agent, text);
 
     // Verify
-    expect(generateLinkCard.mock.calls).toEqual([["Text"]]);
+    expect(generateLinkCard.mock.calls).toEqual([
+      ["Text", ["youtube.com/", "youtu.be/"]],
+    ]);
     expect(bluesky.uploadThumb).not.toHaveBeenCalled();
     expect(result).toEqual({
       data: {
@@ -334,7 +342,6 @@ describe("post", () => {
   const message = "Message";
   const link = "https://example.com";
   const file = "1.jpg";
-  const langs = ["ja"];
   const image = new Uint8Array(10);
 
   const mockLogin = vi.spyOn(bluesky, "login");

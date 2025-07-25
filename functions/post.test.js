@@ -7,8 +7,6 @@ import { Instagram } from "./instagram.js";
 import { Twitter } from "./twitter.js";
 import { Tumblr } from "./tumblr.js";
 import { getDoc, updateDoc } from "./utils.js";
-import { jsonToLex, mock } from "@atproto/api";
-import { error } from "firebase-functions/logger";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { nanoid } from "nanoid";
 import { Post, postAll } from "./post.js";
@@ -48,7 +46,7 @@ Tumblr.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
 
 const id = "postsId";
 const ref = { id, get: vi.fn() };
-const doc = vi.fn((id) => ref);
+const doc = vi.fn(() => ref);
 const get = vi.fn();
 const where = vi.fn(() => ({ get }));
 const collection = vi.fn(() => ({ doc, where }));
@@ -56,7 +54,6 @@ const db = { collection };
 const bucket = {};
 const text = "Text";
 const files = ["1.jpg"];
-const snap = { id, ref, data: () => ({ text, files, targets }) };
 /** @type import("firebase-admin/functions").TaskQueue */
 const queue = { enqueue: vi.fn(), delete: vi.fn() };
 
@@ -178,7 +175,6 @@ describe("generateScheduleTime", () => {
 describe("createPosts", () => {
   it("should create posts.", async () => {
     // Prepare
-    const delay = 9 * 1000;
     const mastodon = {};
     const misskey = {};
     const targets = { mastodon, misskey };
@@ -260,7 +256,6 @@ describe("createPosts", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    const delay = 9 * 1000;
     const mastodon = {};
     const misskey = {};
     const targets = { mastodon, misskey };
@@ -360,7 +355,6 @@ describe("createPosts", () => {
 
   it("should return warn if scheduledFor is too far in the future.", async () => {
     // Prepare
-    const delay = 9 * 1000;
     const mastodon = {};
     const misskey = {};
     const targets = { mastodon, misskey };
@@ -889,7 +883,6 @@ describe("post", () => {
 describe("checkCompleted", () => {
   it("should update status to completed if all targets are completed.", async () => {
     // Prepare
-    const target = "mastodon";
     const mastodon = { status: "completed" };
     const misskey = { status: "completed" };
     const targets = { mastodon, misskey };
@@ -916,7 +909,6 @@ describe("checkCompleted", () => {
 
   it("should update status to failed if a targets are failed.", async () => {
     // Prepare
-    const target = "mastodon";
     const mastodon = { status: "completed" };
     const misskey = { status: "failed" };
     const targets = { mastodon, misskey };
@@ -943,7 +935,6 @@ describe("checkCompleted", () => {
 
   it("should return error if updateDoc returns error.", async () => {
     // Prepare
-    const target = "mastodon";
     const mastodon = { status: "completed" };
     const misskey = { status: "completed" };
     const targets = { mastodon, misskey };
@@ -970,7 +961,6 @@ describe("checkCompleted", () => {
 
   it("should not update status if all targets are not ended.", async () => {
     // Prepare
-    const target = "mastodon";
     const mastodon = { status: "completed" };
     const misskey = { status: "enqueued" };
     const targets = { mastodon, misskey };

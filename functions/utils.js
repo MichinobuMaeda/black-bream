@@ -20,12 +20,14 @@ export const DEFAULT_TZ = "Asia/Tokyo";
  * Generate a card object from a link
  *
  * @param {string} text
+ * @param {Array<string>} [excludeDomains]
  * @returns {Promise<{err: undefined|Error, data: LinkCard|null|undefined}>}
  */
-export const generateLinkCard = async (text) => {
+export const generateLinkCard = async (text, excludeDomains = []) => {
   try {
     const link = text.match(/https:\/\/\S+/);
-    if (!link) {
+
+    if (!link || excludeDomains.some((domain) => link[0].includes(domain))) {
       return { err: undefined, data: null };
     }
 
