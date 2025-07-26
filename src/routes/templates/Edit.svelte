@@ -27,7 +27,7 @@
   // Fields
   let name = $state(template.name);
   let title = $state(template.title);
-  let message = $state(template.message);
+  let message = $state(template.message || template.text);
   let link = $state(template.link);
   let deleted = $state(!!template.deletedAt);
   let feed = $state(template.feed);
@@ -39,7 +39,7 @@
       value: target,
       label: target,
     }));
-  let targets = $state(targetItems.map((item) => item.value));
+  let targets = $state(targetItems.map((item) => item.value)) || [];
 
   let errorName = $derived(
     !name
