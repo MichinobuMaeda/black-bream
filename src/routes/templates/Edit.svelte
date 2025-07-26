@@ -39,7 +39,7 @@
       value: target,
       label: target,
     }));
-  let targets = $state(targetItems.map((item) => item.value)) || [];
+  let targets = $state(targetItems.map((item) => item.value) || []);
 
   let errorName = $derived(
     !name
