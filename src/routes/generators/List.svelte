@@ -40,13 +40,15 @@
           <span class="size-6"><SvgCognition /></span>
           {generator.name}
         </a>
-        <div class="flex flex-row grow justify-end">
-          <IconButton
-            id={`post-${generator.id}`}
-            icon={SvgNoteAdd}
-            onClick={() => push(`/generators/${generator.id}/post`)}
-          />
-        </div>
+        {#if !generator.deletedAt}
+          <div class="flex flex-row grow justify-end">
+            <IconButton
+              id={`post-${generator.id}`}
+              icon={SvgNoteAdd}
+              onClick={() => push(`/generators/${generator.id}/post`)}
+            />
+          </div>
+        {/if}
       </div>
     </Fields>
   {/each}

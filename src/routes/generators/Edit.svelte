@@ -7,6 +7,7 @@
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import { updateDocument, postTargets } from "../../lib/firebase.js";
@@ -26,6 +27,7 @@
   let name = $state(generator.name);
   let source = $state(generator.source);
   let prompt = $state(generator.prompt);
+  let targets = $state(generator.targets || []);
   let deleted = $state(!!generator.deletedAt);
 
   let targetItems = postTargets
@@ -34,7 +36,6 @@
       value: target,
       label: target,
     }));
-  let targets = $state(targetItems.map((item) => item.value));
 
   let errorName = $derived(
     !name
@@ -57,6 +58,7 @@
         source !== generator.source ||
         prompt !== generator.prompt ||
         targets.length !== generator.targets.length ||
+        targets.some((item) => !(generator.targets || []).includes(item)) ||
         deleted !== !!generator.deletedAt),
   );
   let valid = $derived(!errorName && !errorSource && !errorPrompt);
@@ -66,7 +68,7 @@
     name = generator.name;
     source = generator.source;
     prompt = generator.prompt;
-    targets = [...generator.targets];
+    targets = generator.targets || [];
     deleted = !!generator.deletedAt;
     push("/generators");
   };
@@ -79,7 +81,7 @@
     const data = {
       name,
       source,
-      prompt: prompt,
+      prompt,
       targets,
       deletedAt: deleted ? serverTimestamp() : null,
     };
@@ -142,6 +144,10 @@
         message={t().required()}
         error={errorPrompt}
       />
+      <div class="flex grow gap-4 items-center">
+        <Switch id="deleted" bind:checked={deleted} />
+        {t().deleted()}
+      </div>
       <ActionSave
         id="save-new"
         {changed}

@@ -7,6 +7,7 @@
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
   import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionFields from "../../lib/components/ActionFields.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -28,6 +29,7 @@
   let name = $state(template.name);
   let title = $state(template.title);
   let message = $state(template.message || template.text);
+  let targets = $state(template.targets);
   let link = $state(template.link);
   let deleted = $state(!!template.deletedAt);
   let feed = $state(template.feed);
@@ -39,7 +41,6 @@
       value: target,
       label: target,
     }));
-  let targets = $state(targetItems.map((item) => item.value) || []);
 
   let errorName = $derived(
     !name
@@ -66,7 +67,7 @@
         feed !== template.feed ||
         category !== template.category ||
         (targets.length !== template.targets.length &&
-          targets.some((t) => !template.targets.includes(t))) ||
+          targets.some((item) => !template.targets.includes(item))) ||
         deleted !== !!template.deletedAt),
   );
   let valid = $derived(!errorName && !errorTitleMessage);
@@ -176,6 +177,10 @@
             bind:value={category}
           />
         </Fields>
+        <div class="flex grow gap-4 items-center">
+          <Switch id="deleted" bind:checked={deleted} />
+          {t().deleted()}
+        </div>
         <ActionFields>
           <ActionSave
             id={`save-${item}`}

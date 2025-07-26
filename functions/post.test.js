@@ -628,6 +628,20 @@ describe("verifyTargetStatus", () => {
     });
   });
 
+  it("should return error if target status is 'completed.", async () => {
+    // Prepare
+    const target = "mastodon";
+    const post = new Post(db, bucket, { id, target });
+    const targets = { mastodon: { status: "completed" } };
+    const ret = post.verifyTargetStatus(targets);
+
+    // Verify
+    expect(ret).toEqual({
+      data: "completed",
+      warn: new Error(`Invalid status: mastodon.status: completed`),
+    });
+  });
+
   it("should return error if target status is invalid.", async () => {
     // Prepare
     const target = "mastodon";
@@ -725,6 +739,30 @@ describe("post", () => {
     expect(mockGetPostData.mock.calls).toEqual([[]]);
     expect(updateDoc).not.toHaveBeenCalled();
     expect(ret).toEqual({ err });
+  });
+
+  it("should return warn if verifyTargetStatus returns warn.", async () => {
+    // Prepare
+    const post = new Post(db, bucket, { id, target });
+    const mockGetPostData = vi.spyOn(post, "getPostData");
+    mockGetPostData.mockResolvedValueOnce({ data: { text, files, targets } });
+    const mockVerifyTargetStatus = vi.spyOn(post, "verifyTargetStatus");
+    const warn = new Error("test warn");
+    mockVerifyTargetStatus.mockImplementationOnce(() => ({
+      warn,
+      data: "completed",
+    }));
+    const mockSetPostStatusError = vi.spyOn(post, "setPostStatusError");
+
+    // Execute
+    const ret = await post.post();
+
+    // Verify
+    expect(mockGetPostData.mock.calls).toEqual([[]]);
+    expect(mockVerifyTargetStatus.mock.calls).toEqual([[targets]]);
+    expect(mockSetPostStatusError).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(ret).toEqual({ warn: `${warn}`, data: "completed" });
   });
 
   it("should return error if verifyTargetStatus returns error.", async () => {

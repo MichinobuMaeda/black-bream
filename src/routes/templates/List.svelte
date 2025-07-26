@@ -34,16 +34,18 @@
           <span class="size-6"><SvgTextSnippet /></span>
           {template.name}
         </a>
-        <div class="flex flex-row grow justify-end">
-          <IconButton
-            id={`post-${template.id}`}
-            icon={SvgNoteAdd}
-            onClick={() => push(`/templates/${template.id}/post`)}
-          />
-        </div>
+        {#if !template.deletedAt}
+          <div class="flex flex-row grow justify-end">
+            <IconButton
+              id={`post-${template.id}`}
+              icon={SvgNoteAdd}
+              onClick={() => push(`/templates/${template.id}/post`)}
+            />
+          </div>
+        {/if}
       </div>
     </Fields>
-    <p class="whitespace-pre">
+    <p class="whitespace-pre-wrap">
       {template.title || template.message
         ? `${template.title}\n${template.message}`
         : template.text}

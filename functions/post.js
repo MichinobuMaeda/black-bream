@@ -241,6 +241,13 @@ export class Post {
       return { err: new Error(`Invalid status: ${target} is deleted`) };
     }
 
+    if (status === "completed") {
+      return {
+        data: status,
+        warn: new Error(`Invalid status: ${target}.status: ${status}`),
+      };
+    }
+
     if (status !== "enqueued") {
       return { err: new Error(`Invalid status: ${target}.status: ${status}`) };
     }
@@ -270,6 +277,10 @@ export class Post {
 
     if (verified.err) {
       return this.setPostStatusError(verified.err);
+    }
+
+    if (verified.warn) {
+      return { data: verified.data, warn: `${verified.warn}` };
     }
 
     this.provider = providers

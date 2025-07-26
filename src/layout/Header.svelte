@@ -41,14 +41,11 @@
 {/snippet}
 
 <div
-  class="flex flex-row
+  class="flex flex-row h-12 sm:h-10 items-start sm:items-center
     bg-light-surface-container-high dark:bg-dark-surface-container-high
     text-light-on-surface-variant dark:text-dark-on-surface-variant"
 >
-  <div
-    class="flex flex-row m-0 pl-4 pr-2 sm:pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5 gap-6
-    justify-start items-center grow"
-  >
+  <div class="flex flex-row gap-6 px-2 py-1 justify-start items-center grow">
     <div class="flex flex-row grow gap-2 justify-start items-center">
       {#if $location === "/"}
         <button onclick={() => pop()}
@@ -80,7 +77,7 @@
   </div>
   {#if store.menu}
     <div
-      class="flex sm:hidden pl-2 pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5
+      class="flex sm:hidden justify-center items-center px-2 py-1
         bg-light-surface-container-low dark:bg-dark-surface-container-low
           text-light-on-surface dark:text-dark-on-surface"
     >
@@ -92,7 +89,7 @@
       />
     </div>
   {:else}
-    <div class="flex sm:hidden pl-2 pr-4 pt-1 pb-6 sm:pt-1.5 sm:pb-1.5">
+    <div class="flex sm:hidden justify-center items-center px-2 py-1">
       <IconButton
         id="menu-open"
         icon={SvgMenu}
