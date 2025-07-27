@@ -36,10 +36,10 @@ export class WordPress extends Provider {
 
     const mediaType = getMimeTypes(file);
 
-    const form = new FormData();
-    form.append("media", blob.data, file);
+    // const form = new FormData();
+    // form.append("media", blob.data, file);
     logger.info(
-      `twitter post media: ${file} ${mediaType} ${blob.data.size} bytes`,
+      `wordpress post media: ${file} ${mediaType} ${blob.data.size} bytes`,
     );
 
     const name = new Date().toISOString().replace(/\D/g, "");
@@ -52,7 +52,7 @@ export class WordPress extends Provider {
         "Content-Type": `${mediaType}`,
         "Content-Disposition": `attachment; filename=${name}.${ext}`,
       },
-      body: form,
+      body: Buffer.from(blob.data),
     });
 
     if (resp.err) {
