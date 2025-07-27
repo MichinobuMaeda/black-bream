@@ -62,10 +62,10 @@ export class WordPress extends Provider {
 
     const json = await resp.data.json();
     logger.info(
-      `wordpress upload media: ${resp.data.status} ${JSON.stringify(json.data)}`,
+      `wordpress upload media: ${resp.data.status} ${JSON.stringify(json)}`,
     );
 
-    return { data: json.data };
+    return { data: json };
   }
 
   /**
