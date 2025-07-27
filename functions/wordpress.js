@@ -52,7 +52,7 @@ export class WordPress extends Provider {
         "Content-Type": `${mediaType}`,
         "Content-Disposition": `attachment; filename=${name}.${ext}`,
       },
-      body: Buffer.from(blob.data),
+      body: Buffer.from(await blob.data.arrayBuffer(), "binary"),
     });
 
     if (resp.err) {
