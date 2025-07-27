@@ -808,11 +808,11 @@ export const generatePosts = async (source, prompt, setText, file) => {
       return { err: "No valid data found" };
     }
 
-    const source = `${dump(parsed.data)}`;
+    const input = `${dump(parsed.data)}`;
 
-    setText(`${parsed.data.length}件\n\n${source}`);
+    setText(`${parsed.data.length}件\n\n${input}`);
 
-    const ret = await generateFromSource(schemaPosts, prompt, source);
+    const ret = await generateFromSource(schemaPosts, prompt, input);
 
     return ret;
   } catch (e) {
