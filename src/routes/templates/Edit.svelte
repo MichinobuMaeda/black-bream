@@ -134,11 +134,13 @@
             message={t().required()}
             error={errorName}
           />
-          <GroupedCheckBox
-            id={`targets-${item}`}
-            items={targetItems}
-            bind:value={targets}
-          />
+          <Wrap>
+            <GroupedCheckBox
+              id={`targets-${item}`}
+              items={targetItems}
+              bind:value={targets}
+            />
+          </Wrap>
           <TextFieldOutlined
             id={`title-${item}`}
             label={t().title()}

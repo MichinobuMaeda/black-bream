@@ -75,14 +75,17 @@ export class WordPress extends Provider {
    * @param {{ text:string, title:string, message:string, link:string, files: array|undefined }} data
    * @returns {Promise<{err: undefined|Error}>}
    */
-  async post(id, { text, title, message, link, files }) {
+  async post(
+    id,
+    { text, title, message, link, files, date, categories, author },
+  ) {
     const params = await this.getParams();
 
     if (params.err) {
       return params;
     }
 
-    const { service, identifier, password } = params.data;
+    const { service, identifier, password, category } = params.data;
     const auth = Buffer.from(`${identifier}:${password}`).toString("base64");
 
     const medias = [];
@@ -117,13 +120,26 @@ export class WordPress extends Provider {
         )
         .join("\n");
 
+    const body = {
+      title,
+      content,
+      status: "publish",
+      categories: categories?.length ? categories : [category],
+    };
+    if (date) {
+      body.date = date;
+    }
+    if (author) {
+      body.author = author;
+    }
+
     const resp = await httpRequest(`${service}/wp/v2/posts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Basic ${auth}`,
       },
-      body: JSON.stringify({ title, content, status: "publish" }),
+      body: JSON.stringify(body),
     });
 
     if (resp.err) {

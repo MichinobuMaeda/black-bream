@@ -120,11 +120,13 @@
             message={t().required()}
             error={errorName}
           />
-          <GroupedCheckBox
-            id="targets"
-            items={targetItems}
-            bind:value={targets}
-          />
+          <Wrap>
+            <GroupedCheckBox
+              id="targets"
+              items={targetItems}
+              bind:value={targets}
+            />
+          </Wrap>
           <TextFieldOutlined
             id="title-new"
             label={t().title()}

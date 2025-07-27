@@ -737,9 +737,20 @@ const schemaPosts = Schema.array({
       images: Schema.array({ items: Schema.string() }),
       note: Schema.string(),
       targets: Schema.array({ items: Schema.string() }),
-      scheduledFor: Schema.string(),
+      date: Schema.string(),
+      categories: Schema.array({ items: Schema.number() }),
+      author: Schema.number(),
     },
-    optionalProperties: ["title", "message", "link", "images", "note"],
+    optionalProperties: [
+      "title",
+      "message",
+      "link",
+      "images",
+      "note",
+      "date",
+      "categories",
+      "author",
+    ],
   }),
 });
 

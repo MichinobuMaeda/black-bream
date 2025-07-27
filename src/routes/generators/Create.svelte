@@ -104,11 +104,13 @@
           />
         </Fields>
         <Fields>
-          <GroupedCheckBox
-            id="targets"
-            items={targetItems}
-            bind:value={targets}
-          />
+          <Wrap>
+            <GroupedCheckBox
+              id="targets"
+              items={targetItems}
+              bind:value={targets}
+            />
+          </Wrap>
         </Fields>
       </Wrap>
       <TextFieldOutlined

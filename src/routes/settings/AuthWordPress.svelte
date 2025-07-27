@@ -20,12 +20,15 @@
   let wordpressService = $state("");
   let wordpressIdentifier = $state("");
   let wordpressPassword = $state("");
+  /** @type {number|null} */
+  let wordpressCategory = $state(null);
   let wordpressEnabled = $state(false);
 
   $effect(() => {
     wordpressService = store.auth?.wordpress?.service;
     wordpressIdentifier = store.auth?.wordpress?.identifier;
     wordpressPassword = store.auth?.wordpress?.password;
+    wordpressCategory = store.auth?.wordpress?.category;
     wordpressEnabled = !store.auth?.wordpress?.deletedAt;
   });
 
@@ -38,6 +41,9 @@
   let errorWordPressPassword = $derived(
     wordpressEnabled && !wordpressPassword ? t().required() : "",
   );
+  let errorWordPressCategory = $derived(
+    wordpressEnabled && !wordpressCategory ? t().required() : "",
+  );
 
   // Actions
   let result = $state(null);
@@ -46,12 +52,14 @@
       (wordpressService !== store.auth?.wordpress?.service ||
         wordpressIdentifier !== store.auth?.wordpress?.identifier ||
         wordpressPassword !== store.auth?.wordpress?.password ||
+        wordpressCategory !== store.auth?.wordpress?.category ||
         wordpressEnabled !== !store.auth?.wordpress?.deletedAt),
   );
   let valid = $derived(
     !errorWordPressService &&
       !errorWordPressIdentifier &&
-      !errorWordPressPassword,
+      !errorWordPressPassword &&
+      !errorWordPressCategory,
   );
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
@@ -59,6 +67,7 @@
     wordpressService = store.auth?.wordpress?.service;
     wordpressIdentifier = store.auth?.wordpress?.identifier;
     wordpressPassword = store.auth?.wordpress?.password;
+    wordpressCategory = store.auth?.wordpress?.category;
     wordpressEnabled = !store.auth?.wordpress?.deletedAt;
     edit = false;
   };
@@ -68,11 +77,13 @@
     wordpressService = wordpressService.trim();
     wordpressIdentifier = wordpressIdentifier.trim();
     wordpressPassword = wordpressPassword.trim();
+    wordpressCategory = wordpressCategory;
     result = await updateDocument("service", "auth", {
       wordpress: {
         service: wordpressService,
         identifier: wordpressIdentifier,
         password: wordpressPassword,
+        category: wordpressCategory,
         updatedAt: serverTimestamp(),
         deletedAt: wordpressEnabled ? null : serverTimestamp(),
       },
@@ -130,6 +141,16 @@
           bind:value={wordpressPassword}
           message={t().current(store.auth?.wordpress?.password ?? "--")}
           error={errorWordPressPassword}
+        />
+      </Fields>
+      <Fields>
+        <TextFieldOutlined
+          id="wordpressCategory"
+          type="number"
+          label="Category"
+          bind:value={wordpressCategory}
+          message={t().current(store.auth?.wordpress?.category ?? "--")}
+          error={errorWordPressCategory}
         />
       </Fields>
     </Wrap>
