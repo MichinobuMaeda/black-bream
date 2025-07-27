@@ -6,6 +6,7 @@ import { Threads } from "./threads.js";
 import { Instagram } from "./instagram.js";
 import { Twitter } from "./twitter.js";
 import { Tumblr } from "./tumblr.js";
+import { WordPress } from "./wordpress.js";
 import { getDoc, updateDoc } from "./utils.js";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { nanoid } from "nanoid";
@@ -43,6 +44,10 @@ vi.mock("./tumblr.js");
 Tumblr.prototype.id = "tumblr";
 Tumblr.prototype.post = vi.fn(() => Promise.resolve({}));
 Tumblr.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
+vi.mock("./wordpress.js");
+WordPress.prototype.id = "wordpress";
+WordPress.prototype.post = vi.fn(() => Promise.resolve({}));
+WordPress.prototype.refreshAccessToken = vi.fn(() => Promise.resolve({}));
 
 const id = "postsId";
 const ref = { id, get: vi.fn() };

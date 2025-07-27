@@ -8,7 +8,7 @@ import { Tumblr } from "./tumblr.js";
 import { Bluesky } from "./bluesky.js";
 import { Threads } from "./threads.js";
 import { Instagram } from "./instagram.js";
-import { Wordpress } from "./wordpress.js";
+import { WordPress } from "./wordpress.js";
 import { nanoid } from "nanoid";
 
 const providers = [
@@ -19,7 +19,7 @@ const providers = [
   Bluesky,
   Threads,
   Instagram,
-  Wordpress,
+  WordPress,
 ];
 
 /**
