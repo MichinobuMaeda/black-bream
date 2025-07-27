@@ -67,6 +67,7 @@ const feeds = [
     data: () => ({
       feed: "http://example.com/testFeed",
       category: "testCategory",
+      creator: "Test Creator1",
       status: "new",
       title: "Test Feed #1",
     }),
@@ -76,6 +77,7 @@ const feeds = [
     data: () => ({
       feed: "http://example.com/testFeed",
       category: "testCategory",
+      creator: "Test Creator1",
       status: "new",
       title: "Test Feed #2",
     }),
@@ -85,6 +87,7 @@ const feeds = [
     data: () => ({
       feed: "http://example.com/anotherFeed",
       category: "testCategory",
+      creator: "Test Creator1",
       status: "new",
       title: "Test Feed #2",
     }),
@@ -94,6 +97,17 @@ const feeds = [
     data: () => ({
       feed: "http://example.com/testFeed",
       category: "anotherCategory",
+      creator: "Test Creator1",
+      status: "new",
+      title: "Test Feed #2",
+    }),
+  },
+  {
+    id: "feed5",
+    data: () => ({
+      feed: "http://example.com/testFeed",
+      category: "anotherCategory",
+      creator: "Auto posted",
       status: "new",
       title: "Test Feed #2",
     }),
@@ -228,6 +242,7 @@ describe("getFeeds() with empty fields", () => {
         id: "feed1",
         feed: "http://example.com/testFeed",
         category: "testCategory",
+        creator: "Test Creator1",
         status: "new",
         title: "Test Feed #1",
       },
@@ -235,6 +250,7 @@ describe("getFeeds() with empty fields", () => {
         id: "feed2",
         feed: "http://example.com/testFeed",
         category: "testCategory",
+        creator: "Test Creator1",
         status: "new",
         title: "Test Feed #2",
       },

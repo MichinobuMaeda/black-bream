@@ -797,9 +797,11 @@ export const generatePosts = async (source, prompt, setText, file) => {
       return { err: "No valid data found" };
     }
 
-    setText(`${parsed.data.length}件\n\n${dump(parsed.data)}`);
+    const source = `${dump(parsed.data)}`;
 
-    const ret = await generateFromSource(schemaPosts, prompt, parsed.data);
+    setText(`${parsed.data.length}件\n\n${source}`);
+
+    const ret = await generateFromSource(schemaPosts, prompt, source);
 
     return ret;
   } catch (e) {

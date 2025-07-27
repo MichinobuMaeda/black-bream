@@ -70,6 +70,7 @@ export class FeedReader {
         description: decode(item.description),
         pubDate: Timestamp.fromDate(new Date(item.pubDate)),
         category: decode(item.category),
+        creator: decode(item["dc:creator"]),
       }));
     } else if (output.feed) {
       const feed = output.feed;
@@ -79,6 +80,7 @@ export class FeedReader {
         description: decode(item.summary["#text"]),
         pubDate: Timestamp.fromDate(new Date(item.updated)),
         category: decode(item.category["@_term"]),
+        creator: item.author ? item.author.name["#text"] : undefined,
       }));
     } else {
       console.error("Invalid feed format", url);

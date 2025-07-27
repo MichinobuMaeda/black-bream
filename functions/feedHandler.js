@@ -85,6 +85,8 @@ export class FeedHandler {
             (item) =>
               item.feed === feed &&
               item.category === category &&
+              item.creator &&
+              !/(自動|auto)/.test(item.creator) &&
               !item.deletedAt,
           ),
       );
