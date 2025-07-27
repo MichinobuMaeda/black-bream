@@ -15,7 +15,7 @@ export class WordPress extends Provider {
    */
   constructor(db, bucket) {
     super(db, bucket);
-    this.id = "twitter";
+    this.id = "wordpress";
   }
 
   /**
