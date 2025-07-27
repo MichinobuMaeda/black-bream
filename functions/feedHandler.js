@@ -176,13 +176,20 @@ export class FeedHandler {
    * @returns {Promise<{err: undefined|string}>}
    */
   async handleFeedAndCategory(
-    { name, text, targets },
+    { name, text, title, message, link, targets },
     sysTz,
     preDefined,
     { feed, category },
   ) {
     try {
-      if (!text || !text.trim() || !targets || !targets.length) {
+      if (
+        (!text?.trim() &&
+          !title?.trim() &&
+          !message?.trim() &&
+          !link?.trim()) ||
+        !targets ||
+        !targets.length
+      ) {
         logger.warn(
           `Invalid template for feed: ${feed}, category: ${category}`,
         );
@@ -203,7 +210,9 @@ export class FeedHandler {
       let scheduledFor = this.getFeedHandleSchedule(sysTz, preDefined);
 
       await this.db.collection("posts").add({
-        text: this.applyTemplate(text, feeds),
+        title,
+        message: this.applyTemplate(message ?? text, feeds),
+        link,
         files: [],
         targets: targets.reduce(
           (acc, cur) => ({

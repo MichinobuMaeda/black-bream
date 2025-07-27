@@ -578,7 +578,9 @@ describe("handleFeedAndCategory()", () => {
     expect(collectionMock.add.mock.calls).toEqual([
       [
         {
-          text: template.text,
+          title: undefined,
+          message: "Text for template",
+          link: undefined,
           files: [],
           targets: {
             twitter: {
