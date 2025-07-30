@@ -68,9 +68,9 @@ ${generator.prompt}
   let changed = $derived(
     !active &&
       posts.length &&
-      (title !== posts[selected]?.title.trim() ||
-        message !== posts[selected]?.message.trim() ||
-        link !== posts[selected]?.link.trim() ||
+      (title !== posts[selected]?.title?.trim() ||
+        message !== posts[selected]?.message?.trim() ||
+        link !== posts[selected]?.link?.trim() ||
         checkedTargets.length !== generator.targets.length ||
         !checkedTargets.every((target) => generator.targets.includes(target))),
   );
@@ -78,7 +78,13 @@ ${generator.prompt}
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
+    selected = posts.reduce(
+      (acc, post, index) => (post.sent && index === selected ? acc : index),
+      -1,
+    );
+
     const post = posts[selected];
+
     title = post?.title || "";
     message = post?.message || "";
     link = post?.link || "";
@@ -108,7 +114,7 @@ ${generator.prompt}
     result = await createDocument("posts", data);
     active = false;
     if (!result.err) {
-      selected = selected < posts.length - 1 ? selected + 1 : 0;
+      posts[selected].sent = true;
       onCancel();
     }
   };
