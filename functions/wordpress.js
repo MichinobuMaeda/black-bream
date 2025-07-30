@@ -77,7 +77,7 @@ export class WordPress extends Provider {
    */
   async post(
     id,
-    { text, title, message, link, files, date, categories, author },
+    { text, title, message, link, files, categories, date, author },
   ) {
     const params = await this.getParams();
 
@@ -102,8 +102,10 @@ export class WordPress extends Provider {
     const content =
       joinLines(text, message, link)
         .split("\n")
-        .map(
-          (line) => `
+        .map((line) =>
+          date || author
+            ? line
+            : `
 <!-- wp:paragraph -->
 <p>${line}</p>
 <!-- /wp:paragraph -->`,

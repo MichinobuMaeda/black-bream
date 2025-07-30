@@ -56,6 +56,7 @@ ${generator.prompt}
   let checkedTargets = $state([]);
   let date = $state("");
   let categories = $state([]);
+  let author = $state("");
 
   let errorTitleMessage = $derived(
     title || message ? "" : t().requiredAorB(t().title(), t().message()),
@@ -95,6 +96,7 @@ ${generator.prompt}
     checkedTargets = generator.targets || [];
     date = post?.date || "";
     categories = post?.categories || [];
+    author = post?.author || "";
   };
 
   const onSave = async () => {
@@ -123,6 +125,8 @@ ${generator.prompt}
       targets,
       date,
       categories,
+      author: author ? Number(author) : undefined,
+      createdAt: serverTimestamp(),
       scheduledFor,
       status,
     };
