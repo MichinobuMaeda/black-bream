@@ -1,6 +1,6 @@
 <script>
   import { serverTimestamp, Timestamp } from "firebase/firestore";
-  import { dump, load } from "js-yaml";
+  import { load } from "js-yaml";
   import Content from "../../lib/components/Content.svelte";
   import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
@@ -78,11 +78,13 @@ ${generator.prompt}
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
   const onCancel = () => {
-    selected = posts.reduce(
-      (acc, post, index) =>
-        post.sent && index === selected && acc < 0 ? acc : index,
-      -1,
-    );
+    selected = posts.every((post) => post.sent)
+      ? -1
+      : posts.filter((post) => !post.sent).length === 1
+        ? posts.findIndex((post) => !post.sent)
+        : posts.findIndex((post, index) => !post.sent && selected < index) > -1
+          ? posts.findIndex((post, index) => !post.sent && selected < index)
+          : posts.findIndex((post, index) => !post.sent && index < selected);
 
     const post = posts[selected];
 
@@ -176,13 +178,12 @@ ${generator.prompt}
       </div>
       <div>{status}</div>
       {#if posts.length === 0}
-        <div class="font-mono whitespace-pre-wrap">{details}</div>
+        <div class="font-mono whitespace-pre-line">{details}</div>
       {/if}
       {#each posts as post, index (index)}
         <div class="flex flex-col gap-2">
           <h4># {index + 1}</h4>
           {#if post.sent || index !== selected}
-            <div class="font-mono whitespace-pre-wrap">{dump(post)}</div>
             <div>Title: {post.title}</div>
             <div class="whitespace-pre-wrap">{post.message}</div>
             <div class="font-mono whitespace-pre-wrap">Link: {post.link}</div>
@@ -236,7 +237,7 @@ ${generator.prompt}
       {#if posts.length > 0}
         <!-- Test -->
         <h4>Input data for AI</h4>
-        <div class="font-mono whitespace-pre-wrap">{details}</div>
+        <div class="font-mono whitespace-pre-line">{details}</div>
       {/if}
     </div>
   {/if}
