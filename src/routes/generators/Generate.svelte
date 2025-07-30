@@ -79,7 +79,8 @@ ${generator.prompt}
 
   const onCancel = () => {
     selected = posts.reduce(
-      (acc, post, index) => (post.sent && index === selected ? acc : index),
+      (acc, post, index) =>
+        post.sent && index === selected && acc < 0 ? acc : index,
       -1,
     );
 
@@ -182,6 +183,11 @@ ${generator.prompt}
           <h4># {index + 1}</h4>
           {#if post.sent || index !== selected}
             <div class="font-mono whitespace-pre-wrap">{dump(post)}</div>
+            <div>Title: {post.title}</div>
+            <div class="whitespace-pre-wrap">{post.message}</div>
+            <div class="font-mono whitespace-pre-wrap">Link: {post.link}</div>
+            <div class="font-mono">Author: {post.author}</div>
+            <div class="font-mono whitespace-pre-wrap">{post.note}</div>
           {:else}
             <TextFieldOutlined
               id={`title-${index}`}
@@ -214,7 +220,6 @@ ${generator.prompt}
               {(post.categories || []).join(", ")}
             </div>
             <div class="font-mono">Author: {post.author}</div>
-            <div class="font-mono whitespace-pre-wrap">{post.note}</div>
             <ActionSave
               id="save"
               {changed}
@@ -222,7 +227,6 @@ ${generator.prompt}
               {onCancel}
               {onSave}
               {error}
-              cancelOnlyChanged
               saveNotChanged
               wide
             />
@@ -231,6 +235,7 @@ ${generator.prompt}
       {/each}
       {#if posts.length > 0}
         <!-- Test -->
+        <h4>Input data for AI</h4>
         <div class="font-mono whitespace-pre-wrap">{details}</div>
       {/if}
     </div>

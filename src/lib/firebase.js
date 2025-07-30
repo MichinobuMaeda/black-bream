@@ -110,7 +110,7 @@ const schemaPosts = Schema.array({
       message: Schema.string(),
       link: Schema.string(),
       // files: Schema.array({ items: Schema.string() }),
-      note: Schema.string(),
+      // note: Schema.string(),
       date: Schema.string(),
       categories: Schema.array({ items: Schema.number() }),
       author: Schema.number(),
@@ -120,7 +120,7 @@ const schemaPosts = Schema.array({
       "message",
       "link",
       // "files",
-      "note",
+      // "note",
       "date",
       "categories",
       "author",
@@ -168,7 +168,6 @@ export const generatorPromptTemplates = [
   message: |
     Line 1
     Line 2
-  note: Copy the column 2 of the source data as is.
   date: ISO Format (YYYY-MM-DDThh:mm:ss.sssZ)
   categories:
     - 5
