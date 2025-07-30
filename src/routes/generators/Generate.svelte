@@ -55,6 +55,7 @@ ${generator.prompt}
   let files = $state([]);
   let checkedTargets = $state([]);
   let date = $state("");
+  let categories = $state([]);
 
   let errorTitleMessage = $derived(
     title || message ? "" : t().requiredAorB(t().title(), t().message()),
@@ -93,6 +94,7 @@ ${generator.prompt}
     link = post?.link || "";
     checkedTargets = generator.targets || [];
     date = post?.date || "";
+    categories = post?.categories || [];
   };
 
   const onSave = async () => {
@@ -113,7 +115,17 @@ ${generator.prompt}
         {},
       );
     const scheduledFor = Timestamp.now();
-    const data = { title, message, link, files, targets, scheduledFor, status };
+    const data = {
+      title,
+      message,
+      link,
+      files,
+      targets,
+      date,
+      categories,
+      scheduledFor,
+      status,
+    };
     result = await createDocument("posts", data);
     active = false;
     if (!result.err) {
@@ -137,11 +149,11 @@ ${generator.prompt}
         if (err) {
           status = initialStatus;
           details = err.toString();
+          selected = -1;
           posts = [];
-          selected = 0;
         } else {
           status = t().reviewResult();
-          selected = 0;
+          selected = -1;
           posts = data;
           onCancel();
         }

@@ -133,6 +133,10 @@ export class WordPress extends Provider {
       body.author = author;
     }
 
+    console.log(
+      `wordpress post: ${service}/wp/v2/posts\n${JSON.stringify(body, null, 2)}`,
+    );
+
     const resp = await httpRequest(`${service}/wp/v2/posts`, {
       method: "POST",
       headers: {
