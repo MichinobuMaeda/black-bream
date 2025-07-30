@@ -16,6 +16,7 @@
    * @property {function} onSave
    * @property {string} [error]
    * @property {boolean} [cancelOnlyChanged]
+   * @property {boolean} [saveNotChanged]
    * @property {boolean} [wide]
    */
 
@@ -28,6 +29,7 @@
     onSave,
     error,
     cancelOnlyChanged = false,
+    saveNotChanged = false,
     wide = false,
   } = $props();
 </script>
@@ -45,7 +47,7 @@
     icon={SvgCheck}
     label={t().save()}
     onClick={onSave}
-    disabled={!changed || !valid}
+    disabled={!saveNotChanged && (!changed || !valid)}
   />
 {/snippet}
 

@@ -71,10 +71,8 @@ ${generator.prompt}
       (title !== posts[selected]?.title.trim() ||
         message !== posts[selected]?.message.trim() ||
         link !== posts[selected]?.link.trim() ||
-        checkedTargets.length !== posts[selected]?.targets?.length ||
-        !checkedTargets.every((target) =>
-          posts[selected]?.targets?.includes(target),
-        )),
+        checkedTargets.length !== generator.targets.length ||
+        !checkedTargets.every((target) => generator.targets.includes(target))),
   );
   let valid = $derived(!errorTitleMessage && !errorTargets);
   let error = $derived(result?.err ? t().errorOnDataSave() : "");
@@ -84,7 +82,7 @@ ${generator.prompt}
     title = post?.title || "";
     message = post?.message || "";
     link = post?.link || "";
-    checkedTargets = post?.targets || [];
+    checkedTargets = generator.targets || [];
     date = post?.date || "";
   };
 
@@ -175,32 +173,32 @@ ${generator.prompt}
       {/if}
       {#each posts as post, index (index)}
         <div class="flex flex-col gap-2">
-          <h4># {index}</h4>
+          <h4># {index + 1}</h4>
           {#if post.sent || index !== selected}
             <div class="font-mono whitespace-pre-wrap">{dump(post)}</div>
           {:else}
             <TextFieldOutlined
               id={`title-${index}`}
-              label={t().reviewResult()}
+              label={t().title()}
               type="text"
               bind:value={title}
             />
             <TextFieldOutlined
               id={`message-${index}`}
-              label={t().reviewResult()}
+              label={t().message()}
               type="text"
               bind:value={message}
               lines={16}
             />
             <TextFieldOutlined
               id={`link-${index}`}
-              label={t().reviewResult()}
+              label={t().link()}
               type="text"
               bind:value={link}
             />
             <TextFieldOutlined
               id={`date-${index}`}
-              label={t().reviewResult()}
+              label="date"
               type="text"
               bind:value={date}
             />
@@ -218,10 +216,17 @@ ${generator.prompt}
               {onCancel}
               {onSave}
               {error}
+              cancelOnlyChanged
+              saveNotChanged
+              wide
             />
           {/if}
         </div>
       {/each}
+      {#if posts.length > 0}
+        <!-- Test -->
+        <div class="font-mono whitespace-pre-wrap">{details}</div>
+      {/if}
     </div>
   {/if}
 </Content>

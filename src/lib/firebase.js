@@ -103,6 +103,31 @@ export const socialLoginProviders = [
   },
 ];
 
+const schemaPosts = Schema.array({
+  items: Schema.object({
+    properties: {
+      title: Schema.string(),
+      message: Schema.string(),
+      link: Schema.string(),
+      // files: Schema.array({ items: Schema.string() }),
+      note: Schema.string(),
+      date: Schema.string(),
+      categories: Schema.array({ items: Schema.number() }),
+      author: Schema.number(),
+    },
+    optionalProperties: [
+      "title",
+      "message",
+      "link",
+      // "files",
+      "note",
+      "date",
+      "categories",
+      "author",
+    ],
+  }),
+});
+
 export const generatorSourceTemplates = [
   {
     name: "Word as table",
@@ -145,13 +170,6 @@ export const generatorPromptTemplates = [
     Line 2
   note: Copy the column 2 of the source data as is.
   date: ISO Format (YYYY-MM-DDThh:mm:ss.sssZ)
-  targets:
-    - twitter
-    - mastodon
-    - misskey
-    - bluesky
-    - threads
-    - wordpress
   categories:
     - 5
   author: 13
@@ -785,32 +803,6 @@ const parseDocx = async (file, { input, filter }) => {
 
   return { err: "Unsupported input/output format" };
 };
-
-const schemaPosts = Schema.array({
-  items: Schema.object({
-    properties: {
-      title: Schema.string(),
-      message: Schema.string(),
-      link: Schema.string(),
-      // files: Schema.array({ items: Schema.string() }),
-      note: Schema.string(),
-      targets: Schema.array({ items: Schema.string() }),
-      date: Schema.string(),
-      categories: Schema.array({ items: Schema.number() }),
-      author: Schema.number(),
-    },
-    optionalProperties: [
-      "title",
-      "message",
-      "link",
-      // "files",
-      "note",
-      "date",
-      "categories",
-      "author",
-    ],
-  }),
-});
 
 const generateFromSource = async (schema, prompt, source) => {
   try {
