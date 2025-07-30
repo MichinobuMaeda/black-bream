@@ -6,11 +6,11 @@
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { updateDocument, postTargets } from "../../lib/firebase.js";
+  import { updateDocument } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -29,13 +29,6 @@
   let prompt = $state(generator.prompt);
   let targets = $state(generator.targets || []);
   let deleted = $state(!!generator.deletedAt);
-
-  let targetItems = postTargets
-    .filter((target) => (store.conf.postTargets ?? []).includes(target))
-    .map((target) => ({
-      value: target,
-      label: target,
-    }));
 
   let errorName = $derived(
     !name
@@ -100,7 +93,7 @@
 
 <h3>
   <span class="size-6"><SvgEdit /></span>
-  {t().create()}
+  {t().edit()}
 </h3>
 {#if store.operator || store.manager}
   <Content>
@@ -117,13 +110,7 @@
           />
         </Fields>
         <Fields>
-          <Wrap>
-            <GroupedCheckBox
-              id="targets"
-              items={targetItems}
-              bind:value={targets}
-            />
-          </Wrap>
+          <Targets id="targets" bind:value={targets} />
         </Fields>
       </Wrap>
       <TextFieldOutlined

@@ -6,27 +6,30 @@
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { createDocument, postTargets } from "../../lib/firebase.js";
+  import {
+    createDocument,
+    postTargets,
+    generatorSourceTemplates,
+    generatorPromptTemplates,
+  } from "../../lib/firebase.js";
 
   let generators = $derived(store.generators ?? []);
   let active = $state(false);
 
   // Fields
   let name = $state("");
-  let source = $state("");
-  let prompt = $state("");
+  let source = $state(generatorSourceTemplates[0].value);
+  let prompt = $state(generatorPromptTemplates[0].value);
   let deleted = $state(false);
 
-  let targetItems = postTargets
-    .filter((target) => (store.conf.postTargets ?? []).includes(target))
-    .map((target) => ({
-      value: target,
-      label: target,
-    }));
-  let targets = $state(targetItems.map((item) => item.value));
+  let targets = $state(
+    postTargets.filter((target) =>
+      (store.conf.postTargets ?? []).includes(target),
+    ),
+  );
 
   let errorName = $derived(
     !name
@@ -104,13 +107,7 @@
           />
         </Fields>
         <Fields>
-          <Wrap>
-            <GroupedCheckBox
-              id="targets"
-              items={targetItems}
-              bind:value={targets}
-            />
-          </Wrap>
+          <Targets id="targets" bind:value={targets} />
         </Fields>
       </Wrap>
       <TextFieldOutlined

@@ -103,6 +103,64 @@ export const socialLoginProviders = [
   },
 ];
 
+export const generatorSourceTemplates = [
+  {
+    name: "Word as table",
+    value: `input:
+  type: file
+  accept:
+    - '.docx'
+filter:
+  type: table
+  headers:
+    - ColumnName1
+    - ColumnName2
+  limit: 100
+  includes:
+    ColumnName1:
+      - Keyword1
+      - Keyword2
+  excludes:
+    ColumnName1:
+      - Keyword1
+      - Keyword2
+`,
+  },
+];
+
+export const generatorPromptTemplates = [
+  {
+    name: "Generate posts",
+    value: `## Instruction 1
+
+... ...
+
+## Instruction 2
+
+... ...
+
+- title: Title
+  message: |
+    Line 1
+    Line 2
+  note: Copy the column 2 of the source data as is.
+  date: ISO Format (YYYY-MM-DDThh:mm:ss.sssZ)
+  targets:
+    - twitter
+    - mastodon
+    - misskey
+    - bluesky
+    - threads
+    - wordpress
+  categories:
+    - 5
+  author: 13
+
+## Source
+`,
+  },
+];
+
 /** @typedef {import("firebase/firestore").DocumentReference|import("firebase/firestore").CollectionReference|import("firebase/firestore").Query} FirebaseQuery */
 
 /**
@@ -734,7 +792,7 @@ const schemaPosts = Schema.array({
       title: Schema.string(),
       message: Schema.string(),
       link: Schema.string(),
-      images: Schema.array({ items: Schema.string() }),
+      // files: Schema.array({ items: Schema.string() }),
       note: Schema.string(),
       targets: Schema.array({ items: Schema.string() }),
       date: Schema.string(),
@@ -745,7 +803,7 @@ const schemaPosts = Schema.array({
       "title",
       "message",
       "link",
-      "images",
+      // "files",
       "note",
       "date",
       "categories",

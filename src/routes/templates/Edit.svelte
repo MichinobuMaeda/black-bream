@@ -6,12 +6,12 @@
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
   import Switch from "../../lib/coarse-paper/Switch.svelte";
   import ActionFields from "../../lib/components/ActionFields.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
-  import { updateDocument, postTargets } from "../../lib/firebase.js";
+  import { updateDocument } from "../../lib/firebase.js";
 
   /**
    * @typedef {Object} Props
@@ -34,13 +34,6 @@
   let deleted = $state(!!template.deletedAt);
   let feed = $state(template.feed);
   let category = $state(template.category);
-
-  let targetItems = postTargets
-    .filter((target) => (store.conf.postTargets ?? []).includes(target))
-    .map((target) => ({
-      value: target,
-      label: target,
-    }));
 
   let errorName = $derived(
     !name
@@ -119,7 +112,7 @@
 
 <h3>
   <span class="size-6"><SvgEdit /></span>
-  {t().create()}
+  {t().edit()}
 </h3>
 {#if store.operator || store.manager}
   <Content>
@@ -134,13 +127,6 @@
             message={t().required()}
             error={errorName}
           />
-          <Wrap>
-            <GroupedCheckBox
-              id={`targets-${item}`}
-              items={targetItems}
-              bind:value={targets}
-            />
-          </Wrap>
           <TextFieldOutlined
             id={`title-${item}`}
             label={t().title()}
@@ -178,6 +164,7 @@
             type="text"
             bind:value={category}
           />
+          <Targets id={`targets-${item}`} bind:value={targets} />
         </Fields>
         <div class="flex grow gap-4 items-center">
           <Switch id="deleted" bind:checked={deleted} />

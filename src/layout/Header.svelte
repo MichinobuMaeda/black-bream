@@ -2,6 +2,8 @@
   import { location, push, pop, replace } from "svelte-spa-router";
   import IconButton from "../lib/coarse-paper/IconButton.svelte";
   import SvgArrowBackIosNew from "../lib/icons/SvgArrowBackIosNew.svelte";
+  import SvgHome from "../lib/icons/SvgHome.svelte";
+  import SvgTask from "../lib/icons/SvgTask.svelte";
   import SvgLanguage from "../lib/icons/SvgLanguage.svelte";
   import SvgSettings from "../lib/icons/SvgSettings.svelte";
   import SvgAccountCircle from "../lib/icons/SvgAccountCircle.svelte";
@@ -66,14 +68,30 @@
       {/if}
       <span class="hidden sm:flex text-base">{t().appTitle()}</span>
     </div>
-    <IconButton id="language" icon={SvgLanguage} onClick={switchLanguage} />
-    {#if store.me}
-      {#if store.admin || store.manager}
-        {@render navItem(SvgSettings, "/settings")}
+    <div
+      class="hidden sm:flex sm:flex-row gap-6 px-2 py-1 justify-end items-center grow"
+    >
+      <IconButton id="language" icon={SvgLanguage} onClick={switchLanguage} />
+      {#if store.me}
+        {#if store.admin || store.manager}
+          {@render navItem(SvgSettings, "/settings")}
+        {/if}
+        {@render navItem(SvgAccountCircle, "/account")}
       {/if}
-      {@render navItem(SvgAccountCircle, "/account")}
-    {/if}
-    {@render navItem(SvgInfo, "/info")}
+      {@render navItem(SvgInfo, "/info")}
+    </div>
+    <div
+      class="flex flex-row sm:hidden gap-6 px-2 py-1 justify-end items-center grow"
+    >
+      {@render navItem(SvgHome, "/")}
+      {#if store.operator || store.manager}
+        {@render navItem(SvgTask, "/posts")}
+      {/if}
+      <IconButton id="language" icon={SvgLanguage} onClick={switchLanguage} />
+      {#if store.me}
+        {@render navItem(SvgAccountCircle, "/account")}
+      {/if}
+    </div>
   </div>
   {#if store.menu}
     <div

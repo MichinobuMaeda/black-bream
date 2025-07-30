@@ -6,7 +6,7 @@
   import Wrap from "../../lib/components/Wrap.svelte";
   import Fields from "../../lib/components/Fields.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
-  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
   import ActionFields from "../../lib/components/ActionFields.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
@@ -24,13 +24,11 @@
   let feed = $state("");
   let category = $state("");
 
-  let targetItems = postTargets
-    .filter((target) => (store.conf.postTargets ?? []).includes(target))
-    .map((target) => ({
-      value: target,
-      label: target,
-    }));
-  let targets = $state(targetItems.map((item) => item.value));
+  let targets = $state(
+    postTargets.filter((target) =>
+      (store.conf.postTargets ?? []).includes(target),
+    ),
+  );
 
   let errorName = $derived(
     !name
@@ -120,13 +118,6 @@
             message={t().required()}
             error={errorName}
           />
-          <Wrap>
-            <GroupedCheckBox
-              id="targets"
-              items={targetItems}
-              bind:value={targets}
-            />
-          </Wrap>
           <TextFieldOutlined
             id="title-new"
             label={t().title()}
@@ -164,6 +155,7 @@
             type="text"
             bind:value={category}
           />
+          <Targets id="targets" bind:value={targets} />
         </Fields>
         <ActionFields>
           <ActionSave

@@ -12,7 +12,7 @@
   import IconButton from "../../lib/coarse-paper/IconButton.svelte";
   import SvgArrowBack from "../../lib/icons/SvgArrowBack.svelte";
   import SvgArrowForward from "../../lib/icons/SvgArrowForward.svelte";
-  import GroupedCheckBox from "../../lib/coarse-paper/GroupedCheckBox.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
   import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store, dt } from "../../lib/store.svelte.js";
   import {
@@ -39,13 +39,12 @@
   let errorTitleMessage = $derived(
     title || message ? "" : t().requiredAorB(t().title(), t().message()),
   );
-  let targetItems = postTargets
-    .filter((target) => (store.conf.postTargets ?? []).includes(target))
-    .map((target) => ({
-      value: target,
-      label: target,
-    }));
-  let checkedTargets = $state(targetItems.map((item) => item.value));
+  let checkedTargets = $state(
+    initial?.targets ||
+      postTargets.filter((target) =>
+        (store.conf.postTargets ?? []).includes(target),
+      ),
+  );
   let errorTargets = $derived(
     active ? "" : !checkedTargets.length ? t().required() : "",
   );
@@ -124,7 +123,7 @@
     <Wrap>
       <div class="flex flex-col gap-4">
         <Fields>
-          <div class="flex flex-row gap-2">
+          <div class="flex flex-row gap-8">
             <TextFieldOutlined
               id="scheduledFor"
               label={t().schedule()}
@@ -152,13 +151,7 @@
           </div>
         </Fields>
         <Fields>
-          <Wrap>
-            <GroupedCheckBox
-              id="targets"
-              items={targetItems}
-              bind:value={checkedTargets}
-            />
-          </Wrap>
+          <Targets id="targets" bind:value={checkedTargets} />
         </Fields>
         <Fields>
           {#if !title && titleRequiredTargets.some( (target) => checkedTargets.includes(target), )}

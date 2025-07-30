@@ -7,6 +7,8 @@
   import SvgPerson from "../lib/icons/SvgPerson.svelte";
   import SvgTask from "../lib/icons/SvgTask.svelte";
   import SvgCognition from "../lib/icons/SvgCognition.svelte";
+  import SvgSettings from "../lib/icons/SvgSettings.svelte";
+  import SvgInfo from "../lib/icons/SvgInfo.svelte";
   import SvgTextSnippet from "../lib/icons/SvgTextSnippet.svelte";
 
   const linkColor = (location, path) =>
@@ -53,7 +55,7 @@
 {/snippet}
 
 <div
-  class="flex flex-col gap-4 xl:gap-4 px-2 py-4
+  class="hidden sm:flex sm:flex-col gap-4 xl:gap-4 px-2 py-4
     items-start sm:items-center xl:items-start
     bg-light-surface-container-low dark:bg-dark-surface-container-low
     text-light-on-surface dark:text-dark-on-surface"
@@ -69,6 +71,28 @@
     {/if}
     {@render navItem(SvgGroup, t().groups(), "/groups")}
     {@render navItem(SvgPerson, t().users(), "/users")}
+  {:else}
+    {@render navItem(SvgLogin, t().login(), "/")}
+  {/if}
+</div>
+
+<div
+  class="flex flex-col sm:hidden gap-4 xl:gap-4 px-2 py-4
+    items-start sm:items-center xl:items-start
+    bg-light-surface-container-low dark:bg-dark-surface-container-low
+    text-light-on-surface dark:text-dark-on-surface"
+>
+  {#if store.me}
+    {#if store.operator || store.manager}
+      {@render navItem(SvgTextSnippet, t().templates(), "/templates")}
+      {#if store.conf.aiProvider}
+        {@render navItem(SvgCognition, t().generators(), "/generators")}
+      {/if}
+    {/if}
+    {@render navItem(SvgGroup, t().groups(), "/groups")}
+    {@render navItem(SvgPerson, t().users(), "/users")}
+    {@render navItem(SvgSettings, t().settings(), "/settings")}
+    {@render navItem(SvgInfo, t().info(), "/info")}
   {:else}
     {@render navItem(SvgLogin, t().login(), "/")}
   {/if}
