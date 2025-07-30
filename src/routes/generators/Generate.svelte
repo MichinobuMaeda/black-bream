@@ -44,7 +44,7 @@ ${generator.prompt}
 `);
   /** @type {Array<object>}*/
   let posts = $state([]);
-  let selected = $state(0);
+  let selected = $state(-1);
 
   let active = $state(false);
 
