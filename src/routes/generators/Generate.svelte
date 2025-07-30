@@ -1,16 +1,18 @@
 <script>
-  // import { pop } from "svelte-spa-router";
+  import { serverTimestamp, Timestamp } from "firebase/firestore";
   import { dump, load } from "js-yaml";
-  import SvgNoteAdd from "../../lib/icons/SvgNoteAdd.svelte";
   import Content from "../../lib/components/Content.svelte";
   import ButtonText from "../../lib/coarse-paper/ButtonText.svelte";
   import TextFieldOutlined from "../../lib/coarse-paper/TextFieldOutlined.svelte";
+  import Targets from "../../lib/components/Targets.svelte";
+  import ActionSave from "../../lib/components/ActionSave.svelte";
+  import SvgNoteAdd from "../../lib/icons/SvgNoteAdd.svelte";
   import SvgCognition from "../../lib/icons/SvgCognition.svelte";
-  // import ActionSave from "../../lib/components/ActionSave.svelte";
   import { t, store } from "../../lib/store.svelte.js";
   import {
     generatePosts,
-    //   createDocument,
+    imageRequiredTargets,
+    createDocument,
   } from "../../lib/firebase.js";
 
   /**
@@ -23,125 +25,118 @@
 
   const generator = store.generators.find((g) => g.id === item);
   const source = load(generator?.source);
-  const initialMessage =
+  const initialStatus =
     source?.input?.type === "file"
       ? t().selectFile((source?.input?.accept || []).join(", "))
       : t().unsupportedInputType();
 
-  // let active = $state(false);
-
-  // Fields
   /** @type {FileList|null} */
   let selectedFiles = $state(null);
   /** @type {string} */
-  let message = $state(initialMessage);
+  let status = $state(initialStatus);
   /** @type {string} */
-  let text = $state(`
+  let details = $state(`
 -------- Source --------
 ${generator?.source}
 
 -------- Prompt --------
 ${generator.prompt}
 `);
-  /** @type {object}*/
-  let result = $state(null);
+  /** @type {Array<object>}*/
+  let posts = $state([]);
+  let selected = $state(0);
 
-  // let title = $state("");
-  // let message = $state("");
-  // let link = $state("");
-  // let errorTitleMessage = $derived(
-  //   title || message ? "" : t().requiredAorB(t().title(), t().message()),
-  // );
-  // let targetItems = postTargets
-  //   .filter((target) => (store.conf.postTargets ?? []).includes(target))
-  //   .map((target) => ({
-  //     value: target,
-  //     label: target,
-  //   }));
-  // let checkedTargets = $state(targetItems.map((item) => item.value));
-  // let errorTargets = $derived(
-  //   active ? "" : !checkedTargets.length ? t().required() : "",
-  // );
-  // let schedule = $state(dt().formatDateTime());
-  // let errorSchedule = $derived(active ? "" : !schedule ? t().required() : "");
-  // let showPreDefinedSchedule = $derived(
-  //   store.conf.preDefinedSchedules?.wd.length > 0 &&
-  //     store.conf.preDefinedSchedules?.h.length > 0 &&
-  //     store.conf.preDefinedSchedules?.m.length > 0,
-  // );
+  let active = $state(false);
+
+  // Fields
+  let title = $state("");
+  let message = $state("");
+  let link = $state("");
+  let files = $state([]);
+  let checkedTargets = $state([]);
+  let date = $state("");
+
+  let errorTitleMessage = $derived(
+    title || message ? "" : t().requiredAorB(t().title(), t().message()),
+  );
+  let errorTargets = $derived(
+    active ? "" : !checkedTargets.length ? t().required() : "",
+  );
 
   // Actions
-  // let result = $state(null);
-  // let changed = $derived(!active);
-  // let valid = $derived(!errorTitleMessage && !errorTargets && !errorSchedule);
-  // let error = $derived(result?.err ? t().errorOnDataSave() : "");
+  let result = $state(null);
+  let changed = $derived(
+    !active &&
+      posts.length &&
+      (title !== posts[selected]?.title.trim() ||
+        message !== posts[selected]?.message.trim() ||
+        link !== posts[selected]?.link.trim() ||
+        checkedTargets.length !== posts[selected]?.targets?.length ||
+        !checkedTargets.every((target) =>
+          posts[selected]?.targets?.includes(target),
+        )),
+  );
+  let valid = $derived(!errorTitleMessage && !errorTargets);
+  let error = $derived(result?.err ? t().errorOnDataSave() : "");
 
-  // const onCancel = async () => {
-  // title = "";
-  // message = "";
-  // link = "";
-  // checkedTargets = [];
-  // schedule = dt().formatDateTime();
-  // pop();
-  // };
+  const onCancel = () => {
+    const post = posts[selected];
+    title = post?.title || "";
+    message = post?.message || "";
+    link = post?.link || "";
+    checkedTargets = post?.targets || [];
+    date = post?.date || "";
+  };
 
-  // let selectedImages = $state(null);
-
-  // const onSave = async () => {
-  // active = true;
-  // const status = "requested";
-  // title = title?.trim() ?? "";
-  // message = message?.trim() ?? "";
-  // link = link?.trim() ?? "";
-  // const files =
-  //   selectedImages && selectedImages[0]
-  //     ? [`1.${selectedImages[0].name.split(".").pop()}`]
-  //     : [];
-  // const targets = checkedTargets
-  //   .filter(
-  //     (target) => files.length || !imageRequiredTargets.includes(target),
-  //   )
-  //   .reduce(
-  //     (acc, cur) => ({
-  //       ...acc,
-  //       [cur]: { status, createdAt: serverTimestamp() },
-  //     }),
-  //     {},
-  //   );
-  // const scheduledFor = Timestamp.fromDate(dt(schedule).dt);
-  // const data = { title, message, link, files, targets, scheduledFor, status };
-  // result = await createDocument("posts", data);
-  // if (!result.err && result.data.id && selectedImages && selectedImages[0]) {
-  //   result = await savePostedImage(
-  //     result.data.id,
-  //     selectedImages[0],
-  //     document,
-  //   );
-  // }
-  // active = false;
-  // if (!result.err) {
-  //   await onCancel();
-  // }
-  // };
+  const onSave = async () => {
+    active = true;
+    const status = "requested";
+    title = title?.trim() ?? "";
+    message = message?.trim() ?? "";
+    link = link?.trim() ?? "";
+    const targets = checkedTargets
+      .filter(
+        (target) => files.length || !imageRequiredTargets.includes(target),
+      )
+      .reduce(
+        (acc, cur) => ({
+          ...acc,
+          [cur]: { status, createdAt: serverTimestamp() },
+        }),
+        {},
+      );
+    const scheduledFor = Timestamp.now();
+    const data = { title, message, link, files, targets, scheduledFor, status };
+    result = await createDocument("posts", data);
+    active = false;
+    if (!result.err) {
+      selected = selected < posts.length - 1 ? selected + 1 : 0;
+      onCancel();
+    }
+  };
 
   $effect(() => {
     if (selectedFiles?.length > 0) {
-      message = t().waitWithoutClosing();
+      status = t().waitWithoutClosing();
       Promise.resolve(
         generatePosts(
           source,
           generator.prompt,
-          (value) => (text = value),
+          (value) => (details = value),
           selectedFiles[0],
         ),
       ).then((response) => {
         const { err, data } = response;
         if (err) {
-          message = initialMessage;
-          text = err.toString();
+          status = initialStatus;
+          details = err.toString();
+          posts = [];
+          selected = 0;
         } else {
-          message = t().reviewResult();
-          result = dump(data);
+          status = t().reviewResult();
+          selected = 0;
+          posts = data;
+          onCancel();
         }
       });
     }
@@ -174,19 +169,59 @@ ${generator.prompt}
           />
         {/if}
       </div>
-      <div>{message}</div>
-      {#if result}
-        <TextFieldOutlined
-          id="result"
-          label={t().reviewResult()}
-          type="text"
-          bind:value={result}
-          lines={16}
-          readonly
-        />
-      {:else}
-        <div class="font-mono whitespace-pre-wrap">{text}</div>
+      <div>{status}</div>
+      {#if posts.length === 0}
+        <div class="font-mono whitespace-pre-wrap">{details}</div>
       {/if}
+      {#each posts as post, index (index)}
+        <div class="flex flex-col gap-2">
+          <h4># {index}</h4>
+          {#if post.sent || index !== selected}
+            <div class="font-mono whitespace-pre-wrap">{dump(post)}</div>
+          {:else}
+            <TextFieldOutlined
+              id={`title-${index}`}
+              label={t().reviewResult()}
+              type="text"
+              bind:value={title}
+            />
+            <TextFieldOutlined
+              id={`message-${index}`}
+              label={t().reviewResult()}
+              type="text"
+              bind:value={message}
+              lines={16}
+            />
+            <TextFieldOutlined
+              id={`link-${index}`}
+              label={t().reviewResult()}
+              type="text"
+              bind:value={link}
+            />
+            <TextFieldOutlined
+              id={`date-${index}`}
+              label={t().reviewResult()}
+              type="text"
+              bind:value={date}
+            />
+            <Targets id={`targets-${index}`} bind:value={checkedTargets} />
+            <div class="font-mono">
+              Categories:
+              {(post.categories || []).join(", ")}
+            </div>
+            <div class="font-mono">Author: {post.author}</div>
+            <div class="font-mono whitespace-pre-wrap">{post.note}</div>
+            <ActionSave
+              id="save"
+              {changed}
+              {valid}
+              {onCancel}
+              {onSave}
+              {error}
+            />
+          {/if}
+        </div>
+      {/each}
     </div>
   {/if}
 </Content>
