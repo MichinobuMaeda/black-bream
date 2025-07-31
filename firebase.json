@@ -24,17 +24,6 @@
         "source": "/auth/**",
         "destination": "/index.html"
       }
-    ],
-    "headers": [
-      {
-        "source": "/__/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, max-age=0"
-          }
-        ]
-      }
     ]
   },
   "storage": {
