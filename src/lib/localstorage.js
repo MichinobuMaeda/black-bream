@@ -4,6 +4,7 @@ const LSKeyTwitterState = "black_bream_twitter_state";
 const LSKeyTwitterChallenge = "black_bream_twitter_challenge";
 const LSKeyTumblrState = "black_bream_tumblr_state";
 const LSKeyWatchdogTimeout = "black_bream_watchdog_timeout";
+const LSKeySignInProvider = "black_bream_sign_in_provider";
 
 const getItem = (key) => window.localStorage.getItem(key);
 const setItem = (key, value) => window.localStorage.setItem(key, value);
@@ -38,5 +39,10 @@ export const localstorage = {
   watchdogTimeout: {
     load: () => Number(getItem(LSKeyWatchdogTimeout)) || 0,
     save: (v) => setItem(LSKeyWatchdogTimeout, Number(v ?? 0).toString()),
+  },
+  signInProvider: {
+    load: () => getItem(LSKeySignInProvider) ?? "",
+    save: (v) => setItem(LSKeySignInProvider, (v ?? "").toString()),
+    clear: () => removeItem(LSKeySignInProvider),
   },
 };

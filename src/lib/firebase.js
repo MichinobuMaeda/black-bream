@@ -14,10 +14,11 @@ import {
   signOut,
   verifyBeforeUpdateEmail,
   updatePassword,
-  signInWithPopup,
+  signInWithRedirect,
   linkWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
+  getRedirectResult,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -178,6 +179,23 @@ export const generatorPromptTemplates = [
   },
 ];
 
+/**
+ * Get social login provider by ID
+ *
+ * @param {string} id
+ * @returns {Object|undefined}
+ */
+export const getSocialLoginProvider = (id) => {
+  switch (id) {
+    case "google":
+      return new GoogleAuthProvider();
+    case "github":
+      return new GithubAuthProvider();
+    default:
+      return undefined;
+  }
+};
+
 /** @typedef {import("firebase/firestore").DocumentReference|import("firebase/firestore").CollectionReference|import("firebase/firestore").Query} FirebaseQuery */
 
 /**
@@ -214,6 +232,7 @@ export class FirebaseState {
     this.store = store;
 
     this.setEnvironment(location);
+    this.handleFirebaseSocialLogin();
     this.handleFirebaseAuthLink(location);
     this.initUserDataAll();
     this.subscribeServiceConf();
@@ -267,6 +286,20 @@ export class FirebaseState {
           });
       }
     }
+  }
+
+  /**
+   * Handle firebase social login
+   *
+   * @returns {void}
+   */
+  async handleFirebaseSocialLogin() {
+    const id = localstorage.signInProvider.load();
+    if (!id) {
+      return;
+    }
+    localstorage.signInProvider.clear();
+    await getRedirectResult(this.auth);
   }
 
   /**
@@ -702,18 +735,12 @@ export const changePassword = async (store, currentPassword, newPassword) => {
  */
 export const socialLogin = async (id) => {
   try {
-    let provider;
-    switch (id) {
-      case "google":
-        provider = new GoogleAuthProvider();
-        break;
-      case "github":
-        provider = new GithubAuthProvider();
-        break;
-      default:
-        return { err: "error" };
+    const provider = getSocialLoginProvider(id);
+    if (!provider) {
+      return { err: "error" };
     }
-    await signInWithPopup(fbs.auth, provider);
+    localstorage.signInProvider.save(id);
+    await signInWithRedirect(fbs.auth, provider);
     return { err: undefined };
   } catch (e) {
     console.error(`socialLogin: ${e}`);
@@ -729,13 +756,9 @@ export const socialLogin = async (id) => {
  */
 export const registerSocialLogin = async (id) => {
   try {
-    let provider;
-    switch (id) {
-      case "google":
-        provider = new GoogleAuthProvider();
-        break;
-      default:
-        return { err: "error" };
+    const provider = getSocialLoginProvider(id);
+    if (!provider) {
+      return { err: "error" };
     }
     await linkWithPopup(fbs.auth.currentUser, provider);
     return { err: undefined };
