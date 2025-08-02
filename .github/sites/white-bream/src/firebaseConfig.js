@@ -1,6 +1,6 @@
 export const config = {
   apiKey: "FIREBASE_API_KEY",
-  authDomain: "white-bream.web.app",
+  authDomain: "white-bream.firebaseapp.com",
   projectId: "white-bream",
   storageBucket: "white-bream.firebasestorage.app",
   messagingSenderId: "1018210955396",
