@@ -21,3 +21,9 @@ jobs:
       site-id: grey-bream
     secrets:
       firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GREY_BREAM }}
+  white-bream:
+    uses: ./.github/workflows/on-call-storage.yml
+    with:
+      site-id: white-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WHITE_BREAM }}

@@ -42,3 +42,13 @@ jobs:
       firebase_api_key: ${{ secrets.FIREBASE_API_KEY_GREY_BREAM }}
       firebase_recaptcha_key: ${{ secrets.FIREBASE_RECAPTCHA_KEY_GREY_BREAM }}
       repo_token: ${{ secrets.GITHUB_TOKEN }}
+  white-bream:
+    needs: [coverage]
+    uses: ./.github/workflows/on-call-hosting.yml
+    with:
+      site-id: white-bream
+    secrets:
+      firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WHITE_BREAM }}
+      firebase_api_key: ${{ secrets.FIREBASE_API_KEY_WHITE_BREAM }}
+      firebase_recaptcha_key: ${{ secrets.FIREBASE_RECAPTCHA_KEY_WHITE_BREAM }}
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
