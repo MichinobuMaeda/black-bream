@@ -183,6 +183,7 @@ export class Post {
    */
   async setPostStatusError(err) {
     const { target } = this.data;
+    console.error(err);
 
     const updated = await updateDoc(this.ref, {
       status: "posting",
