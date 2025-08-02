@@ -1,5 +1,6 @@
 import { httpRequest, getPublicMediaUrl, joinLines } from "./utils.js";
 import { Provider } from "./provider.js";
+import { logger } from "firebase-functions";
 
 export class Threads extends Provider {
   /**
@@ -25,19 +26,18 @@ export class Threads extends Provider {
     id,
     { text, title, message, link, files },
   ) {
-    return httpRequest(
-      files?.length
-        ? `https://graph.threads.net/v1.0/${userId}/threads` +
-            "?media_type=IMAGE" +
-            `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
-            `&image_url=${getPublicMediaUrl(id, files[0])}` +
-            `&access_token=${accessToken}`
-        : `https://graph.threads.net/v1.0/${userId}/threads` +
-            "?media_type=TEXT" +
-            `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
-            `&access_token=${accessToken}`,
-      { method: "POST" },
-    ).then(({ err, data }) =>
+    const url = files?.length
+      ? `https://graph.threads.net/v1.0/${userId}/threads` +
+        "?media_type=IMAGE" +
+        `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
+        `&image_url=${getPublicMediaUrl(id, files[0])}` +
+        `&access_token=${accessToken}`
+      : `https://graph.threads.net/v1.0/${userId}/threads` +
+        "?media_type=TEXT" +
+        `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
+        `&access_token=${accessToken}`;
+    logger.info(url);
+    return httpRequest(url, { method: "POST" }).then(({ err, data }) =>
       err
         ? { err }
         : data
@@ -59,16 +59,18 @@ export class Threads extends Provider {
       err
         ? { err }
         : { then: (fn) => fn(data) }.then(({ userId, accessToken }) =>
-            this.createContainer(data, id, postData).then(({ err, data }) =>
-              err
+            this.createContainer(data, id, postData).then(({ err, data }) => {
+              const url =
+                `https://graph.threads.net/v1.0/${userId}/threads_publish` +
+                `?creation_id=${data.id}` +
+                `&access_token=${accessToken}`;
+              logger.info(url);
+              return err
                 ? { err }
-                : httpRequest(
-                    `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-                      `?creation_id=${data.id}` +
-                      `&access_token=${accessToken}`,
-                    { method: "POST" },
-                  ).then(({ err }) => ({ err })),
-            ),
+                : httpRequest(url, { method: "POST" }).then(({ err }) => ({
+                    err,
+                  }));
+            }),
           ),
     );
   }
