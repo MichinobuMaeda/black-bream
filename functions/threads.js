@@ -60,10 +60,11 @@ export class Threads extends Provider {
         ? { err }
         : { then: (fn) => fn(data) }.then(({ userId, accessToken }) =>
             this.createContainer(data, id, postData).then(({ err, data }) => {
-              const url =
-                `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-                `?creation_id=${data.id}` +
-                `&access_token=${accessToken}`;
+              const url = err
+                ? ""
+                : `https://graph.threads.net/v1.0/${userId}/threads_publish` +
+                  `?creation_id=${data.id}` +
+                  `&access_token=${accessToken}`;
               logger.info(url);
               return err
                 ? { err }
