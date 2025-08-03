@@ -23,7 +23,7 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
-        "source": "/auth/**",
+        "source": "**",
         "destination": "/index.html"
       }
     ]
