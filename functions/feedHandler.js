@@ -63,8 +63,11 @@ export class FeedHandler {
     const items = templates.filter(
       (template) => template.feed === feed && template.category === category,
     );
+    logger.info(`Found ${items.length} templates for ${feed}, ${category}`);
 
-    return items.length ? items[Math.floor(Math.random() * items.length)] : {};
+    return items.length
+      ? items[Math.floor((new Date().getMilliseconds() / 1000) * items.length)]
+      : {};
   }
 
   /**
@@ -102,7 +105,7 @@ export class FeedHandler {
    */
   getFeedHandleSchedule(sysTz, preDefined) {
     const schIndex = Math.ceil(
-      Math.random() *
+      (new Date().getMilliseconds() / 1000) *
         ((preDefined?.h?.length ?? 0) * (preDefined?.m?.length ?? 0)),
     );
 
