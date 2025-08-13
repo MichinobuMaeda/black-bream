@@ -93,35 +93,6 @@ export class FeedHandler {
   }
 
   /**
-   * Get the next schedule based on predefined schedules.
-   *
-   * @param {string} sysTz - The timezone to use for scheduling.
-   * @param {TZDate} base - The base date to start from.
-   * @param {Object} preDefined - The predefined schedule object
-   *    containing arrays of weekdays, hours, and minutes.
-   * @returns {TZDate} - The next scheduled date.
-   */
-  getNextSchedule(sysTz, base, preDefined) {
-    if (
-      !preDefined?.wd?.length ||
-      !preDefined?.h?.length ||
-      !preDefined?.m?.length
-    ) {
-      return base;
-    }
-
-    while (
-      !preDefined.wd.includes(base.getDay() % 7) ||
-      !preDefined.h.includes(base.getHours()) ||
-      !preDefined.m.includes(base.getMinutes())
-    ) {
-      base = addMinutes(base, 1);
-    }
-
-    return base;
-  }
-
-  /**
    * Get a random feed handle schedule based on predefined schedules.
    *
    * @param {string} sysTz - The timezone to use for scheduling.
@@ -130,19 +101,33 @@ export class FeedHandler {
    * @returns {TZDate} - A date object representing the scheduled time.
    */
   getFeedHandleSchedule(sysTz, preDefined) {
+    const schIndex = Math.ceil(
+      Math.random() *
+        ((preDefined?.h?.length ?? 0) * (preDefined?.m?.length ?? 0)),
+    );
+
     let scheduledFor = addMinutes(
       startOfMinute(new TZDate(new Date(), sysTz)),
       1,
     );
+    let i = 0;
 
-    const schIndex = Math.ceil(
-      Math.random() *
-        ((preDefined?.h?.length ?? 0) + (preDefined?.m?.length ?? 0)),
+    logger.info(
+      `${schIndex} - ${scheduledFor.toLocaleString()} - ${JSON.stringify(preDefined)}`,
     );
 
-    for (let i = 0; i < schIndex; i++) {
-      scheduledFor = this.getNextSchedule(sysTz, scheduledFor, preDefined);
+    while (i < schIndex) {
+      scheduledFor = addMinutes(scheduledFor, 1);
+      if (
+        preDefined?.wd?.includes(scheduledFor.getDay() % 7) &&
+        preDefined?.h?.includes(scheduledFor.getHours()) &&
+        preDefined?.m?.includes(scheduledFor.getMinutes())
+      ) {
+        ++i;
+      }
     }
+
+    logger.info(scheduledFor.toLocaleString());
 
     return scheduledFor;
   }

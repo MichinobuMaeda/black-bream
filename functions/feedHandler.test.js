@@ -1,5 +1,4 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { TZDate } from "@date-fns/tz";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 // import { httpRequest } from "./utils";
 import { FeedHandler } from "./feedHandler.js";
@@ -255,46 +254,6 @@ describe("getFeeds() with empty fields", () => {
         title: "Test Feed #2",
       },
     ]);
-  });
-});
-
-describe("getNextSchedule()", () => {
-  it("should return the next schedule for a given timezone and predefined schedule", () => {
-    // Prepare
-    const tz = "Asia/Bangkok";
-    const base = new TZDate(2000, 0, 1, tz);
-    const preDefined = {
-      wd: [1, 2],
-      h: [3, 4],
-      m: [5, 6],
-    };
-
-    // Execute
-    const nextSchedule = new FeedHandler(db).getNextSchedule(
-      tz,
-      base,
-      preDefined,
-    );
-
-    // Verify
-    expect(nextSchedule).toEqual(new TZDate(2000, 0, 3, 3, 5, tz));
-  });
-
-  it("should return the current date if no predefined schedule is provided", () => {
-    // Prepare
-    const tz = "Asia/Bangkok";
-    const base = new TZDate(2000, 0, 1, tz);
-    const preDefined = {};
-
-    // Execute
-    const nextSchedule = new FeedHandler(db).getNextSchedule(
-      tz,
-      base,
-      preDefined,
-    );
-
-    // Verify
-    expect(nextSchedule).toEqual(new TZDate(2000, 0, 1, tz));
   });
 });
 
