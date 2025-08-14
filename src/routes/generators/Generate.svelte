@@ -146,7 +146,7 @@ ${generator.prompt}
           source,
           generator.prompt,
           (value) => (details = value),
-          selectedFiles[0],
+          selectedFiles,
         ),
       ).then((response) => {
         const { err, data } = response;
@@ -174,21 +174,26 @@ ${generator.prompt}
   {#if (store.operator || store.manager) && store.conf?.aiProvider}
     <div class="flex flex-col gap-2">
       <h4>{generator?.name}</h4>
-      <div class="flex flex-row gap-2">
+      <div class="flex flex-row gap-2 items-start">
         {#if source.input.type === "file"}
-          <ButtonText
-            id="open-file"
-            icon={SvgNoteAdd}
-            label="Word"
-            onClick={() => document.getElementById("add-image-field").click()}
-          />
-          {selectedFiles ? selectedFiles[0].name : "--"}
+          <div class="flex flex-col">
+            <ButtonText
+              id="open-file"
+              icon={SvgNoteAdd}
+              label="Word"
+              onClick={() => document.getElementById("add-image-field").click()}
+            />
+            {#each selectedFiles as file, index (index)}
+              <div>{file.name}</div>
+            {/each}
+          </div>
           <input
             id="add-image-field"
             type="file"
             accept={(source?.input?.accept || []).join(", ")}
             class="hidden"
             bind:files={selectedFiles}
+            multiple
           />
         {/if}
       </div>

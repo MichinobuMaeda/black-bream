@@ -785,16 +785,16 @@ export const callFunction = async (name, param) => {
   }
 };
 
-const parseDocx = async (file, { input, filter }) => {
+const parseDocx = async (files, { input, filter }) => {
+  console.log(JSON.stringify(files.map((file) => `parseDocx: ${file.name}`)));
   if (input.accept.includes(".docx") && filter.type === "table") {
-    const table = await docxToTable(file);
-    if (table.err) {
-      console.error(`parseDocx: ${table.err}`);
-      return table;
-    }
+    const tables = (
+      await Promise.all(files.map((file) => docxToTable(file)))
+    ).filter((table) => !table.err);
 
     const { headers, includes, excludes, limit } = filter;
-    const data = table.data
+    const data = tables
+      .flatMap((table) => table.data)
       .filter(({ cols }) => cols.length >= headers.length)
       .map(({ cols }) =>
         (headers || []).reduce(
@@ -866,9 +866,9 @@ const generateFromSource = async (schema, prompt, source) => {
   }
 };
 
-export const generatePosts = async (source, prompt, setText, file) => {
+export const generatePosts = async (source, prompt, setText, selectedFiles) => {
   try {
-    const parsed = await parseDocx(file, source);
+    const parsed = await parseDocx(Array.from(selectedFiles), source);
 
     if (parsed.err) {
       setText(parsed.err);

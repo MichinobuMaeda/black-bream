@@ -145,13 +145,8 @@ function getAllTextNodes(dom, node) {
  */
 
 /**
- * @typedef {Object} DocxToTableResultRow
- * @property {Array<{DocxToTableResultCol}>} cols
- */
-
-/**
  * @typedef {Object} DocxToTableResult
- * @property {Array<DocxToTableResultRow>} rows
+ * @property {Array<{DocxToTableResultCol}>} cols
  */
 
 /**
