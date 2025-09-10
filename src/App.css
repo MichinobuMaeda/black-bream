@@ -1,0 +1,17 @@
+/* Tailwind CSS v4 */
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+@import "./theme.css";
+@import "./xuan-paper/xuan-paper.css";
+
+body {
+  @apply text-base
+    bg-light-form dark:bg-dark-form
+    text-light-on-form dark:text-dark-on-form;
+}
+
+h2 {
+  @apply flex px-2 sm:px-4 md:px-6 lg:px-8 py-1 sm:py-2 text-2xl
+    bg-light-tertiary-container dark:bg-dark-tertiary-container
+    text-light-on-tertiary-container dark:text-dark-on-tertiary-container;
+}

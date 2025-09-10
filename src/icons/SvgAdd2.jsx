@@ -1,0 +1,18 @@
+/**
+ * Material Symbol: Add 2
+ * @see https://fonts.google.com/icons
+ * @returns {JSX.Element} SVG element
+ */
+function SvgAdd2() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 -960 960 960"
+      fill="currentColor"
+    >
+      <path d="M440-120v-320H120v-80h320v-320h80v320h320v80H520v320h-80Z" />
+    </svg>
+  );
+}
+
+export default SvgAdd2;

@@ -1,37 +1,33 @@
-import { defineConfig, mergeConfig } from "vite";
-import viteConfig from "./vite.config";
-import { coverageConfigDefaults } from "vitest/config";
-import { svelteTesting } from "@testing-library/svelte/vite";
+import { defineConfig, mergeConfig } from "vitest/config";
+import viteConfig from "./vite.config.js";
 
 export default mergeConfig(
   viteConfig,
   defineConfig({
-    plugins: [svelteTesting()],
     test: {
-      setupFiles: ["./vitest.setup.js"],
+      globals: true,
       environment: "jsdom",
-      deps: {
-        inline: ["vitest-canvas-mock"],
-      },
-      threads: false,
-      environmentOptions: {
-        jsdom: {
-          resources: "usable",
-        },
-      },
-      exclude: ["functions/node_modules", "node_modules", "test/firestore"],
+      setupFiles: ["./tests/setup.ts"],
+      include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+      exclude: ["node_modules", "dist", ".idea", ".git", ".cache"],
       coverage: {
-        enabled: true,
-        include: ["src/**/*.js", "functions/*.js"],
+        provider: "v8",
+        reporter: ["text", "json", "html"],
         exclude: [
-          "src/main.js",
+          "node_modules/",
+          "**/*.{test,spec}.{js,ts,jsx,tsx}",
+          "vite.config.*",
+          "vitest.config.*",
+          "**/tests/**",
+          "**/coverage/**",
+          "**/dist/**",
+          "**/Svg*.jsx",
+          "*.config.js",
+          "src/i18n.js",
+          "src/state.js",
           "src/sw.js",
-          "src/vite-env.d.ts",
-          "src/lib/coarse-paper/*",
-          "src/lib/icons/*",
-          "functions/index.js",
-          "functions/ui_test_data.js",
-          ...coverageConfigDefaults.exclude,
+          "src/version.js",
+          "**/*.jsx",
         ],
       },
     },

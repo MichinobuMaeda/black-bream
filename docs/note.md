@@ -25,20 +25,40 @@ v20.17.0
 ### Create the local project
 
 ```bash
-$ npm create @vite-pwa/pwa@latest black-bream -- --template svelte
-✔ PWA Name: … black-bream
-✔ PWA Short Name: … black-bream
+$ npm create @vite-pwa/pwa@latest
+✔ Project name: … black-bream
+✔ Select a framework: › React
+✔ Select a variant: › JavaScript
+✔ PWA Name: … Black bream
+✔ PWA Short Name: … Black bream
 ✔ PWA Description: …
-✔ Theme color: … #ffffff
-✔ Select a strategy: › generateSW
+✔ Theme color: … #c37d9e
+✔ Select a strategy: › injectManifest
 ✔ Select a behavior: › Prompt for update
-✔ Enable periodic SW updates? … no
-✔ Show offline ready prompt? … no
-✔ Generate PWA Assets Icons on the fly? … yes
+✔ Enable periodic SW updates? … no / yes
+✔ Show offline ready prompt? … no / yes
+✔ Generate PWA Assets Icons on the fly? … no / yes
 
 $ cd black-bream
 $ npm install
-$ npm run dev -- --open
+$ npm i tailwindcss @tailwindcss/vite
+$ npm init @eslint/config@latest
+
+✔ What do you want to lint? · javascript
+✔ How would you like to use ESLint? · problems
+✔ What type of modules does your project use? · esm
+✔ Which framework does your project use? · react
+✔ Does your project use TypeScript? · No / Yes
+✔ Where does your code run? · browser
+✔ Would you like to install them now? · No / Yes
+✔ Which package manager do you want to use? · npm
+
+$ npm i prop-types
+$ npm i -D --save-exact prettier
+$ node --eval "fs.writeFileSync('.prettierrc','{}\n')"
+$ node --eval "fs.writeFileSync('.prettierignore','# Ignore artifacts:\nbuild\ncoverage\n')"
+
+$ npm i react-i18next i18next
 ```
 
 ### Configure the Git repository
@@ -152,7 +172,7 @@ Modify `functions/package.json`
 
 ```json
   "engines": {
-    "node": "20"
+    "node": "22"
   },
 ```
 
@@ -182,66 +202,7 @@ Grant the new role? Yes
 
 ```
 
-#### Install extension
-
-<https://console.firebase.google.com/u/0/project/black-bream>
-
-- Build
-    - Extensions
-        - Explore extensions
-            - Trigger Email from Firestore
-                - Install
-                    - Projects: black-bream
-                    - Secret Manager: Enable
-                    - Cloud Functions location: asia-northeast2 (Osaka)
-
-# Original README.md
-
-This template should help get you started developing with Svelte in Vite.
-
-## Recommended IDE Setup
-
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
-
-## Need an official Svelte framework?
-
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
-
-## Technical considerations
-
-**Why use this over SvelteKit?**
-
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from "svelte/store";
-export default writable(0);
-```
-
 Add "Service Account User" and "Editor" to
 github-action-\*@black-bream.iam.gserviceaccount.com
+
+

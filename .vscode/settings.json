@@ -1,6 +1,5 @@
 {
   "cSpell.words": [
-    "ABCDEFGHJKLMNPRSTUVWXY",
     "adminsdk",
     "apdisk",
     "APPCHECK",
@@ -45,6 +44,8 @@
     "msword",
     "namedview",
     "netrwhist",
+    "njsproj",
+    "ntvs",
     "nvmrc",
     "officedocument",
     "ontext",
@@ -75,15 +76,24 @@
     "vercel",
     "vite",
     "wordprocessingml",
+    "Xuan",
     "youtu",
     "Yujt",
     "Zabcdefghijkmnopqrstuvwxyz"
   ],
-  "eslint.validate": ["javascript", "javascriptreact", "svelte"],
-  "eslint.useFlatConfig": true,
+  "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "javascript.validate.enable": false,
   "typescript.validate.enable": false,
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "javascriptreact", "jsx"],
+  "eslint.useFlatConfig": true,
+  "eslint.lintTask.enable": true,
+  "eslint.run": "onType",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.debug": true,
   "testing.automaticallyOpenTestResults": "neverOpen",
   "vitest.rootConfig": "vitest.config.ts"
 }

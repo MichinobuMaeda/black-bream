@@ -1,9 +1,12 @@
+# Ignore artifacts:
+dist
+docs
+coverage
+
 # Package Managers
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
-src/i18n.js
 src/sw.js
-src/vite-env.d.ts
-src/lib/coarse-paper/*
+src/lib/xuan-paper/*

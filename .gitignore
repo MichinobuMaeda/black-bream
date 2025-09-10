@@ -1,7 +1,19 @@
-coverage/
+coverage
 /dist
 node_modules
+/src/version.js
 /work
+dist-ssr
+dev-dist
+*.local
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 
 # Output
 .output

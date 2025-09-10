@@ -1,38 +1,92 @@
-import prettier from "eslint-config-prettier";
 import js from "@eslint/js";
-import svelte from "eslint-plugin-svelte";
 import globals from "globals";
+import pluginReact from "eslint-plugin-react";
+import { defineConfig } from "eslint/config";
+import jsdoc from "eslint-plugin-jsdoc";
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
-  js.configs.recommended,
-  ...svelte.configs["flat/recommended"],
+export default defineConfig([
   {
+    ignores: ["**/dist/**", "**/docs/**", "**/src/sw.js"],
+  },
+  jsdoc.configs["flat/recommended"],
+  {
+    files: ["**/*.js"],
+    plugins: {
+      jsdoc,
+    },
     rules: {
-      "svelte/no-at-html-tags": "off", // for parsed markdown
+      "jsdoc/require-description": "warn",
     },
   },
-  prettier,
-  ...svelte.configs["flat/prettier"],
   {
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
+    files: ["**/*.{js,jsx}"],
+    plugins: {
+      jsdoc,
+    },
+    settings: {
+      jsdoc: {
+        preferredTypes: {
+          "React.ReactNode": "React.ReactNode",
+          "JSX.Element": "JSX.Element",
+        },
+        mode: "typescript",
+      },
+    },
+    rules: {
+      "jsdoc/no-undefined-types": [
+        "warn",
+        {
+          definedTypes: [
+            "React",
+            "React.ReactNode",
+            "JSX",
+            "JSX.Element",
+            "HTMLElement",
+            "Event",
+            "MouseEvent",
+            "KeyboardEvent",
+            "FormEvent",
+            "ChangeEvent",
+            "InputEvent",
+            "FocusEvent",
+            "ClipboardEvent",
+            "DragEvent",
+            "TouchEvent",
+            "WheelEvent",
+            "AnimationEvent",
+            "TransitionEvent",
+            "PointerEvent",
+            "CompositionEvent",
+            "UIEvent",
+            "SyntheticEvent",
+          ],
+        },
+      ],
+      "jsdoc/check-tag-names": [
+        "warn",
+        {
+          definedTags: ["component", "generated", "vitest-environment"],
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/*.{js,mjs,cjs,jsx}"],
+    plugins: { js },
+    extends: ["js/recommended"],
+    languageOptions: { globals: globals.browser },
+  },
+  {
+    ...pluginReact.configs.flat.recommended,
+    settings: {
+      react: {
+        version: "19.0.0",
       },
     },
   },
   {
-    files: ["test/**", "**/*.test.js", "**/*.spec.js"],
-    rules: {},
+    rules: {
+      "react/react-in-jsx-scope": "off",
+    },
   },
-  {
-    ignores: [
-      "build/",
-      ".svelte-kit/",
-      "dist/",
-      "coverage/",
-      "functions/coverage/",
-    ],
-  },
-];
+]);

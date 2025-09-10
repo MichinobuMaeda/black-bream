@@ -1,17 +1,19 @@
+import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { hexFromArgb } from "@material/material-color-utilities";
-import config from "./theme.js";
-import { generateDynamicScheme } from "./material-theme.js";
-
-const ds = generateDynamicScheme(config, false);
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { versionPlugin } from "./tools/generate-version.js";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  resolve: process.env.VITEST ? { conditions: ["browser"] } : undefined,
   plugins: [
-    svelte(),
+    versionPlugin({
+      input: path.join("package.json"),
+      output: path.join("src", "version.js"),
+    }),
+    tailwindcss(),
+    react(),
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
@@ -25,12 +27,10 @@ export default defineConfig({
       },
 
       manifest: {
-        name: config.appName,
-        short_name: config.appName,
-        description: config.appName,
-        theme_color: hexFromArgb(ds.primary),
-        background_color: hexFromArgb(ds.surfaceContainer),
-        lang: "ja",
+        name: "Black bream",
+        short_name: "Black bream",
+        description: "Black bream",
+        theme_color: "#c37d9e",
       },
 
       injectManifest: {
@@ -43,10 +43,8 @@ export default defineConfig({
         suppressWarnings: true,
         type: "module",
       },
+
+      includeAssets: ["src/assets/images/*.{svg,png,jpg,jpeg}"],
     }),
   ],
-  server: {
-    host: "localhost",
-    port: 8000,
-  },
 });
