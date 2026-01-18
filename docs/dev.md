@@ -6,11 +6,11 @@
 $ git --version
 git version 2.46.2
 $ gh --version
-gh version 2.57.0 (2024-09-16)
+gh version 2.85.0 (2026-01-14)
 $ node --version
-v20.17.0
+v24.12.0
 $ java --version
-openjdk 23 2024-09-17
+openjdk 25.0.1 2025-10-21
 $ curl --version
 curl 8.7.1
 ```

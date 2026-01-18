@@ -82,6 +82,8 @@ export const aiProviders = [
   { id: "vertex", name: "Vertex AI Gemini API" },
 ];
 
+const GEMINI_MODEL = "gemini-2.5-flash";
+
 export const titleRequiredTargets = ["wordpress"];
 export const imageRequiredTargets = ["instagram"];
 
@@ -843,7 +845,7 @@ const generateFromSource = async (schema, prompt, source) => {
     const ai = getAI(fbs.app, { backend });
 
     const result = await getGenerativeModel(ai, {
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL,
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: schema,
