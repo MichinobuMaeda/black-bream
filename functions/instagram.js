@@ -28,7 +28,7 @@ export class Instagram extends Provider {
             ? { err }
             : { then: (fn) => fn(data) }.then(({ clientId, accessToken }) =>
                 httpRequest(
-                  `https://graph.instagram.com/v22.0/${clientId}/media`,
+                  `https://graph.instagram.com/v24.0/${clientId}/media`,
                   {
                     method: "POST",
                     headers: {
@@ -45,7 +45,7 @@ export class Instagram extends Provider {
                     ? { err }
                     : data.json().then((media) =>
                         httpRequest(
-                          `https://graph.instagram.com/v22.0/${clientId}/media_publish`,
+                          `https://graph.instagram.com/v24.0/${clientId}/media_publish`,
                           {
                             method: "POST",
                             headers: {

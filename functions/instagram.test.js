@@ -49,7 +49,7 @@ describe("Instagram.post", () => {
     "Content-Type": "application/json",
   };
   getPublicMediaUrl.mockImplementation(() => "public-url");
-  const uploadUrl = `https://graph.instagram.com/v22.0/${clientId}/media`;
+  const uploadUrl = `https://graph.instagram.com/v24.0/${clientId}/media`;
   const uploadParams1 = {
     method,
     headers,
@@ -71,7 +71,7 @@ describe("Instagram.post", () => {
       json: vi.fn(() => Promise.resolve({ id: "media-id" })),
     },
   };
-  const publishUrl = `https://graph.instagram.com/v22.0/${clientId}/media_publish`;
+  const publishUrl = `https://graph.instagram.com/v24.0/${clientId}/media_publish`;
   const publishParams = {
     method,
     headers,
@@ -118,7 +118,7 @@ describe("Instagram.post", () => {
 
     // Verify
     expect(httpRequest).toHaveBeenCalledWith(
-      `https://graph.instagram.com/v22.0/${clientId}/media`,
+      `https://graph.instagram.com/v24.0/${clientId}/media`,
       uploadParams1,
     );
     expect(uploadData.data.json).not.toHaveBeenCalled();
