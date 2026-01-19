@@ -95,21 +95,25 @@ describe("post", () => {
           json: () => Promise.resolve({ id: "01234566789" }),
         },
       })
+      .mockResolvedValueOnce({
+        data: {
+          json: () => Promise.resolve({ status: "FINISHED" }),
+        },
+      })
       .mockResolvedValueOnce({ data: { status: 200 } });
 
     // Execute
     const result = await threads.post(id, dataText);
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
+    expect(httpRequest.mock.calls[0]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads`,
+      { method: "POST", body: expect.any(FormData) },
+    ]);
+    expect(httpRequest.mock.calls[1][0]).toContain("01234566789?fields=status");
+    expect(httpRequest.mock.calls[2]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+      { method: "POST", body: expect.any(FormData) },
     ]);
     expect(result).toEqual({});
   });
@@ -125,21 +129,25 @@ describe("post", () => {
           json: () => Promise.resolve({ id: "01234566789" }),
         },
       })
+      .mockResolvedValueOnce({
+        data: {
+          json: () => Promise.resolve({ status: "FINISHED" }),
+        },
+      })
       .mockResolvedValueOnce({ data: { status: 200 } });
 
     // Execute
     const result = await threads.post(id, dataTitleMessageLink);
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
+    expect(httpRequest.mock.calls[0]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads`,
+      { method: "POST", body: expect.any(FormData) },
+    ]);
+    expect(httpRequest.mock.calls[1][0]).toContain("01234566789?fields=status");
+    expect(httpRequest.mock.calls[2]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+      { method: "POST", body: expect.any(FormData) },
     ]);
     expect(result).toEqual({});
   });
@@ -155,21 +163,25 @@ describe("post", () => {
           json: () => Promise.resolve({ id: "01234566789" }),
         },
       })
+      .mockResolvedValueOnce({
+        data: {
+          json: () => Promise.resolve({ status: "FINISHED" }),
+        },
+      })
       .mockResolvedValueOnce({ data: { status: 200 } });
 
     // Execute
     const result = await threads.post(id, dataImage);
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
+    expect(httpRequest.mock.calls[0]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads`,
+      { method: "POST", body: expect.any(FormData) },
+    ]);
+    expect(httpRequest.mock.calls[1][0]).toContain("01234566789?fields=status");
+    expect(httpRequest.mock.calls[2]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+      { method: "POST", body: expect.any(FormData) },
     ]);
     expect(result).toEqual({});
   });
@@ -226,22 +238,122 @@ describe("post", () => {
           json: () => Promise.resolve({ id: "01234566789" }),
         },
       })
+      .mockResolvedValueOnce({
+        data: {
+          json: () => Promise.resolve({ status: "FINISHED" }),
+        },
+      })
       .mockResolvedValueOnce({ err });
 
     // Execute
     const result = await threads.post(id, dataText);
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
-      [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
-        { method: "POST", body: expect.any(FormData) },
-      ],
+    expect(httpRequest.mock.calls[0]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads`,
+      { method: "POST", body: expect.any(FormData) },
     ]);
+    expect(httpRequest.mock.calls[1][0]).toContain("01234566789?fields=status");
+    expect(httpRequest.mock.calls[2]).toEqual([
+      `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+      { method: "POST", body: expect.any(FormData) },
+    ]);
+    expect(result).toEqual({ err });
+  });
+});
+
+describe("waitForMediaStatus", () => {
+  const mediaId = "test-media-id";
+  const accessToken = "test-access-token";
+  const statusUrl = `https://graph.threads.net/v1.0/${mediaId}?fields=status&access_token=${accessToken}`;
+
+  it("should return success when status is FINISHED.", async () => {
+    // Prepare
+    const statusData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status: "FINISHED" })),
+      },
+    };
+    httpRequest.mockResolvedValueOnce(statusData);
+
+    // Execute
+    const result = await threads.waitForMediaStatus(mediaId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl);
+    expect(statusData.data.json).toHaveBeenCalled();
+    expect(result).toEqual({});
+  });
+
+  it("should poll until status is FINISHED.", async () => {
+    // Prepare
+    const inProgressData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status: "IN_PROGRESS" })),
+      },
+    };
+    const finishedData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status: "FINISHED" })),
+      },
+    };
+    httpRequest
+      .mockResolvedValueOnce(inProgressData)
+      .mockResolvedValueOnce(finishedData);
+
+    // Execute
+    const result = await threads.waitForMediaStatus(mediaId, accessToken, 30, 10);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({});
+  });
+
+  it("should return error when status is ERROR.", async () => {
+    // Prepare
+    const errorData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status: "ERROR" })),
+      },
+    };
+    httpRequest.mockResolvedValueOnce(errorData);
+
+    // Execute
+    const result = await threads.waitForMediaStatus(mediaId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl);
+    expect(errorData.data.json).toHaveBeenCalled();
+    expect(result).toEqual({ err: new Error("Media processing failed") });
+  });
+
+  it("should return error when max attempts reached.", async () => {
+    // Prepare
+    const inProgressData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status: "IN_PROGRESS" })),
+      },
+    };
+    httpRequest.mockResolvedValue(inProgressData);
+
+    // Execute
+    const result = await threads.waitForMediaStatus(mediaId, accessToken, 3, 10);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ err: new Error("Media processing timeout") });
+  });
+
+  it("should return error when httpRequest fails.", async () => {
+    // Prepare
+    const err = new Error("Network error");
+    httpRequest.mockResolvedValueOnce({ err });
+
+    // Execute
+    const result = await threads.waitForMediaStatus(mediaId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl);
     expect(result).toEqual({ err });
   });
 });

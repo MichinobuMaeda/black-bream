@@ -68,18 +68,51 @@ export class Threads extends Provider {
                 return { err };
               }
 
-              const url = `https://graph.threads.net/v1.0/${userId}/threads_publish`;
-              const form = new FormData();
-              form.append("creation_id", data.id);
-              form.append("access_token", accessToken);
+              return this.waitForMediaStatus(data.id, accessToken).then(({ err }) => {
+                if (err) {
+                  return { err };
+                }
 
-              logger.info(url);
-              return httpRequest(url, { method: "POST", body: form }).then(({ err }) => ({
-                err,
-              }));
+                const url = `https://graph.threads.net/v1.0/${userId}/threads_publish`;
+                const form = new FormData();
+                form.append("creation_id", data.id);
+                form.append("access_token", accessToken);
+
+                logger.info(url);
+                return httpRequest(url, { method: "POST", body: form }).then(({ err }) => ({
+                  err,
+                }));
+              });
             }),
           ),
     );
+  }
+
+  /**
+   * Wait for media container to be ready
+   *
+   * @param {string} mediaId - The media container ID
+   * @param {string} accessToken - The access token
+   * @param {number} maxAttempts - Maximum number of polling attempts (default: 30)
+   * @param {number} delayMs - Delay between attempts in milliseconds (default: 2000)
+   * @returns {Promise<{err: undefined|Error}>}
+   */
+  async waitForMediaStatus(mediaId, accessToken, maxAttempts = 30, delayMs = 2000) {
+    const checkStatus = async (attempt) => (attempt >= maxAttempts)
+      ? { err: new Error("Media processing timeout") }
+      : httpRequest(
+          `https://graph.threads.net/v1.0/${mediaId}?fields=status&access_token=${accessToken}`,
+        ).then(async ({ err, data }) => (err)
+          ? { err }
+          : data.json().then(async (status) => (status.status === "FINISHED")
+            ? {}
+            : (status.status === "ERROR")
+              ? { err: new Error("Media processing failed") }
+              : new Promise(resolve => setTimeout(resolve, delayMs))
+                  .then(() => checkStatus(attempt + 1))
+      ));
+
+    return checkStatus(0);
   }
 
   /**
