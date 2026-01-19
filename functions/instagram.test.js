@@ -111,7 +111,12 @@ describe("Instagram.post", () => {
   it("should return an error if the media upload fails.", async () => {
     // Prepare
     const err = new Error("test error");
-    httpRequest.mockResolvedValueOnce({ err });
+    const errorData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ error: "Upload failed" })),
+      },
+    };
+    httpRequest.mockResolvedValueOnce({ err, data: errorData.data });
 
     // Execute
     const result = await instagram.post(id, { text, files });
@@ -121,6 +126,7 @@ describe("Instagram.post", () => {
       `https://graph.instagram.com/v24.0/${clientId}/media`,
       uploadParams1,
     );
+    expect(errorData.data.json).toHaveBeenCalled();
     expect(uploadData.data.json).not.toHaveBeenCalled();
     expect(result).toEqual({ err });
   });
@@ -128,9 +134,14 @@ describe("Instagram.post", () => {
   it("should return an error if the media publish fails.", async () => {
     // Prepare
     const err = new Error("test error");
+    const publishErrorData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ error: "Publish failed" })),
+      },
+    };
     httpRequest
       .mockResolvedValueOnce(uploadData)
-      .mockResolvedValueOnce({ err });
+      .mockResolvedValueOnce({ err, data: publishErrorData.data });
 
     // Execute
     const result = await instagram.post(id, { text, files });
@@ -141,6 +152,7 @@ describe("Instagram.post", () => {
       [publishUrl, publishParams],
     ]);
     expect(uploadData.data.json).toHaveBeenCalled();
+    expect(publishErrorData.data.json).toHaveBeenCalled();
     expect(result).toEqual({ err });
   });
 
