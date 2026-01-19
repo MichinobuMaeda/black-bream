@@ -40,8 +40,13 @@ export class Instagram extends Provider {
                       image_url: getPublicMediaUrl(id, files[0]),
                     }),
                   },
-                ).then(({ err, data }) =>
-                  err
+                ).then(({ err, data }) => {
+                  console.log(
+                    `https://graph.instagram.com/v24.0/${clientId}/media`,
+                    err,
+                    data,
+                  );
+                  return err
                     ? { err }
                     : data.json().then((media) =>
                         httpRequest(
@@ -54,9 +59,16 @@ export class Instagram extends Provider {
                             },
                             body: JSON.stringify({ creation_id: media.id }),
                           },
-                        ).then(({ err }) => (err ? { err } : {})),
-                      ),
-                ),
+                        ).then(({ err, data }) => {
+                          console.log(
+                            `https://graph.instagram.com/v24.0/${clientId}/media_publish`,
+                            err,
+                            data,
+                          );
+                          return err ? { err } : {}
+                        })
+                      );
+                }),
               ),
         );
   }
