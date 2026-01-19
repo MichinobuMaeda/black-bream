@@ -134,6 +134,11 @@ describe("Instagram.post", () => {
   it("should return an error if the media publish fails.", async () => {
     // Prepare
     const err = new Error("test error");
+    const statusData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "FINISHED" })),
+      },
+    };
     const publishErrorData = {
       data: {
         json: vi.fn(() => Promise.resolve({ error: "Publish failed" })),
@@ -141,36 +146,43 @@ describe("Instagram.post", () => {
     };
     httpRequest
       .mockResolvedValueOnce(uploadData)
+      .mockResolvedValueOnce(statusData)
       .mockResolvedValueOnce({ err, data: publishErrorData.data });
 
     // Execute
     const result = await instagram.post(id, { text, files });
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [uploadUrl, uploadParams1],
-      [publishUrl, publishParams],
-    ]);
+    expect(httpRequest.mock.calls[0]).toEqual([uploadUrl, uploadParams1]);
+    expect(httpRequest.mock.calls[1][0]).toContain("media-id?fields=status_code");
+    expect(httpRequest.mock.calls[2]).toEqual([publishUrl, publishParams]);
     expect(uploadData.data.json).toHaveBeenCalled();
+    expect(statusData.data.json).toHaveBeenCalled();
     expect(publishErrorData.data.json).toHaveBeenCalled();
     expect(result).toEqual({ err });
   });
 
   it("should post with text.", async () => {
     // Prepare
+    const statusData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "FINISHED" })),
+      },
+    };
     httpRequest
       .mockResolvedValueOnce(uploadData)
+      .mockResolvedValueOnce(statusData)
       .mockResolvedValueOnce(publishData);
 
     // Execute
     const result = await instagram.post(id, { text, files });
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [uploadUrl, uploadParams1],
-      [publishUrl, publishParams],
-    ]);
+    expect(httpRequest.mock.calls[0]).toEqual([uploadUrl, uploadParams1]);
+    expect(httpRequest.mock.calls[1][0]).toContain("media-id?fields=status_code");
+    expect(httpRequest.mock.calls[2]).toEqual([publishUrl, publishParams]);
     expect(uploadData.data.json).toHaveBeenCalled();
+    expect(statusData.data.json).toHaveBeenCalled();
     expect(result).toEqual({});
   });
 
@@ -178,8 +190,14 @@ describe("Instagram.post", () => {
     // Prepare
     const title = "Title";
     const message = "Message";
+    const statusData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "FINISHED" })),
+      },
+    };
     httpRequest
       .mockResolvedValueOnce(uploadData)
+      .mockResolvedValueOnce(statusData)
       .mockResolvedValueOnce(publishData);
 
     // Execute
@@ -191,12 +209,110 @@ describe("Instagram.post", () => {
     });
 
     // Verify
-    expect(httpRequest.mock.calls).toEqual([
-      [uploadUrl, uploadParams2],
-      [publishUrl, publishParams],
-    ]);
+    expect(httpRequest.mock.calls[0]).toEqual([uploadUrl, uploadParams2]);
+    expect(httpRequest.mock.calls[1][0]).toContain("media-id?fields=status_code");
+    expect(httpRequest.mock.calls[2]).toEqual([publishUrl, publishParams]);
     expect(uploadData.data.json).toHaveBeenCalled();
+    expect(statusData.data.json).toHaveBeenCalled();
     expect(result).toEqual({});
+  });
+});
+
+describe("waitForMediaStatus", () => {
+  const mediaId = "test-media-id";
+  const statusUrl = `https://graph.instagram.com/v24.0/${mediaId}?fields=status_code`;
+  const statusHeaders = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  it("should return success when status is FINISHED.", async () => {
+    // Prepare
+    const statusData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "FINISHED" })),
+      },
+    };
+    httpRequest.mockResolvedValueOnce(statusData);
+
+    // Execute
+    const result = await instagram.waitForMediaStatus(mediaId, clientId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl, { headers: statusHeaders });
+    expect(statusData.data.json).toHaveBeenCalled();
+    expect(result).toEqual({});
+  });
+
+  it("should poll until status is FINISHED.", async () => {
+    // Prepare
+    const inProgressData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "IN_PROGRESS" })),
+      },
+    };
+    const finishedData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "FINISHED" })),
+      },
+    };
+    httpRequest
+      .mockResolvedValueOnce(inProgressData)
+      .mockResolvedValueOnce(finishedData);
+
+    // Execute
+    const result = await instagram.waitForMediaStatus(mediaId, clientId, accessToken, 30, 10);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({});
+  });
+
+  it("should return error when status is ERROR.", async () => {
+    // Prepare
+    const errorData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "ERROR" })),
+      },
+    };
+    httpRequest.mockResolvedValueOnce(errorData);
+
+    // Execute
+    const result = await instagram.waitForMediaStatus(mediaId, clientId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl, { headers: statusHeaders });
+    expect(errorData.data.json).toHaveBeenCalled();
+    expect(result).toEqual({ err: new Error("Media processing failed") });
+  });
+
+  it("should return error when max attempts reached.", async () => {
+    // Prepare
+    const inProgressData = {
+      data: {
+        json: vi.fn(() => Promise.resolve({ status_code: "IN_PROGRESS" })),
+      },
+    };
+    httpRequest.mockResolvedValue(inProgressData);
+
+    // Execute
+    const result = await instagram.waitForMediaStatus(mediaId, clientId, accessToken, 3, 10);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ err: new Error("Media processing timeout") });
+  });
+
+  it("should return error when httpRequest fails.", async () => {
+    // Prepare
+    const err = new Error("Network error");
+    httpRequest.mockResolvedValueOnce({ err });
+
+    // Execute
+    const result = await instagram.waitForMediaStatus(mediaId, clientId, accessToken);
+
+    // Verify
+    expect(httpRequest).toHaveBeenCalledWith(statusUrl, { headers: statusHeaders });
+    expect(result).toEqual({ err });
   });
 });
 

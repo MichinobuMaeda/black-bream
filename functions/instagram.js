@@ -46,25 +46,62 @@ export class Instagram extends Provider {
                         return { err };
                     })
                     : data.json().then((media) =>
-                        httpRequest(
-                          `https://graph.instagram.com/v24.0/${clientId}/media_publish`,
-                          {
-                            method: "POST",
-                            headers: {
-                              Authorization: `Bearer ${accessToken}`,
-                              "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({ creation_id: media.id }),
-                          },
-                        ).then(({ err, data }) => err ? data.json().then((message) => {
-                            console.log("Instagram API error: media_publish", message);
-                            return { err };
-                          }) : {}
-                        )
+                        this.waitForMediaStatus(media.id, clientId, accessToken)
+                          .then(({ err }) => err
+                            ? { err }
+                            : httpRequest(
+                                `https://graph.instagram.com/v24.0/${clientId}/media_publish`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    Authorization: `Bearer ${accessToken}`,
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({ creation_id: media.id }),
+                                },
+                              ).then(({ err, data }) => err ? data.json().then((message) => {
+                                  console.log("Instagram API error: media_publish", message);
+                                  return { err };
+                                }) : {}
+                              )
+                          )
                       )
                 ),
               ),
         );
+  }
+
+  /**
+   * Wait for media container to be ready
+   *
+   * @param {string} mediaId - The media container ID
+   * @param {string} clientId - The Instagram client ID
+   * @param {string} accessToken - The access token
+   * @param {number} maxAttempts - Maximum number of polling attempts (default: 30)
+   * @param {number} delayMs - Delay between attempts in milliseconds (default: 2000)
+   * @returns {Promise<{err: undefined|Error}>}
+   */
+  async waitForMediaStatus(mediaId, clientId, accessToken, maxAttempts = 30, delayMs = 2000) {
+    const checkStatus = async (attempt) =>  (attempt >= maxAttempts)
+     ? { err: new Error("Media processing timeout") }
+     : httpRequest(
+        `https://graph.instagram.com/v24.0/${mediaId}?fields=status_code`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      ).then(async ({ err, data }) => (err)
+        ? { err }
+        : data.json().then(async (status) => (status.status_code === "FINISHED")
+          ? {}
+          : (status.status_code === "ERROR")
+            ? { err: new Error("Media processing failed") }
+            : new Promise(resolve => setTimeout(resolve, delayMs))
+                .then(() => checkStatus(attempt + 1))
+    ));
+
+    return checkStatus(0);
   }
 
   /**
