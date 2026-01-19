@@ -26,18 +26,22 @@ export class Threads extends Provider {
     id,
     { text, title, message, link, files },
   ) {
-    const url = files?.length
-      ? `https://graph.threads.net/v1.0/${userId}/threads` +
-        "?media_type=IMAGE" +
-        `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
-        `&image_url=${getPublicMediaUrl(id, files[0])}` +
-        `&access_token=${accessToken}`
-      : `https://graph.threads.net/v1.0/${userId}/threads` +
-        "?media_type=TEXT" +
-        `&text=${encodeURIComponent(joinLines(text, title, message, link))}` +
-        `&access_token=${accessToken}`;
+    const url = `https://graph.threads.net/v1.0/${userId}/threads`;
+
+    const form = new FormData();
+    form.append("access_token", accessToken);
+
+    if (files?.length) {
+      form.append("media_type", "IMAGE");
+      form.append("text", joinLines(text, title, message, link));
+      form.append("image_url", getPublicMediaUrl(id, files[0]));
+    } else {
+      form.append("media_type", "TEXT");
+      form.append("text", joinLines(text, title, message, link));
+    }
+
     logger.info(url);
-    return httpRequest(url, { method: "POST" }).then(({ err, data }) =>
+    return httpRequest(url, { method: "POST", body: form }).then(({ err, data }) =>
       err
         ? { err }
         : data
@@ -60,17 +64,19 @@ export class Threads extends Provider {
         ? { err }
         : { then: (fn) => fn(data) }.then(({ userId, accessToken }) =>
             this.createContainer(data, id, postData).then(({ err, data }) => {
-              const url = err
-                ? ""
-                : `https://graph.threads.net/v1.0/${userId}/threads_publish` +
-                  `?creation_id=${data.id}` +
-                  `&access_token=${accessToken}`;
+              if (err) {
+                return { err };
+              }
+
+              const url = `https://graph.threads.net/v1.0/${userId}/threads_publish`;
+              const form = new FormData();
+              form.append("creation_id", data.id);
+              form.append("access_token", accessToken);
+
               logger.info(url);
-              return err
-                ? { err }
-                : httpRequest(url, { method: "POST" }).then(({ err }) => ({
-                    err,
-                  }));
+              return httpRequest(url, { method: "POST", body: form }).then(({ err }) => ({
+                err,
+              }));
             }),
           ),
     );

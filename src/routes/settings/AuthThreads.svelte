@@ -62,7 +62,7 @@
       `?client_id=${store.auth?.threads?.clientId}` +
       `&redirect_uri=${encodeURIComponent(store.auth?.threads?.callBackUrl)}` +
       "&response_type=code" +
-      "&scope=threads_basic,threads_content_publish",
+      "&scope=threads_basic,threads_content_publish,threads_delete",
   );
   let result = $state(null);
   let changed = $derived(

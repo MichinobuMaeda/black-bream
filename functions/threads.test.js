@@ -103,17 +103,12 @@ describe("post", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent("Text")}` +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
-          "?creation_id=01234566789" +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
     expect(result).toEqual({});
@@ -138,17 +133,12 @@ describe("post", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent("Title\nMessage\nhttps://example.com")}` +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
-          "?creation_id=01234566789" +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
     expect(result).toEqual({});
@@ -173,18 +163,12 @@ describe("post", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=IMAGE" +
-          `&text=${encodeURIComponent("Text")}` +
-          "&image_url=https://public-post-media-url/public/posts/post-id/1.jpg" +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
-          "?creation_id=01234566789" +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
     expect(result).toEqual({});
@@ -204,11 +188,8 @@ describe("post", () => {
     expect(result).toEqual({ err });
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent("Text")}` +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
   });
@@ -226,11 +207,8 @@ describe("post", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent("Text")}` +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
     expect(result).toEqual({ err });
@@ -256,17 +234,12 @@ describe("post", () => {
     // Verify
     expect(httpRequest.mock.calls).toEqual([
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads` +
-          "?media_type=TEXT" +
-          `&text=${encodeURIComponent("Text")}` +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads`,
+        { method: "POST", body: expect.any(FormData) },
       ],
       [
-        `https://graph.threads.net/v1.0/${params.userId}/threads_publish` +
-          "?creation_id=01234566789" +
-          `&access_token=${params.accessToken}`,
-        { method: "POST" },
+        `https://graph.threads.net/v1.0/${params.userId}/threads_publish`,
+        { method: "POST", body: expect.any(FormData) },
       ],
     ]);
     expect(result).toEqual({ err });
